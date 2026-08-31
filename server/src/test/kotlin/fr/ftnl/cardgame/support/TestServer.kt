@@ -1,0 +1,69 @@
+package fr.ftnl.cardgame.support
+
+import fr.ftnl.cardgame.ApplicationServices
+import fr.ftnl.cardgame.HttpClientFactory
+import fr.ftnl.cardgame.session.InMemoryGameSessionStore
+import fr.ftnl.cardgame.auth.AdminSession
+import io.ktor.client.HttpClient
+import io.ktor.client.request.get
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.response.respond
+import io.ktor.server.routing.get
+import io.ktor.server.routing.routing
+import io.ktor.server.sessions.sessions
+import io.ktor.server.sessions.set
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.cookies.HttpCookies
+import io.ktor.client.plugins.websocket.WebSockets
+import io.ktor.serialization.kotlinx.json.json
+import io.ktor.server.config.MapApplicationConfig
+import io.ktor.server.testing.ApplicationTestBuilder
+import fr.ftnl.cardgame.configure
+import fr.ftnl.cardgame.plugins.ApiJson
+
+/**
+ * Boots the real application against the PostgreSQL test container and an in-memory
+ * session store, so an integration test exercises the true routing, serialisation,
+ * session handling and SQL.
+ */
+fun ApplicationTestBuilder.startTestServer(): ApplicationServices {
+    TestDatabase.connect()
+    val services = ApplicationServices(
+        config = TestConfig.create(),
+        scope = testScope(),
+        httpClient = HttpClientFactory.create(),
+        sessionStore = InMemoryGameSessionStore(),
+    )
+    environment { config = MapApplicationConfig() }
+    application {
+        configure(services)
+        routing {
+            // Test-only door. The real one is the Discord OAuth callback, which cannot run
+            // here, so this hands out the very same signed session the callback would set.
+            get(ADMIN_LOGIN_PATH) {
+                call.sessions.set(AdminSession(TestConfig.ADMIN_DISCORD_ID, "Root"))
+                call.respond(HttpStatusCode.NoContent)
+            }
+        }
+    }
+    return services
+}
+
+const val ADMIN_LOGIN_PATH = "/test/sign-in-as-admin"
+
+/** A browser that carries an administrator session from its very first call. */
+suspend fun ApplicationTestBuilder.adminBrowser(): HttpClient =
+    browser().also { it.get(ADMIN_LOGIN_PATH) }
+
+/** A browser-like client: it keeps its cookies, so it stays the same player. */
+fun ApplicationTestBuilder.browser(): HttpClient = createClient {
+    install(ContentNegotiation) { json(ApiJson) }
+    install(HttpCookies)
+    install(WebSockets)
+    install(HttpTimeout) { requestTimeoutMillis = 20_000 }
+}
+
+private fun ApplicationTestBuilder.testScope() = kotlinx.coroutines.CoroutineScope(
+    kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Default
+)

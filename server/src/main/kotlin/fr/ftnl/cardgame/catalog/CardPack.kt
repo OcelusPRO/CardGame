@@ -1,0 +1,20 @@
+package fr.ftnl.cardgame.catalog
+
+import fr.ftnl.cardgame.domain.game.AnswerMode
+
+/** A themed group of official cards the host can switch on or off before a game. */
+data class CardPack(
+    val id: String,
+    val name: String,
+    val description: String = "",
+    val enabled: Boolean = true,
+    val createdAtMillis: Long = 0,
+    /**
+     * The answer modes this pack may be played in. A pack offered in both modes carries
+     * no restriction; narrowing it hides the pack from the lobby whenever the game runs
+     * in a mode it left out. Never empty: an empty choice falls back to every mode.
+     */
+    val answerModes: Set<AnswerMode> = AnswerMode.entries.toSet(),
+) {
+    fun allows(mode: AnswerMode): Boolean = mode in answerModes
+}

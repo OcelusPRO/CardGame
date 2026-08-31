@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-cardgame}
+      POSTGRES_USER: ${POSTGRES_USER:-cardgame}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cardgame}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cardgame}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    image: harbor.ftnl.link/yarp/cardgame:latest
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-cardgame}
+      DATABASE_USER: ${POSTGRES_USER:-cardgame}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-cardgame}
+      REDIS_URL: redis://redis:6379
+      REDIS_ENABLED: "true"
+      SESSION_SIGN_KEY: ${SESSION_SIGN_KEY:-dev-secret-change-me-please-32chars}
+      SEED_DEV_DECK: ${SEED_DEV_DECK:-true}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:-}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:-}
+      DISCORD_REDIRECT_URL: ${DISCORD_REDIRECT_URL:-http://localhost:8080/auth/discord/callback}
+      ADMIN_DISCORD_IDS: ${ADMIN_DISCORD_IDS:-}
+
+volumes:
+  postgres-data:

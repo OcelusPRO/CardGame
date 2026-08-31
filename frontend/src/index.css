@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+/*
+ * One palette for the whole app. The two decks are deliberately opposite: the situation
+ * card is ink black like a bad idea, the punchline card is paper white like an excuse.
+ */
+@theme {
+  --color-ink: #150726;
+  --color-ink-soft: #24103c;
+  --color-ink-line: #3b1c5e;
+  --color-paper: #fdf8f3;
+  --color-paper-line: #e4d9cd;
+
+  --color-punch: #ff2e88;
+  --color-punch-soft: #ff7ab3;
+  --color-zap: #ffd23f;
+  --color-mint: #2ee6a8;
+  --color-sky: #4cc9f0;
+  --color-grape: #9b5de5;
+
+  --font-display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+  --font-body: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-hand: "Caveat", "Segoe Script", cursive;
+
+  --shadow-card: 0 18px 40px -18px rgb(0 0 0 / 0.75);
+  --shadow-glow: 0 0 45px -8px var(--color-punch);
+
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-pop: pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-shimmer: shimmer 2.4s linear infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(-1deg); }
+  50% { transform: translateY(-12px) rotate(1deg); }
+}
+
+@keyframes pop {
+  0% { transform: scale(0.85); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--color-paper);
+  background:
+    radial-gradient(120% 90% at 8% 0%, #3a1163 0%, transparent 55%),
+    radial-gradient(120% 90% at 92% 12%, #7a1246 0%, transparent 50%),
+    radial-gradient(100% 80% at 50% 100%, #10233f 0%, transparent 60%),
+    var(--color-ink);
+  background-attachment: fixed;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* The 3D tilt of the cards only makes sense with perspective on the container. */
+.card-stage {
+  perspective: 1200px;
+}
+
+/*
+ * Makes a card a sizing context of its own, so its text can be expressed in `cqi`
+ * and follow the real width the layout gave it.
+ */
+.card-fit {
+  container-type: inline-size;
+}
+
+/* Respect the people who do not want the room to move. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

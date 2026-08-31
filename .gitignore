@@ -1,0 +1,19 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+.kotlin/
+
+# Node
+node_modules/
+frontend/dist/
+
+# The compiled web app is copied here at build time, never committed.
+server/src/main/resources/static/
+
+# Local environment
+.env
+
+# OS / editors
+.DS_Store
+*.log

@@ -1,0 +1,28 @@
+ktor:
+  deployment:
+    port: 8080
+  application:
+    modules:
+      - fr.ftnl.cardgame.ApplicationKt.module
+
+app:
+  database:
+    url: "$DATABASE_URL:jdbc:postgresql://localhost:5432/cardgame"
+    user: "$DATABASE_USER:cardgame"
+    password: "$DATABASE_PASSWORD:cardgame"
+    driver: "$DATABASE_DRIVER:org.postgresql.Driver"
+    poolSize: "$DATABASE_POOL_SIZE:8"
+  redis:
+    enabled: "$REDIS_ENABLED:true"
+    url: "$REDIS_URL:redis://localhost:6379"
+    sessionTtlMinutes: "$REDIS_SESSION_TTL_MINUTES:180"
+  discord:
+    clientId: "$DISCORD_CLIENT_ID:"
+    clientSecret: "$DISCORD_CLIENT_SECRET:"
+    redirectUrl: "$DISCORD_REDIRECT_URL:http://localhost:8080/auth/discord/callback"
+  admin:
+    discordIds: "$ADMIN_DISCORD_IDS:"
+  session:
+    signKey: "$SESSION_SIGN_KEY:dev-secret-change-me-please-32chars"
+  seed:
+    enabled: "$SEED_DEV_DECK:false"
