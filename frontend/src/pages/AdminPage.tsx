@@ -6,6 +6,7 @@ import { ActivityChart } from '../components/admin/ActivityChart'
 import { CardEditor } from '../components/admin/CardEditor'
 import { CardStatsExplorer } from '../components/admin/CardStatsExplorer'
 import { ComboTable } from '../components/admin/ComboTable'
+import { DeckTransfer } from '../components/admin/DeckTransfer'
 import { PackEditor } from '../components/admin/PackEditor'
 import { StatTile } from '../components/admin/StatTile'
 import { useAdminCatalog } from '../components/admin/useAdminCatalog'
@@ -65,6 +66,15 @@ export function AdminPage() {
 
       <Panel title="Packs">
         <PackEditor packs={catalog.packs} onSave={catalog.savePack} onDelete={catalog.deletePack} />
+      </Panel>
+
+      <Panel title="Import / export de deck">
+        <DeckTransfer
+          packs={catalog.packs}
+          situations={catalog.situations}
+          punchlines={catalog.punchlines}
+          onImport={catalog.importPack}
+        />
       </Panel>
 
       <Panel title="Cartes officielles">

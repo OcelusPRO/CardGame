@@ -35,6 +35,16 @@ export interface PackInput {
   answerModeFreeText?: boolean
 }
 
+export interface DeckImportInput {
+  packId?: string
+  name: string
+  description: string
+  answerModeCards: boolean
+  answerModeFreeText: boolean
+  situations: string[]
+  punchlines: string[]
+}
+
 export interface LiveStatsView {
   activeGames: number
   connectedPlayers: number

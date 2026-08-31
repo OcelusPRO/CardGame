@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { adminApi } from '../../api/admin'
-import type { CardAdminView, PackAdminView, PackInput } from '../../api/adminTypes'
+import type { CardAdminView, DeckImportInput, PackAdminView, PackInput } from '../../api/adminTypes'
 
 /** Loads and mutates the catalogue, reloading only the list that actually changed. */
 export function useAdminCatalog() {
@@ -30,6 +30,11 @@ export function useAdminCatalog() {
     savePack: async (input: Omit<PackInput, 'enabled'> & { enabled?: boolean }) => {
       await adminApi.savePack({ enabled: true, ...input })
       await reload()
+    },
+    importPack: async (input: DeckImportInput) => {
+      const pack = await adminApi.importPack(input)
+      await reload()
+      return pack
     },
     deletePack: async (id: string) => {
       await adminApi.deletePack(id)

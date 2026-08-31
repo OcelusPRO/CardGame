@@ -1,5 +1,6 @@
 package fr.ftnl.cardgame.api.admin
 
+import fr.ftnl.cardgame.api.dto.DeckImportInput
 import fr.ftnl.cardgame.api.dto.ErrorResponse
 import fr.ftnl.cardgame.api.dto.PackInput
 import fr.ftnl.cardgame.catalog.AdminPackService
@@ -24,6 +25,11 @@ fun Route.adminPackRoutes(packs: AdminPackService) {
         post {
             call.requireAdmin() ?: return@post
             call.respond(packs.save(call.receive<PackInput>()))
+        }
+
+        post("import") {
+            call.requireAdmin() ?: return@post
+            call.respond(packs.import(call.receive<DeckImportInput>()))
         }
 
         delete("{id}") {

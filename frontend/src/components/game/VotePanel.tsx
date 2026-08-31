@@ -18,6 +18,8 @@ export function VotePanel({ game, onChoose }: Props) {
   const round = game.round
   const czarMode = game.settings.selectionMode === 'CZAR'
   const canChoose = game.you.mustVote
+  // The host can allow voting for one's own answer, but only in the everybody-votes mode.
+  const canVoteOwn = !czarMode && game.settings.allowSelfVote
 
   useEffect(() => setPreviewId(null), [round?.number])
 
@@ -47,16 +49,19 @@ export function VotePanel({ game, onChoose }: Props) {
         </p>
 
         <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(13rem,1fr))]">
-          {round.answers.map((answer) => (
-            <AnswerCard
-              key={answer.id}
-              answer={answer}
-              voted={round.myVote === answer.id}
-              disabled={!canChoose || answer.isMine}
-              onPreview={() => setPreviewId(answer.id)}
-              onVote={canChoose && !answer.isMine ? () => onChoose(answer.id) : undefined}
-            />
-          ))}
+          {round.answers.map((answer) => {
+            const blocked = answer.isMine && !canVoteOwn
+            return (
+              <AnswerCard
+                key={answer.id}
+                answer={answer}
+                voted={round.myVote === answer.id}
+                disabled={!canChoose || blocked}
+                onPreview={() => setPreviewId(answer.id)}
+                onVote={canChoose && !blocked ? () => onChoose(answer.id) : undefined}
+              />
+            )
+          })}
         </div>
       </div>
     </RoundStage>

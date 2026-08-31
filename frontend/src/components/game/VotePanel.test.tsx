@@ -41,6 +41,39 @@ describe('VotePanel', () => {
     expect(onChoose).not.toHaveBeenCalled()
   })
 
+  it('lets a player vote for their own answer once the host allows it', async () => {
+    const onChoose = vi.fn()
+    const game = votingGame()
+    render(
+      <VotePanel
+        game={{ ...game, settings: { ...game.settings, allowSelfVote: true } }}
+        onChoose={onChoose}
+      />,
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: 'un chat mouillé' }))
+
+    expect(onChoose).toHaveBeenCalledWith(0)
+  })
+
+  it('still blocks self-vote in czar mode even if the flag is on', async () => {
+    const onChoose = vi.fn()
+    const game = votingGame()
+    render(
+      <VotePanel
+        game={{
+          ...game,
+          settings: { ...game.settings, allowSelfVote: true, selectionMode: 'CZAR' },
+        }}
+        onChoose={onChoose}
+      />,
+    )
+
+    await userEvent.click(screen.getByText('un chat mouillé'))
+
+    expect(onChoose).not.toHaveBeenCalled()
+  })
+
   it('writes the pointed answer into the situation card', async () => {
     render(<VotePanel game={votingGame()} onChoose={vi.fn()} />)
     expect(screen.getAllByText('la honte')).toHaveLength(1)

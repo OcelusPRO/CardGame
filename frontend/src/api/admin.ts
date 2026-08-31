@@ -4,6 +4,7 @@ import type {
   CardAdminView,
   CardInput,
   CardStatsView,
+  DeckImportInput,
   PackAdminView,
   ComboView,
   CardUsageView,
@@ -24,6 +25,8 @@ export const adminApi = {
 
   packs: () => api.get<PackAdminView[]>('/api/admin/packs'),
   savePack: (input: PackInput) => api.post<PackAdminView>('/api/admin/packs', input),
+  importPack: (input: DeckImportInput) =>
+    api.post<PackAdminView>('/api/admin/packs/import', input),
   deletePack: (id: string) => api.remove<void>(`/api/admin/packs/${id}`),
 
   situations: () => api.get<CardAdminView[]>('/api/admin/situations'),
