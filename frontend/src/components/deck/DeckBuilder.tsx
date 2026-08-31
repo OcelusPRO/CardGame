@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { CardPackView, DeckInput } from '../../api/types'
 import { Button } from '../ui/Button'
 import { DeckOption } from './DeckOption'
@@ -13,7 +13,9 @@ interface Props {
 
 /**
  * Where the host composes the paquet: one selector holding the official packs and the
- * decks kept in this browser, plus a place to type cards on the spot.
+ * decks kept in this browser, plus a place to type cards on the spot. There is no
+ * "apply" button — the composed deck is pushed live: toggles at once, the free-text
+ * boxes after a short pause so a socket message is not sent on every keystroke.
  */
 export function DeckBuilder({ packs, disabled, onApply }: Props) {
   const { decks, save, remove } = useSavedDecks()
@@ -26,14 +28,42 @@ export function DeckBuilder({ packs, disabled, onApply }: Props) {
   // A brand new table plays with everything the site offers, exactly like the server default.
   useEffect(() => setSelectedPacks(packs.map((pack) => pack.id)), [packs])
 
-  const chosenDecks = decks.filter((deck) => selectedDecks.includes(deck.id))
+  const build = (packIds: string[], deckIds: string[], sit: string, pun: string): DeckInput => {
+    const chosen = decks.filter((deck) => deckIds.includes(deck.id))
+    return {
+      packIds,
+      customSituations: [...chosen.flatMap((deck) => deck.situations), ...linesToCards(sit)],
+      customPunchlines: [...chosen.flatMap((deck) => deck.punchlines), ...linesToCards(pun)],
+    }
+  }
 
-  const apply = () => {
-    onApply({
-      packIds: selectedPacks,
-      customSituations: [...chosenDecks.flatMap((deck) => deck.situations), ...linesToCards(situations)],
-      customPunchlines: [...chosenDecks.flatMap((deck) => deck.punchlines), ...linesToCards(punchlines)],
-    })
+  const latest = useRef({ selectedPacks, selectedDecks, situations, punchlines })
+  latest.current = { selectedPacks, selectedDecks, situations, punchlines }
+  const debounce = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  useEffect(() => () => clearTimeout(debounce.current), [])
+
+  const push = (deck: DeckInput) => {
+    if (!disabled) onApply(deck)
+  }
+  const pushSoon = () => {
+    clearTimeout(debounce.current)
+    debounce.current = setTimeout(() => {
+      const it = latest.current
+      push(build(it.selectedPacks, it.selectedDecks, it.situations, it.punchlines))
+    }, 500)
+  }
+
+  const togglePack = (id: string) => {
+    if (disabled) return
+    const next = toggle(selectedPacks, id)
+    setSelectedPacks(next)
+    push(build(next, selectedDecks, situations, punchlines))
+  }
+  const toggleDeck = (id: string) => {
+    if (disabled) return
+    const next = toggle(selectedDecks, id)
+    setSelectedDecks(next)
+    push(build(selectedPacks, next, situations, punchlines))
   }
 
   return (
@@ -47,7 +77,7 @@ export function DeckBuilder({ packs, disabled, onApply }: Props) {
             official
             selected={selectedPacks.includes(pack.id)}
             disabled={disabled}
-            onToggle={() => setSelectedPacks(toggle(selectedPacks, pack.id))}
+            onToggle={() => togglePack(pack.id)}
           />
         ))}
         {decks.map((deck) => (
@@ -58,13 +88,17 @@ export function DeckBuilder({ packs, disabled, onApply }: Props) {
             official={false}
             selected={selectedDecks.includes(deck.id)}
             disabled={disabled}
-            onToggle={() => setSelectedDecks(toggle(selectedDecks, deck.id))}
+            onToggle={() => toggleDeck(deck.id)}
           />
         ))}
         {packs.length === 0 && decks.length === 0 && (
           <p className="text-sm text-white/50">Aucun deck disponible : écrivez les vôtres ci-dessous.</p>
         )}
       </div>
+
+      {!disabled && (
+        <p className="text-xs text-white/40">Les changements de paquet sont appliqués automatiquement.</p>
+      )}
 
       {selectedPacks.length === 0 && selectedDecks.length === 0 && (
         <p className="text-xs text-zap">
@@ -75,22 +109,25 @@ export function DeckBuilder({ packs, disabled, onApply }: Props) {
       <CardTextArea
         label="Vos situations (une par ligne, utilisez ____ pour les trous)"
         value={situations}
-        onChange={setSituations}
+        onChange={(value) => {
+          setSituations(value)
+          pushSoon()
+        }}
         disabled={disabled}
         placeholder={'Chez moi, on ne parle jamais de ____.\nLe secret de ma réussite : ____.'}
       />
       <CardTextArea
         label="Vos réponses (une par ligne)"
         value={punchlines}
-        onChange={setPunchlines}
+        onChange={(value) => {
+          setPunchlines(value)
+          pushSoon()
+        }}
         disabled={disabled}
         placeholder={'un poulet rôti mal cuit\nla honte de ma vie'}
       />
 
       <div className="flex flex-wrap items-center gap-2">
-        <Button onClick={apply} disabled={disabled} variant="zap">
-          Appliquer le paquet
-        </Button>
         <input
           value={deckName}
           onChange={(event) => setDeckName(event.target.value)}
