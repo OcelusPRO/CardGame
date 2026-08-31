@@ -10,6 +10,7 @@ import fr.ftnl.cardgame.api.view.AvatarMapper
 import fr.ftnl.cardgame.api.view.SettingsMapper
 import fr.ftnl.cardgame.auth.PlayerSession
 import fr.ftnl.cardgame.catalog.CardPoolResolver
+import fr.ftnl.cardgame.catalog.DeckRequest
 import fr.ftnl.cardgame.domain.engine.GameCommand
 import fr.ftnl.cardgame.domain.game.GameCode
 import fr.ftnl.cardgame.domain.game.GamePhase
@@ -26,13 +27,17 @@ import fr.ftnl.cardgame.domain.player.PlayerId
 class GameEntryService(
     private val games: GameService,
     private val decks: CardPoolResolver,
+    private val appliedDecks: GameDecks,
 ) {
 
     suspend fun create(request: CreateGameRequest, session: PlayerSession, baseUrl: String): GameTicket {
         val host = player(session, request.nickname, request.avatar)
         val settings = SettingsMapper.merge(GameSettings(), request.settings ?: GameSettingsInput())
         val state = games.create(host, settings)
-        games.dispatch(state.code, GameCommand.SetCardPool(host.id, decks.resolveDefault()))
+        // Remember the default deck so a later mode switch can rebuild it against the rules.
+        val deck = DeckRequest(packIds = decks.enabledPackIds())
+        appliedDecks.remember(state.code, deck)
+        games.dispatch(state.code, GameCommand.SetCardPool(host.id, decks.resolve(deck, settings.answerMode)))
         return ticket(state.code, host.id, baseUrl, isHost = true)
     }
 

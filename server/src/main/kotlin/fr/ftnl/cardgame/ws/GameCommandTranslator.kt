@@ -7,9 +7,12 @@ import fr.ftnl.cardgame.catalog.CustomCardFactory
 import fr.ftnl.cardgame.catalog.DeckRequest
 import fr.ftnl.cardgame.domain.card.CardId
 import fr.ftnl.cardgame.domain.engine.GameCommand
+import fr.ftnl.cardgame.domain.game.AnswerMode
+import fr.ftnl.cardgame.domain.game.GameCode
 import fr.ftnl.cardgame.domain.game.GameSettings
 import fr.ftnl.cardgame.domain.game.SubmissionId
 import fr.ftnl.cardgame.domain.player.PlayerId
+import fr.ftnl.cardgame.game.GameDecks
 
 /**
  * Translates a socket message into the domain command it stands for. Anything needing a
@@ -18,12 +21,14 @@ import fr.ftnl.cardgame.domain.player.PlayerId
 class GameCommandTranslator(
     private val decks: CardPoolResolver,
     private val customCards: CustomCardFactory,
+    private val applied: GameDecks,
 ) {
 
     suspend fun toCommand(
         message: ClientMessage,
         playerId: PlayerId,
         settings: GameSettings,
+        code: GameCode,
     ): GameCommand? = when (message) {
         is ClientMessage.PlayCards ->
             GameCommand.PlayCards(playerId, message.cardIds.map(::CardId), message.fills)
@@ -32,7 +37,12 @@ class GameCommandTranslator(
         is ClientMessage.UpdateSettings ->
             GameCommand.UpdateSettings(playerId, SettingsMapper.merge(settings, message.settings))
 
-        is ClientMessage.UpdateDeck -> GameCommand.SetCardPool(playerId, resolve(message.deck))
+        is ClientMessage.UpdateDeck -> {
+            val request = deckRequest(message.deck)
+            applied.remember(code, request)
+            GameCommand.SetCardPool(playerId, decks.resolve(request, settings.answerMode))
+        }
+
         is ClientMessage.Kick -> GameCommand.Kick(playerId, PlayerId(message.playerId))
         ClientMessage.Start -> GameCommand.Start(playerId)
         ClientMessage.NextRound -> GameCommand.NextRound(playerId)
@@ -41,11 +51,20 @@ class GameCommandTranslator(
         ClientMessage.Ping -> null
     }
 
-    private suspend fun resolve(deck: DeckInput) = decks.resolve(
-        DeckRequest(
-            packIds = deck.packIds,
-            customSituations = customCards.situations(deck.customSituations),
-            customPunchlines = customCards.punchlines(deck.customPunchlines),
-        )
+    /**
+     * Rebuilds the last deck the host applied, for [answerMode]. Null when nothing was
+     * applied yet, in which case the game still holds its default (all packs) pool.
+     */
+    suspend fun poolForMode(code: GameCode, by: PlayerId, answerMode: AnswerMode): GameCommand.SetCardPool? {
+        val request = applied.of(code) ?: return null
+        return GameCommand.SetCardPool(by, decks.resolve(request, answerMode))
+    }
+
+    fun forget(code: GameCode) = applied.forget(code)
+
+    private suspend fun deckRequest(deck: DeckInput) = DeckRequest(
+        packIds = deck.packIds,
+        customSituations = customCards.situations(deck.customSituations),
+        customPunchlines = customCards.punchlines(deck.customPunchlines),
     )
 }

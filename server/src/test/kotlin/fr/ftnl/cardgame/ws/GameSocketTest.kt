@@ -5,6 +5,11 @@ import fr.ftnl.cardgame.api.dto.CreateGameRequest
 import fr.ftnl.cardgame.api.dto.GameSettingsInput
 import fr.ftnl.cardgame.api.dto.GameTicket
 import fr.ftnl.cardgame.api.dto.GameView
+import fr.ftnl.cardgame.catalog.CardPack
+import fr.ftnl.cardgame.catalog.CatalogSituation
+import fr.ftnl.cardgame.domain.card.CardId
+import fr.ftnl.cardgame.domain.card.SituationText
+import fr.ftnl.cardgame.domain.game.AnswerMode
 import fr.ftnl.cardgame.support.awaitFailure
 import fr.ftnl.cardgame.support.awaitState
 import fr.ftnl.cardgame.support.browser
@@ -98,6 +103,33 @@ class GameSocketTest {
 
         val updated = socket.awaitState { it.settings.rounds == 7 }
         assertEquals("FREE_TEXT", updated.settings.answerMode)
+        socket.cancel()
+    }
+
+    @Test
+    fun `switching the answer mode drops a pack reserved to the other one`() = testApplication {
+        val services = startTestServer()
+        runBlocking {
+            services.seedTestDeck() // pack "test", both modes, 5 situations
+            services.packRepository.save(
+                CardPack("cards-only", "Cartes seules", answerModes = setOf(AnswerMode.CARDS)),
+            )
+            repeat(3) { index ->
+                services.situationRepository.save(
+                    CatalogSituation(CardId("co-s${index + 1}"), "cards-only", SituationText("____ ?")),
+                )
+            }
+        }
+        val host = browser()
+        val code = host.createGame("Alice").code
+
+        val socket = host.webSocketSession("/ws/game/$code")
+        assertEquals(8, socket.awaitState().deck.situationsLeft)
+
+        socket.emit(ClientMessage.UpdateSettings(GameSettingsInput(answerMode = "FREE_TEXT")))
+        val pruned = socket.awaitState { it.settings.answerMode == "FREE_TEXT" && it.deck.situationsLeft == 5 }
+
+        assertEquals(5, pruned.deck.situationsLeft)
         socket.cancel()
     }
 

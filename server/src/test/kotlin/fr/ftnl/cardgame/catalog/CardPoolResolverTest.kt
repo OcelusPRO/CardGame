@@ -3,6 +3,7 @@ package fr.ftnl.cardgame.catalog
 import fr.ftnl.cardgame.domain.card.CardId
 import fr.ftnl.cardgame.domain.card.CardOrigin
 import fr.ftnl.cardgame.domain.card.SituationText
+import fr.ftnl.cardgame.domain.game.AnswerMode
 import fr.ftnl.cardgame.support.FakeCardPackRepository
 import fr.ftnl.cardgame.support.FakePunchlineCardRepository
 import fr.ftnl.cardgame.support.FakeSituationCardRepository
@@ -77,5 +78,36 @@ class CardPoolResolverTest {
 
         assertEquals(1, pool.situations.size)
         assertTrue(pool.punchlines.isEmpty())
+    }
+
+    @Test
+    fun `a pack restricted to the other mode is dropped from the resolved pool`() = runBlocking {
+        val modePacks = FakeCardPackRepository(
+            listOf(
+                CardPack("both", "Tous"),
+                CardPack("cardsOnly", "Cartes", answerModes = setOf(AnswerMode.CARDS)),
+            )
+        )
+        val modeSituations = FakeSituationCardRepository(
+            listOf(
+                CatalogSituation(CardId("a"), "both", SituationText("____ ?")),
+                CatalogSituation(CardId("b"), "cardsOnly", SituationText("____ !")),
+            )
+        )
+        val modeResolver = CardPoolResolver(modePacks, modeSituations, FakePunchlineCardRepository())
+
+        val request = DeckRequest(packIds = setOf("both", "cardsOnly"))
+        assertEquals(
+            listOf("a", "b"),
+            modeResolver.resolve(request, AnswerMode.CARDS).situations.map { it.id.value }.sorted(),
+        )
+        assertEquals(
+            listOf("a"),
+            modeResolver.resolve(request, AnswerMode.FREE_TEXT).situations.map { it.id.value },
+        )
+        assertEquals(
+            listOf("a", "b"),
+            modeResolver.resolve(request).situations.map { it.id.value }.sorted(),
+        )
     }
 }

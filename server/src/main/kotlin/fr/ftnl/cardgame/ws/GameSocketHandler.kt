@@ -3,6 +3,7 @@ package fr.ftnl.cardgame.ws
 import fr.ftnl.cardgame.api.view.GameViewFactory
 import fr.ftnl.cardgame.domain.engine.GameCommand
 import fr.ftnl.cardgame.domain.game.GameCode
+import fr.ftnl.cardgame.domain.game.GameState
 import fr.ftnl.cardgame.domain.player.PlayerId
 import fr.ftnl.cardgame.game.DispatchResult
 import fr.ftnl.cardgame.game.GameService
@@ -42,7 +43,10 @@ class GameSocketHandler(
     private suspend fun forgetIfDeserted(code: GameCode) {
         if (connections.of(code).isNotEmpty()) return
         val state = games.find(code) ?: return
-        if (games.isAbandoned(state)) games.forget(code)
+        if (games.isAbandoned(state)) {
+            games.forget(code)
+            translator.forget(code)
+        }
     }
 
     private suspend fun sendCurrentState(connection: GameConnection) {
@@ -60,12 +64,27 @@ class GameSocketHandler(
     private suspend fun run(connection: GameConnection, message: ClientMessage) {
         val state = games.find(connection.code)
             ?: return connection.send(ServerMessage.Failure(GAME_NOT_FOUND))
-        val command = translator.toCommand(message, connection.playerId, state.settings) ?: return
+        val command = translator.toCommand(message, connection.playerId, state.settings, connection.code)
+            ?: return
         when (val result = games.dispatch(connection.code, command)) {
             is DispatchResult.Refused -> connection.send(ServerMessage.Failure(result.error.name))
             DispatchResult.GameNotFound -> connection.send(ServerMessage.Failure(GAME_NOT_FOUND))
-            is DispatchResult.Updated -> Unit
+            is DispatchResult.Updated -> realignDeck(connection, before = state, after = result.state)
         }
+    }
+
+    /**
+     * A change of answer mode can outlaw a pack still sitting in the live deck. The picker
+     * only hides it; here the server actually rebuilds the pile so the game stays legal.
+     */
+    private suspend fun realignDeck(connection: GameConnection, before: GameState, after: GameState) {
+        if (before.settings.answerMode == after.settings.answerMode) return
+        val rebuilt = translator.poolForMode(
+            connection.code,
+            connection.playerId,
+            after.settings.answerMode,
+        ) ?: return
+        games.dispatch(connection.code, rebuilt)
     }
 
     private fun decode(text: String): ClientMessage? =

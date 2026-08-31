@@ -21,6 +21,7 @@ import fr.ftnl.cardgame.domain.game.GameClock
 import fr.ftnl.cardgame.domain.game.RandomGameCodeGenerator
 import fr.ftnl.cardgame.domain.game.SystemGameClock
 import fr.ftnl.cardgame.game.GameCodeAllocator
+import fr.ftnl.cardgame.game.GameDecks
 import fr.ftnl.cardgame.game.GameEntryService
 import fr.ftnl.cardgame.game.GameFactory
 import fr.ftnl.cardgame.game.GameLocks
@@ -71,6 +72,7 @@ class ApplicationServices(
     val adminPacks = AdminPackService(packRepository, situationRepository, punchlineRepository, clock)
     val adminCards = AdminCardService(situationRepository, punchlineRepository, clock)
     private val deckResolver = CardPoolResolver(packRepository, situationRepository, punchlineRepository)
+    private val appliedDecks = GameDecks()
 
     val sessions: GameSessionStore = sessionStore ?: redis?.let {
         RedisGameSessionStore(it, GameSessionCodec(), config.redis.sessionTtlMinutes)
@@ -85,7 +87,7 @@ class ApplicationServices(
     )
 
     val views = GameViewFactory(clock)
-    val entry = GameEntryService(games, deckResolver)
+    val entry = GameEntryService(games, deckResolver, appliedDecks)
     val statsService = StatsService(statsReader, packRepository, situationRepository, punchlineRepository, connections, clock)
     val discordClient = DiscordClient(httpClient)
     val adminGuard = AdminGuard(config.admin)
@@ -94,7 +96,7 @@ class ApplicationServices(
         games = games,
         connections = connections,
         views = views,
-        translator = GameCommandTranslator(deckResolver, CustomCardFactory()),
+        translator = GameCommandTranslator(deckResolver, CustomCardFactory(), appliedDecks),
         json = ApiJson,
     )
 
