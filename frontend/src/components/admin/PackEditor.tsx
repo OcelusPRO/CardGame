@@ -2,44 +2,88 @@ import { useState } from 'react'
 import type { PackAdminView } from '../../api/adminTypes'
 import { Button } from '../ui/Button'
 
+interface PackDraft {
+  id?: string
+  name: string
+  description: string
+  answerModeCards: boolean
+  answerModeFreeText: boolean
+  enabled?: boolean
+}
+
 interface Props {
   packs: PackAdminView[]
-  onSave: (
-    name: string,
-    description: string,
-    answerModeCards: boolean,
-    answerModeFreeText: boolean,
-  ) => void
+  onSave: (draft: PackDraft) => void
   onDelete: (id: string) => void
 }
 
-/** Creating and dropping the themed packs the cards belong to. */
+/** Creating, editing and dropping the themed packs the cards belong to. */
 export function PackEditor({ packs, onSave, onDelete }: Props) {
+  const [editing, setEditing] = useState<string | undefined>(undefined)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [cards, setCards] = useState(true)
   const [freeText, setFreeText] = useState(true)
 
   const reset = () => {
+    setEditing(undefined)
     setName('')
     setDescription('')
     setCards(true)
     setFreeText(true)
   }
 
+  const edit = (pack: PackAdminView) => {
+    setEditing(pack.id)
+    setName(pack.name)
+    setDescription(pack.description)
+    setCards(pack.answerModeCards)
+    setFreeText(pack.answerModeFreeText)
+  }
+
+  const submit = () => {
+    onSave({
+      id: editing,
+      name: name.trim(),
+      description: description.trim(),
+      answerModeCards: cards,
+      answerModeFreeText: freeText,
+      enabled: editing ? packs.find((pack) => pack.id === editing)?.enabled : true,
+    })
+    reset()
+  }
+
   return (
     <div className="flex flex-col gap-4">
-      <ul className="flex flex-wrap gap-2">
+      <ul className="flex flex-col gap-2">
         {packs.map((pack) => (
-          <li key={pack.id} className="flex items-center gap-3 rounded-2xl bg-white/10 px-3 py-2 text-sm">
-            <span>
-              <span className="block font-semibold">{pack.name}</span>
+          <li
+            key={pack.id}
+            className={`flex items-center gap-3 rounded-2xl px-3 py-2 text-sm ${
+              editing === pack.id ? 'bg-white/10 ring-1 ring-punch' : 'bg-white/10'
+            }`}
+          >
+            <span className="min-w-0 flex-1">
+              <span className="block font-semibold">
+                {pack.name}
+                {!pack.enabled && <span className="ml-2 text-xs text-white/40">désactivé</span>}
+              </span>
               <span className="block text-xs text-white/50">
                 {pack.situationCount} situations · {pack.punchlineCount} réponses
-                {pack.enabled ? '' : ' · désactivé'}
-                {modeLabel(pack)}
+              </span>
+              <span className="mt-1 flex flex-wrap gap-1.5">
+                <ModeChip label="Cartes distribuées" on={pack.answerModeCards} />
+                <ModeChip label="Sans limites" on={pack.answerModeFreeText} />
               </span>
             </span>
+            <button
+              type="button"
+              aria-label={`Modifier ${pack.name}`}
+              onClick={() => edit(pack)}
+              className="text-white/40 transition hover:text-zap"
+            >
+              ✎
+            </button>
             <button
               type="button"
               aria-label={`Supprimer ${pack.name}`}
@@ -53,7 +97,11 @@ export function PackEditor({ packs, onSave, onDelete }: Props) {
         {packs.length === 0 && <li className="text-sm text-white/50">Aucun pack pour l&apos;instant.</li>}
       </ul>
 
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3 rounded-2xl bg-white/5 p-3">
+        <p className="text-xs font-semibold uppercase tracking-wider text-white/50">
+          {editing ? 'Modifier le pack' : 'Nouveau pack'}
+        </p>
+
         <div className="flex flex-wrap gap-2">
           <input
             value={name}
@@ -93,19 +141,17 @@ export function PackEditor({ packs, onSave, onDelete }: Props) {
           </label>
         </fieldset>
 
-        <div>
-          <Button
-            variant="zap"
-            disabled={!name.trim() || (!cards && !freeText)}
-            onClick={() => {
-              onSave(name.trim(), description.trim(), cards, freeText)
-              reset()
-            }}
-          >
-            Ajouter
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="zap" disabled={!name.trim() || (!cards && !freeText)} onClick={submit}>
+            {editing ? 'Mettre à jour' : 'Ajouter'}
           </Button>
+          {editing && (
+            <Button variant="ghost" onClick={reset}>
+              Annuler
+            </Button>
+          )}
           {!cards && !freeText && (
-            <p className="mt-1 text-xs text-zap">Choisissez au moins un mode de jeu.</p>
+            <p className="text-xs text-zap">Choisissez au moins un mode de jeu.</p>
           )}
         </div>
       </div>
@@ -113,10 +159,15 @@ export function PackEditor({ packs, onSave, onDelete }: Props) {
   )
 }
 
-/** Only worth showing when the pack is actually restricted to one mode. */
-function modeLabel(pack: PackAdminView): string {
-  if (pack.answerModeCards && pack.answerModeFreeText) return ''
-  if (pack.answerModeCards) return ' · mode cartes uniquement'
-  if (pack.answerModeFreeText) return ' · mode sans limites uniquement'
-  return ' · aucun mode'
+/** A pill that reads at a glance whether the pack may be played in that mode. */
+function ModeChip({ label, on }: { label: string; on: boolean }) {
+  return (
+    <span
+      className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+        on ? 'bg-mint/20 text-mint' : 'bg-white/5 text-white/30 line-through'
+      }`}
+    >
+      {label}
+    </span>
+  )
 }
