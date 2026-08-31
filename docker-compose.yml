@@ -1,6 +1,7 @@
 services:
   postgres:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-cardgame}
       POSTGRES_USER: ${POSTGRES_USER:-cardgame}
@@ -8,13 +9,16 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cardgame}"]
+      # -h 127.0.0.1 forces a real TCP check: the socket is up during init before the
+      # server actually accepts network connections, which would flip the check green too soon.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U ${POSTGRES_USER:-cardgame} -d ${POSTGRES_DB:-cardgame}"]
       interval: 5s
       timeout: 3s
       retries: 10
 
   redis:
     image: redis:7-alpine
+    restart: unless-stopped
     command: ["redis-server", "--save", "", "--appendonly", "no"]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -24,6 +28,7 @@ services:
 
   app:
     image: harbor.ftnl.link/yarp/cardgame:latest
+    restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy

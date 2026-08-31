@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
 /** Entry point declared in `application.yaml`. */
 fun Application.module() {
     val config = AppConfigLoader.load(environment.config)
-    DatabaseFactory.connect(config.database)
+    DatabaseFactory.connectAwaitingDatabase(config.database)
     val services = ApplicationServices(config, this, HttpClientFactory.create())
     monitor.subscribe(io.ktor.server.application.ApplicationStopped) { services.close() }
     configure(services)
