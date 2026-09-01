@@ -90,7 +90,7 @@ export function PackEditor({ packs, onSave, onDelete }: Props) {
                 {pack.name}
                 {!pack.enabled && <span className="ml-2 text-xs text-ink/50">désactivé</span>}
                 {pack.adultOnly && (
-                  <span className="ml-2 sketch-pill bg-red-300/20 px-2 py-0.5 text-[11px] font-semibold text-red-300">
+                  <span className="ml-2 rounded bg-red-600 px-2 py-0.5 text-[11px] font-bold leading-none text-white">
                     18+
                   </span>
                 )}

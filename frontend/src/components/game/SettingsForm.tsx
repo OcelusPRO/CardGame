@@ -94,12 +94,12 @@ export function SettingsForm({ settings, disabled, onChange }: Props) {
           onChange={(unanimityBonus) => onChange({ unanimityBonus })}
         />
         <NumberBox
-          label="Joueurs minimum"
-          value={settings.minPlayers}
+          label="Joueurs maximum"
+          value={settings.maxPlayers}
           min={2}
-          max={settings.maxPlayers}
+          max={24}
           lockedBecause={lockedBecause(null)}
-          onChange={(minPlayers) => onChange({ minPlayers })}
+          onChange={(maxPlayers) => onChange({ maxPlayers })}
         />
       </div>
 

@@ -14,7 +14,7 @@ data class GameSettings(
     val submitSeconds: Int = 90,
     val selectSeconds: Int = 60,
     val resultSeconds: Int = 10,
-    val minPlayers: Int = 3,
+    val minPlayers: Int = MIN_PLAYERS,
     val maxPlayers: Int = 12,
     /** Lets a player vote for their own answer, for tables that find that funnier. */
     val allowSelfVote: Boolean = false,
@@ -40,7 +40,7 @@ data class GameSettings(
 
     companion object {
         const val MIN_PLAYERS = 2
-        const val MAX_PLAYERS = 20
+        const val MAX_PLAYERS = 24
         const val MIN_ROUNDS = 1
         const val MAX_ROUNDS = 50
         const val MIN_HAND_SIZE = 4

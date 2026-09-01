@@ -28,7 +28,7 @@ export function DeckOption({ name, detail, official, selected, disabled, adult, 
         <span className="sr-only">{official ? 'Deck officiel :' : 'Votre deck :'}</span>
         {name}
         {adult && (
-          <span className="sketch-pill bg-red-300/20 px-1.5 py-0.5 text-[10px] font-semibold text-red-300">
+          <span className="shrink-0 rounded bg-red-600 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
             18+
           </span>
         )}
