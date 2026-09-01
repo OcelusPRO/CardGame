@@ -44,6 +44,7 @@ class GameService(
     suspend fun forget(code: GameCode) {
         store.delete(code)
         locks.release(code)
+        listeners.forEach { it.onGameForgotten(code) }
     }
 
     private suspend fun runCommand(code: GameCode, command: GameCommand): DispatchResult =

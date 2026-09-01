@@ -16,6 +16,12 @@ sealed interface GameCommand {
 
     data class SetConnected(val playerId: PlayerId, val connected: Boolean) : GameCommand
 
+    /**
+     * Issued by the scheduler once the disconnect grace delay has elapsed: frees the seat
+     * of [playerId] unless the match is under way, or they came back in the meantime.
+     */
+    data class DropIfAway(val playerId: PlayerId) : GameCommand
+
     data class Kick(val by: PlayerId, val playerId: PlayerId) : GameCommand
 
     data class UpdateSettings(val by: PlayerId, val settings: GameSettings) : GameCommand

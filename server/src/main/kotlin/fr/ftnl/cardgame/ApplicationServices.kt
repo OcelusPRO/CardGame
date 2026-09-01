@@ -30,6 +30,7 @@ import fr.ftnl.cardgame.game.GameEntryService
 import fr.ftnl.cardgame.game.GameFactory
 import fr.ftnl.cardgame.game.GameLocks
 import fr.ftnl.cardgame.game.GameService
+import fr.ftnl.cardgame.game.IdleGameReaper
 import fr.ftnl.cardgame.game.PhaseScheduler
 import fr.ftnl.cardgame.plugins.ApiJson
 import fr.ftnl.cardgame.session.GameSessionCodec
@@ -105,15 +106,24 @@ class ApplicationServices(
         views = views,
         translator = GameCommandTranslator(deckResolver, CustomCardFactory(), appliedDecks),
         adultAccess = adultAccessGuard,
+        scope = scope,
         json = ApiJson,
     )
 
     private val scheduler = PhaseScheduler(scope, clock) { code, command -> games.dispatch(code, command) }
 
+    /** A table left completely untouched for half an hour is dropped. */
+    private val idleReaper = IdleGameReaper(scope, IDLE_GAME_MILLIS) { code -> games.forget(code) }
+
     init {
         games.addListener(GameBroadcaster(connections, views))
         games.addListener(StatsRecorder(statsWriter))
         games.addListener(scheduler)
+        games.addListener(idleReaper)
+    }
+
+    private companion object {
+        const val IDLE_GAME_MILLIS = 30L * 60 * 1000
     }
 
     fun close() {

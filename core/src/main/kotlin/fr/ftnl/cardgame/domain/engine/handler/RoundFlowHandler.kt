@@ -37,8 +37,19 @@ internal class RoundFlowHandler(
         )
     }
 
-    private fun finish(state: GameState): CommandResult = CommandResult.accepted(
-        state.copy(phase = GamePhase.FINISHED, phaseDeadlineMillis = null),
-        GameEvent.GameEnded(GameEndCondition.winners(state)),
-    )
+    /**
+     * Ends the match and, at the same time, frees the seats of everyone who is no longer
+     * connected: their seat was only kept so they could reconnect while it was still being
+     * played. The ranking is drawn from the players who actually stayed to the end.
+     */
+    private fun finish(state: GameState): CommandResult {
+        val absent = state.players.filterNot { it.connected }.map { it.id }.toSet()
+        val trimmed = state.withoutPlayers(absent)
+            .copy(phase = GamePhase.FINISHED, phaseDeadlineMillis = null)
+        val departures = absent.map { GameEvent.PlayerLeft(it) }
+        return CommandResult.Accepted(
+            trimmed,
+            departures + GameEvent.GameEnded(GameEndCondition.winners(trimmed)),
+        )
+    }
 }

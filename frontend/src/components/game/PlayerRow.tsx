@@ -24,6 +24,7 @@ export function PlayerRow({ player, phase, isYou, onKick }: Props) {
       <div className="min-w-0 flex-1">
         <p className="truncate font-display font-bold">
           {player.nickname}
+          {player.isHost && <HostCrown />}
           {isYou && <span className="ml-1 text-xs font-semibold text-mint">(vous)</span>}
         </p>
         <p className="text-xs text-ink/60">{statusOf(player, phase)}</p>
@@ -43,10 +44,38 @@ export function PlayerRow({ player, phase, isYou, onKick }: Props) {
   )
 }
 
+/** A rough, hand-drawn crown marking the host, so the status line is free to say what
+ *  they are doing this round like everyone else. */
+function HostCrown() {
+  return (
+    <span
+      className="ml-1 inline-flex align-[-0.15em]"
+      title="Hôte"
+      role="img"
+      aria-label="Hôte"
+    >
+      <svg
+        viewBox="0 0 24 20"
+        className="h-[1em] w-[1.2em] text-honey"
+        fill="currentColor"
+        fillOpacity={0.18}
+        stroke="currentColor"
+        strokeWidth={1.7}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+      >
+        <path d="M2.6 15.2 L1.9 6.3 L7.8 10.8 L11.8 3.2 L16.3 10.9 L22 6 L20.7 15.5 C20.4 16 15.9 16.7 11.7 16.6 C7.4 16.5 3 16 2.6 15.2 Z" />
+        <path d="M3.4 18.4 C7 17.4 17 17.5 20.4 18.3" fill="none" />
+      </svg>
+    </span>
+  )
+}
+
 function statusOf(player: PlayerView, phase: GamePhase): string {
   if (!player.connected) return 'Déconnecté'
-  if (player.isHost) return player.isCzar ? 'Hôte · maître du jeu' : 'Hôte'
   if (player.isCzar) return 'Maître du jeu'
+  if (phase === 'LOBBY') return 'En attente'
   if (phase === 'SUBMITTING') return player.hasAnswered ? 'A joué' : 'Réfléchit…'
   if (phase === 'SELECTING') return player.hasVoted ? 'A voté' : 'Hésite…'
   return 'En jeu'

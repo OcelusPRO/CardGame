@@ -11,7 +11,10 @@ import fr.ftnl.cardgame.game.GameService
 import io.ktor.websocket.Frame
 import io.ktor.websocket.WebSocketSession
 import io.ktor.websocket.readText
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 
 /**
@@ -24,6 +27,7 @@ class GameSocketHandler(
     private val views: GameViewFactory,
     private val translator: GameCommandTranslator,
     private val adultAccess: AdultAccessGuard,
+    private val scope: CoroutineScope,
     private val json: Json,
 ) {
 
@@ -43,7 +47,20 @@ class GameSocketHandler(
         } finally {
             connections.remove(connection)
             games.dispatch(code, GameCommand.SetConnected(playerId, connected = false))
+            scheduleGraceDrop(code, playerId)
             forgetIfDeserted(code)
+        }
+    }
+
+    /**
+     * After a socket drops, the seat is held for a few seconds so a reconnection is
+     * seamless. Once the delay is up, [GameCommand.DropIfAway] frees it — unless the
+     * player came back, or the match is running (then the seat lives until the game ends).
+     */
+    private fun scheduleGraceDrop(code: GameCode, playerId: PlayerId) {
+        scope.launch {
+            delay(GRACE_MILLIS)
+            games.dispatch(code, GameCommand.DropIfAway(playerId))
         }
     }
 
@@ -109,5 +126,6 @@ class GameSocketHandler(
     private companion object {
         const val BAD_MESSAGE = "BAD_MESSAGE"
         const val GAME_NOT_FOUND = "GAME_NOT_FOUND"
+        const val GRACE_MILLIS = 5_000L
     }
 }

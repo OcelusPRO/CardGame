@@ -50,4 +50,14 @@ data class GameState(
     val expectedAnswers: Int get() = round?.situation?.blankCount ?: 1
 
     val isOver: Boolean get() = phase == GamePhase.FINISHED
+
+    /**
+     * True while a match is actually being played. Outside of it a dropped player is
+     * removed from the table straight away; during it their seat is kept so they can
+     * reconnect, and it is only freed once the game ends.
+     */
+    val isMidGame: Boolean
+        get() = phase == GamePhase.SUBMITTING ||
+            phase == GamePhase.SELECTING ||
+            phase == GamePhase.ROUND_RESULT
 }

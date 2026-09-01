@@ -48,8 +48,8 @@ describe('SharePanel', () => {
     await userEvent.click(screen.getByRole('button', { name: /Afficher le code/i }))
     const shown = revealSlot(container).className
 
-    expect(hidden).toContain('h-60 w-52')
-    expect(shown).toContain('h-60 w-52')
+    expect(hidden).toContain('h-40 w-80')
+    expect(shown).toContain('h-40 w-80')
   })
 
   it('offers the link without revealing anything', () => {

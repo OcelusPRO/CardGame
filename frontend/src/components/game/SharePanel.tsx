@@ -40,13 +40,15 @@ export function SharePanel({ code }: Props) {
 
         <div
           aria-hidden={!revealed}
-          className={`flex h-60 w-52 shrink-0 flex-col items-center justify-between transition-opacity duration-200 ${
+          className={`flex h-40 w-80 shrink-0 items-center justify-end gap-4 transition-opacity duration-200 ${
             revealed ? 'opacity-100' : 'invisible opacity-0'
           }`}
         >
-          <p className="font-display text-4xl font-extrabold tracking-[0.2em] text-punch">{code}</p>
+          <div className="flex flex-col items-center gap-2">
+            <p className="font-display text-4xl font-extrabold tracking-[0.15em] text-punch">{code}</p>
+            <CopyButton value={code} label="Copier le code" />
+          </div>
           <QrCode value={url} size={150} />
-          <CopyButton value={code} label="Copier le code" />
         </div>
       </div>
     </Panel>

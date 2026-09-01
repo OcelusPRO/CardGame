@@ -6,6 +6,7 @@ import fr.ftnl.cardgame.domain.engine.handler.AnswerHandler
 import fr.ftnl.cardgame.domain.engine.handler.CardPoolHandler
 import fr.ftnl.cardgame.domain.engine.handler.ChoiceHandler
 import fr.ftnl.cardgame.domain.engine.handler.ConnectionHandler
+import fr.ftnl.cardgame.domain.engine.handler.DropIfAwayHandler
 import fr.ftnl.cardgame.domain.engine.handler.JoinHandler
 import fr.ftnl.cardgame.domain.engine.handler.KickHandler
 import fr.ftnl.cardgame.domain.engine.handler.LeaveHandler
@@ -31,6 +32,7 @@ class GameEngine(
     private val join = JoinHandler()
     private val leave = LeaveHandler(roundFlow)
     private val connection = ConnectionHandler(roundFlow)
+    private val dropIfAway = DropIfAwayHandler(roundFlow)
     private val kick = KickHandler()
     private val settings = SettingsHandler()
     private val cardPool = CardPoolHandler(shuffler)
@@ -44,6 +46,7 @@ class GameEngine(
         is GameCommand.Join -> join.handle(state, command)
         is GameCommand.Leave -> leave.handle(state, command)
         is GameCommand.SetConnected -> connection.handle(state, command)
+        is GameCommand.DropIfAway -> dropIfAway.handle(state, command)
         is GameCommand.Kick -> kick.handle(state, command)
         is GameCommand.UpdateSettings -> settings.handle(state, command)
         is GameCommand.SetCardPool -> cardPool.handle(state, command)
