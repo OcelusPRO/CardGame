@@ -16,8 +16,8 @@ export function PlayerRow({ player, phase, isYou, onKick }: Props) {
       layout
       initial={{ opacity: 0, x: -12 }}
       animate={{ opacity: 1, x: 0 }}
-      className={`flex items-center gap-3 rounded-2xl px-3 py-2 ${
-        player.connected ? 'bg-white/5' : 'bg-white/5 opacity-45'
+      className={`sketch-alt flex items-center gap-3 px-3 py-2 ${
+        player.connected ? 'bg-paper/70' : 'bg-paper/70 opacity-45'
       }`}
     >
       <Avatar avatar={player.avatar} size={52} title={player.nickname} />
@@ -26,15 +26,15 @@ export function PlayerRow({ player, phase, isYou, onKick }: Props) {
           {player.nickname}
           {isYou && <span className="ml-1 text-xs font-semibold text-mint">(vous)</span>}
         </p>
-        <p className="text-xs text-white/50">{statusOf(player, phase)}</p>
+        <p className="text-xs text-ink/60">{statusOf(player, phase)}</p>
       </div>
-      <span className="font-display text-xl font-bold tabular-nums text-zap">{player.score}</span>
+      <span className="font-display text-xl font-bold tabular-nums text-honey">{player.score}</span>
       {onKick && (
         <button
           type="button"
           onClick={onKick}
           aria-label={`Exclure ${player.nickname}`}
-          className="rounded-full px-2 py-1 text-sm text-white/40 transition hover:bg-red-500/20 hover:text-red-300"
+          className="rounded-full px-2 py-1 text-sm text-ink/50 transition hover:bg-red-500/20 hover:text-red-300"
         >
           ✕
         </button>

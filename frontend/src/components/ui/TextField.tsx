@@ -25,7 +25,7 @@ export function TextField({
   const id = useId()
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-xs font-semibold uppercase tracking-wider text-white/50">
+      <label htmlFor={id} className="text-xs font-semibold uppercase tracking-wider text-ink/60">
         {label}
       </label>
       <input
@@ -35,11 +35,11 @@ export function TextField({
         maxLength={maxLength}
         placeholder={placeholder}
         onChange={(event) => onChange(uppercase ? event.target.value.toUpperCase() : event.target.value)}
-        className={`rounded-2xl bg-white/10 px-4 py-3 font-display text-lg outline-none ring-1 ring-white/15 transition placeholder:text-white/30 focus:ring-2 focus:ring-punch ${
+        className={`sketch-input bg-paper px-4 py-3 font-display text-lg outline-none transition placeholder:text-ink/35 focus:border-punch ${
           uppercase ? 'tracking-[0.35em]' : ''
         }`}
       />
-      {hint && <p className="text-xs text-white/45">{hint}</p>}
+      {hint && <p className="text-xs text-ink/55">{hint}</p>}
     </div>
   )
 }

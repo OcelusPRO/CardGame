@@ -38,12 +38,12 @@ export function FinishedPanel({ game, send }: Props) {
           {rest.map((player, index) => (
             <li
               key={player.id}
-              className="flex items-center gap-3 rounded-2xl bg-white/5 px-3 py-2 text-sm"
+              className="sketch-alt flex items-center gap-3 bg-paper/70 px-3 py-2 text-sm"
             >
-              <span className="w-6 text-center font-display font-bold text-white/40">{index + 4}</span>
+              <span className="w-6 text-center font-display font-bold text-ink/50">{index + 4}</span>
               <Avatar avatar={player.avatar} size={36} title={player.nickname} />
               <span className="min-w-0 flex-1 truncate font-semibold">{player.nickname}</span>
-              <span className="font-display text-lg font-bold tabular-nums text-zap">{player.score}</span>
+              <span className="font-display text-lg font-bold tabular-nums text-honey">{player.score}</span>
             </li>
           ))}
         </ol>
@@ -54,7 +54,7 @@ export function FinishedPanel({ game, send }: Props) {
           <Button onClick={() => send(messages.lobby())}>Retour au salon 🔄</Button>
         ) : (
           <>
-            <p className="text-sm text-white/55">
+            <p className="text-sm text-ink/65">
               L&apos;hôte peut relancer une partie depuis le salon.
             </p>
             <Link to="/">

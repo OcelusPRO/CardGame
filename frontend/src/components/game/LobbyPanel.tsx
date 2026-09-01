@@ -29,7 +29,7 @@ export function LobbyPanel({ game, onSettings, onDeck }: Props) {
 
   return (
     <div className="flex flex-col gap-5">
-      <SharePanel code={game.code} />
+      <SharePanel code={game.code} isHost={game.you.isHost} />
 
       <div className="grid gap-5 xl:grid-cols-2 xl:items-start">
         <Panel title="Règles">

@@ -41,11 +41,11 @@ function ExportDeck({ packs, situations, punchlines }: Omit<Props, 'onImport'>) 
         value={packId}
         aria-label="Pack à exporter"
         onChange={(event) => setPackId(event.target.value)}
-        className="rounded-full bg-white/10 px-4 py-2 text-sm outline-none ring-1 ring-white/15"
+        className="sketch-input bg-paper px-4 py-2 text-sm outline-none"
       >
         {packs.length === 0 && <option value="">Aucun pack</option>}
         {packs.map((entry) => (
-          <option key={entry.id} value={entry.id} className="bg-ink-soft">
+          <option key={entry.id} value={entry.id} className="bg-paper">
             {entry.name}
           </option>
         ))}
@@ -56,7 +56,7 @@ function ExportDeck({ packs, situations, punchlines }: Omit<Props, 'onImport'>) 
         value={text}
         rows={12}
         aria-label="Deck exporté"
-        className="w-full rounded-2xl bg-white/5 p-3 font-mono text-xs leading-relaxed outline-none ring-1 ring-white/15"
+        className="w-full sketch-input bg-paper/70 p-3 font-mono text-xs leading-relaxed outline-none"
       />
 
       <div className="flex flex-wrap gap-2">
@@ -142,11 +142,11 @@ function ImportDeck({ packs, onImport }: Pick<Props, 'packs' | 'onImport'>) {
         value={replaceId}
         aria-label="Cible de l'import"
         onChange={(event) => pickReplace(event.target.value)}
-        className="rounded-full bg-white/10 px-4 py-2 text-sm outline-none ring-1 ring-white/15"
+        className="sketch-input bg-paper px-4 py-2 text-sm outline-none"
       >
         <option value="">Nouveau pack</option>
         {packs.map((entry) => (
-          <option key={entry.id} value={entry.id} className="bg-ink-soft">
+          <option key={entry.id} value={entry.id} className="bg-paper">
             Remplacer : {entry.name}
           </option>
         ))}
@@ -157,18 +157,18 @@ function ImportDeck({ packs, onImport }: Pick<Props, 'packs' | 'onImport'>) {
           value={name}
           onChange={(event) => setName(event.target.value)}
           placeholder="Nom du pack"
-          className="flex-1 rounded-full bg-white/10 px-4 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-punch"
+          className="flex-1 sketch-input bg-paper px-4 py-2 text-sm outline-none focus:border-punch"
         />
         <input
           value={description}
           onChange={(event) => setDescription(event.target.value)}
           placeholder="Description"
-          className="flex-1 rounded-full bg-white/10 px-4 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-punch"
+          className="flex-1 sketch-input bg-paper px-4 py-2 text-sm outline-none focus:border-punch"
         />
       </div>
 
       <fieldset className="flex flex-wrap items-center gap-4 text-sm">
-        <legend className="mb-1 text-xs font-semibold uppercase tracking-wider text-white/50">
+        <legend className="mb-1 text-xs font-semibold uppercase tracking-wider text-ink/60">
           Modes de jeu autorisés
         </legend>
         <label className="flex items-center gap-2">
@@ -197,7 +197,7 @@ function ImportDeck({ packs, onImport }: Pick<Props, 'packs' | 'onImport'>) {
         rows={12}
         aria-label="Deck à importer"
         placeholder={'## Situations\nLe pire cadeau, c’est ____.\n\n## Réponses\nun chat mouillé'}
-        className="w-full rounded-2xl bg-white/5 p-3 font-mono text-xs leading-relaxed outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-punch"
+        className="w-full sketch-input bg-paper/70 p-3 font-mono text-xs leading-relaxed outline-none focus:border-punch"
       />
 
       <div className="flex flex-wrap items-center gap-2">

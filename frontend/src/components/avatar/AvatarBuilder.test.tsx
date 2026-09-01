@@ -18,9 +18,9 @@ describe('AvatarBuilder', () => {
     const onChange = vi.fn()
     render(<AvatarBuilder value={DEFAULT_AVATAR} onChange={onChange} />)
 
-    await userEvent.click(screen.getByRole('button', { name: 'Couleur de tête #2ee6a8' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Couleur de tête #8fe3c4' }))
 
-    expect(onChange).toHaveBeenCalledWith({ ...DEFAULT_AVATAR, topColor: '#2ee6a8' })
+    expect(onChange).toHaveBeenCalledWith({ ...DEFAULT_AVATAR, topColor: '#8fe3c4' })
   })
 
   it('marks the current selection for assistive technology', () => {

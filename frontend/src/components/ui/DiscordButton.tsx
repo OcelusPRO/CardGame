@@ -13,7 +13,7 @@ export function DiscordButton({ me }: Props) {
 
   if (me.discordConnected) {
     return (
-      <span className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-sm font-semibold">
+      <span className="sketch-pill flex items-center gap-2 bg-paper px-3 py-1.5 text-sm font-semibold">
         {me.discordAvatarUrl && (
           <img src={me.discordAvatarUrl} alt="" className="size-6 rounded-full" />
         )}
@@ -25,7 +25,7 @@ export function DiscordButton({ me }: Props) {
   return (
     <a
       href="/auth/discord"
-      className="rounded-full bg-[#5865F2] px-4 py-2 text-sm font-bold text-white transition hover:brightness-110"
+      className="sketch-pill bg-[#5865F2] px-4 py-2 text-sm font-bold text-white transition hover:brightness-110"
     >
       Connexion Discord
     </a>

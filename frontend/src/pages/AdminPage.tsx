@@ -33,8 +33,8 @@ export function AdminPage() {
     return (
       <div className="mx-auto max-w-md px-4 py-24 text-center">
         <p className="font-display text-2xl">Espace réservé</p>
-        <p className="mt-2 text-white/60">Connectez-vous avec un compte Discord administrateur.</p>
-        <Link to="/" className="mt-4 inline-block text-sm underline text-white/50">
+        <p className="mt-2 text-ink/70">Connectez-vous avec un compte Discord administrateur.</p>
+        <Link to="/" className="mt-4 inline-block text-sm underline text-ink/60">
           Retour à l'accueil
         </Link>
       </div>

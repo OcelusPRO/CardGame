@@ -15,7 +15,7 @@ export function HomePage() {
         className="font-display text-5xl font-extrabold leading-[0.95] text-balance sm:text-7xl"
       >
         Le jeu de cartes
-        <span className="block bg-linear-to-r from-punch via-zap to-mint bg-clip-text text-transparent">
+        <span className="block bg-linear-to-r from-punch via-grape to-mint bg-clip-text text-transparent">
           qui dérape
         </span>
       </motion.h1>
@@ -24,10 +24,10 @@ export function HomePage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.15 }}
-        className="max-w-xl text-lg text-white/70"
+        className="max-w-xl text-lg text-ink/75"
       >
-        Une situation, des réponses, et le mauvais goût de vos amis. Créez une partie, partagez le code,
-        et laissez le QR code faire le reste.
+        Une situation, des réponses, et le mauvais goût de vos amis. Créez une partie, envoyez le lien,
+        et vous jouez dans la minute.
       </motion.p>
 
       <motion.div
@@ -47,13 +47,13 @@ export function HomePage() {
       </motion.div>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <Feature emoji="🎭" title="Mode sans limites" text="Pas de cartes réponses : chacun écrit la sienne." />
-        <Feature emoji="✏️" title="Cartes maison" text="Composez votre paquet et gardez-le dans le navigateur." />
+        <Feature emoji="🎭" title="Mode sans limites" text="Pas de cartes à jouer : chacun écrit sa réponse." />
+        <Feature emoji="✏️" title="Cartes maison" text="Écrivez vos propres cartes et rejouez-les quand vous voulez." />
         <Feature emoji="🗳️" title="Vote ou maître du jeu" text="Chaque vote rapporte, la majorité rapporte plus." />
       </div>
 
       {me?.isAdmin && (
-        <Link to="/admin" className="text-sm font-semibold text-white/50 underline">
+        <Link to="/admin" className="text-sm font-semibold text-ink/60 underline">
           Espace administration
         </Link>
       )}
@@ -63,10 +63,10 @@ export function HomePage() {
 
 function Feature({ emoji, title, text }: { emoji: string; title: string; text: string }) {
   return (
-    <div className="rounded-3xl bg-white/5 p-5 text-left ring-1 ring-white/10">
+    <div className="sketch bg-paper/70 p-5 text-left">
       <span className="text-2xl">{emoji}</span>
       <h2 className="mt-2 font-display text-lg font-bold">{title}</h2>
-      <p className="mt-1 text-sm text-white/60">{text}</p>
+      <p className="mt-1 text-sm text-ink/70">{text}</p>
     </div>
   )
 }

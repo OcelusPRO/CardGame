@@ -71,7 +71,7 @@ export function GamePage() {
   if (lookup === 'loading') return <Centered>On cherche la table…</Centered>
 
   if (lookup === 'missing') {
-    return <Centered>Cette partie n&apos;existe plus — on t&apos;ouvre une nouvelle table…</Centered>
+    return <Centered>Cette partie n&apos;existe plus — on vous ouvre une nouvelle table…</Centered>
   }
 
   if (!seated) {
@@ -107,7 +107,7 @@ export function GamePage() {
     >
       <main className="order-1 flex min-w-0 flex-1 flex-col gap-5 lg:order-2">
         <header className="flex flex-wrap items-center justify-between gap-3">
-          <p className="font-display text-sm font-bold uppercase tracking-wider text-white/50">
+          <p className="font-display text-sm font-bold uppercase tracking-wider text-ink/60">
             {inLobby ? 'Salon' : `Manche ${game.round?.number ?? 0} / ${game.settings.rounds}`}
           </p>
           <ConnectionBadge status={status} />
@@ -127,7 +127,7 @@ export function GamePage() {
         <div className="flex flex-col gap-4 lg:sticky lg:top-6">
           <PlayerList game={game} onKick={(playerId) => send(messages.kick(playerId))} />
           {inLobby && (
-            <div className="fixed inset-x-4 bottom-4 z-40 rounded-3xl bg-ink/90 p-3 shadow-card backdrop-blur lg:static lg:bg-transparent lg:p-0 lg:shadow-none lg:backdrop-blur-none">
+            <div className="sketch fixed inset-x-4 bottom-4 z-40 bg-paper/95 p-3 shadow-card backdrop-blur lg:static lg:border-none lg:bg-transparent lg:p-0 lg:shadow-none lg:backdrop-blur-none">
               <StartGameBar game={game} onStart={() => send(messages.start())} />
             </div>
           )}

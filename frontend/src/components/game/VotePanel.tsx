@@ -38,7 +38,7 @@ export function VotePanel({ game, onChoose }: Props) {
       }
     >
       <div className="flex flex-col gap-4">
-        <p className="text-center font-display text-lg text-white/70">
+        <p className="text-center font-display text-lg text-ink/75">
           {canChoose
             ? czarMode
               ? 'À vous de trancher.'

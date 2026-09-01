@@ -41,13 +41,13 @@ export function GameJoinCard({ preview, identity, onIdentityChange, me, onJoined
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-4 py-10">
       <div>
         <h1 className="font-display text-4xl font-extrabold">Rejoindre la partie</h1>
-        <p className="mt-1 text-white/60">
+        <p className="mt-1 text-ink/70">
           Table de {preview.hostNickname} · {preview.playerCount}/{preview.maxPlayers} joueurs
         </p>
       </div>
 
       {!preview.canJoin && (
-        <p className="rounded-2xl bg-zap/15 px-4 py-3 text-sm text-zap">
+        <p className="sketch bg-zap/20 px-4 py-3 text-sm text-honey">
           {preview.phase === 'LOBBY'
             ? 'La table est complète.'
             : 'La partie a déjà commencé : impossible de prendre une place.'}
@@ -58,7 +58,7 @@ export function GameJoinCard({ preview, identity, onIdentityChange, me, onJoined
         <IdentityForm identity={identity} onChange={onIdentityChange} me={me} autoFocus />
       </Panel>
 
-      {error && <p className="rounded-2xl bg-red-500/15 px-4 py-3 text-sm text-red-200">{error}</p>}
+      {error && <p className="sketch [--stroke:#dc2626] bg-red-500/15 px-4 py-3 text-sm text-red-200">{error}</p>}
 
       <Button
         full

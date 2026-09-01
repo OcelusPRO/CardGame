@@ -25,14 +25,14 @@ const MESSAGES: Record<string, string> = {
   GAME_NOT_FOUND: "Cette partie n'existe pas ou est terminée.",
   INVALID_GAME_CODE: "Ce code de partie est invalide.",
   NICKNAME_REQUIRED: "Choisissez un pseudo.",
-  VALIDATION_ERROR: "Une valeur saisie n'est pas valide.",
-  MALFORMED_REQUEST: "La requête est mal formée.",
+  VALIDATION_ERROR: "Une des valeurs saisies n'est pas valide.",
+  MALFORMED_REQUEST: "Cette action n'a pas pu être envoyée.",
   ADMIN_REQUIRED: "Réservé aux administrateurs.",
   PACK_NOT_EMPTY: "Ce pack contient encore des cartes.",
   PACK_NOT_FOUND: "Ce pack n'existe pas.",
   CARD_NOT_FOUND: "Cette carte n'existe pas.",
-  BAD_MESSAGE: "Message incompris par le serveur.",
-  INTERNAL_ERROR: "Le serveur a fait une bêtise.",
+  BAD_MESSAGE: "Cette action n'a pas été comprise.",
+  INTERNAL_ERROR: "Panne de notre côté. Réessayez dans un instant.",
   NETWORK_ERROR: "Connexion impossible.",
 }
 

@@ -39,7 +39,7 @@ export function CreatePage() {
         <IdentityForm identity={identity} onChange={setIdentity} me={me} autoFocus />
       </Panel>
 
-      {error && <p className="rounded-2xl bg-red-500/15 px-4 py-3 text-sm text-red-200">{error}</p>}
+      {error && <p className="sketch [--stroke:#dc2626] bg-red-500/15 px-4 py-3 text-sm text-red-200">{error}</p>}
 
       <Button full disabled={identity.nickname.trim().length < 2 || busy} onClick={create}>
         {busy ? 'Création…' : 'Ouvrir la table'}

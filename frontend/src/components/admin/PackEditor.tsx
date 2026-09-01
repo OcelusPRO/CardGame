@@ -59,16 +59,16 @@ export function PackEditor({ packs, onSave, onDelete }: Props) {
         {packs.map((pack) => (
           <li
             key={pack.id}
-            className={`flex items-center gap-3 rounded-2xl px-3 py-2 text-sm ${
-              editing === pack.id ? 'bg-white/10 ring-1 ring-punch' : 'bg-white/10'
+            className={`flex items-center gap-3 sketch-alt px-3 py-2 text-sm ${
+              editing === pack.id ? 'bg-ink/5 ring-1 ring-punch' : 'bg-ink/5'
             }`}
           >
             <span className="min-w-0 flex-1">
               <span className="block font-semibold">
                 {pack.name}
-                {!pack.enabled && <span className="ml-2 text-xs text-white/40">désactivé</span>}
+                {!pack.enabled && <span className="ml-2 text-xs text-ink/50">désactivé</span>}
               </span>
-              <span className="block text-xs text-white/50">
+              <span className="block text-xs text-ink/60">
                 {pack.situationCount} situations · {pack.punchlineCount} réponses
               </span>
               <span className="mt-1 flex flex-wrap gap-1.5">
@@ -80,7 +80,7 @@ export function PackEditor({ packs, onSave, onDelete }: Props) {
               type="button"
               aria-label={`Modifier ${pack.name}`}
               onClick={() => edit(pack)}
-              className="text-white/40 transition hover:text-zap"
+              className="text-ink/50 transition hover:text-honey"
             >
               ✎
             </button>
@@ -88,17 +88,17 @@ export function PackEditor({ packs, onSave, onDelete }: Props) {
               type="button"
               aria-label={`Supprimer ${pack.name}`}
               onClick={() => onDelete(pack.id)}
-              className="text-white/40 transition hover:text-red-300"
+              className="text-ink/50 transition hover:text-red-300"
             >
               ✕
             </button>
           </li>
         ))}
-        {packs.length === 0 && <li className="text-sm text-white/50">Aucun pack pour l&apos;instant.</li>}
+        {packs.length === 0 && <li className="text-sm text-ink/60">Aucun pack pour l&apos;instant.</li>}
       </ul>
 
-      <div className="flex flex-col gap-3 rounded-2xl bg-white/5 p-3">
-        <p className="text-xs font-semibold uppercase tracking-wider text-white/50">
+      <div className="sketch flex flex-col gap-3 bg-paper/70 p-3">
+        <p className="text-xs font-semibold uppercase tracking-wider text-ink/60">
           {editing ? 'Modifier le pack' : 'Nouveau pack'}
         </p>
 
@@ -107,18 +107,18 @@ export function PackEditor({ packs, onSave, onDelete }: Props) {
             value={name}
             onChange={(event) => setName(event.target.value)}
             placeholder="Nom du pack"
-            className="flex-1 rounded-full bg-white/10 px-4 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-punch"
+            className="flex-1 sketch-input bg-paper px-4 py-2 text-sm outline-none focus:border-punch"
           />
           <input
             value={description}
             onChange={(event) => setDescription(event.target.value)}
             placeholder="Description"
-            className="flex-1 rounded-full bg-white/10 px-4 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-punch"
+            className="flex-1 sketch-input bg-paper px-4 py-2 text-sm outline-none focus:border-punch"
           />
         </div>
 
         <fieldset className="flex flex-wrap items-center gap-4 text-sm">
-          <legend className="mb-1 text-xs font-semibold uppercase tracking-wider text-white/50">
+          <legend className="mb-1 text-xs font-semibold uppercase tracking-wider text-ink/60">
             Modes de jeu autorisés
           </legend>
           <label className="flex items-center gap-2">
@@ -151,7 +151,7 @@ export function PackEditor({ packs, onSave, onDelete }: Props) {
             </Button>
           )}
           {!cards && !freeText && (
-            <p className="text-xs text-zap">Choisissez au moins un mode de jeu.</p>
+            <p className="text-xs text-honey">Choisissez au moins un mode de jeu.</p>
           )}
         </div>
       </div>
@@ -163,8 +163,8 @@ export function PackEditor({ packs, onSave, onDelete }: Props) {
 function ModeChip({ label, on }: { label: string; on: boolean }) {
   return (
     <span
-      className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-        on ? 'bg-mint/20 text-mint' : 'bg-white/5 text-white/30 line-through'
+      className={`sketch-pill px-2 py-0.5 text-[11px] font-semibold ${
+        on ? 'bg-mint/20 text-mint' : 'bg-paper/70 text-ink/40 line-through'
       }`}
     >
       {label}

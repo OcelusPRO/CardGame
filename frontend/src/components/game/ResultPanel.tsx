@@ -3,6 +3,7 @@ import type { AnswerView, GameView, RoundOutcomeView } from '../../api/types'
 import { SituationCard } from '../cards/SituationCard'
 import { Button } from '../ui/Button'
 import { AnswerCard } from './AnswerCard'
+import { CrumpledAnswer } from './CrumpledAnswer'
 import { RoundStage } from './RoundStage'
 
 interface Props {
@@ -36,26 +37,37 @@ export function ResultPanel({ game, onNext }: Props) {
               key={playerId}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-full bg-mint/15 px-4 py-2 font-display font-bold text-mint"
+              className="sketch-pill [--stroke:var(--color-mint)] bg-mint/15 px-4 py-2 font-display font-bold text-mint"
             >
               {game.players.find((player) => player.id === playerId)?.nickname ?? '?'} +{points}
             </motion.li>
           ))}
           {Object.keys(outcome.points).length === 0 && (
-            <li className="text-sm text-white/50">Personne n'a marqué. Ça arrive.</li>
+            <li className="text-sm text-ink/60">Personne n'a marqué. Ça arrive.</li>
           )}
         </motion.ul>
 
-        <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(13rem,1fr))]">
-          {ranked.map((answer) => (
-            <AnswerCard
-              key={answer.id}
-              answer={answer}
-              author={game.players.find((player) => player.id === answer.authorId)}
-              winner={answer.authorId !== undefined && outcome.winners.includes(answer.authorId)}
-            />
-          ))}
-        </div>
+        <motion.div layout className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(13rem,1fr))]">
+          {ranked.map((answer, index) => {
+            const won = answer.authorId !== undefined && outcome.winners.includes(answer.authorId)
+            const card = (
+              <AnswerCard
+                answer={answer}
+                author={game.players.find((player) => player.id === answer.authorId)}
+                winner={won}
+              />
+            )
+            // Everything that fell short of the win is balled up and thrown away, last
+            // place first, so the table is left with the answer that actually landed.
+            return won ? (
+              <div key={answer.id}>{card}</div>
+            ) : (
+              <CrumpledAnswer key={answer.id} delay={2 + (ranked.length - index) * 0.25}>
+                {card}
+              </CrumpledAnswer>
+            )
+          })}
+        </motion.div>
 
         {game.you.isHost && (
           <Button full onClick={onNext}>

@@ -26,8 +26,8 @@ interface Props {
 }
 
 const TONES: Record<CardTone, string> = {
-  situation: 'bg-ink-soft text-paper ring-white/15',
-  punchline: 'bg-paper text-ink ring-black/10',
+  situation: 'bg-ink-soft text-paper [--stroke:var(--color-paper)]',
+  punchline: 'bg-paper text-ink',
 }
 
 const SHAPES: Record<CardShape, string> = {
@@ -79,7 +79,7 @@ export function GameCard({
         whileHover={interactive ? { y: selected ? -22 : -10 } : undefined}
         whileTap={interactive ? { scale: 0.97 } : undefined}
         transition={{ type: 'spring', stiffness: 320, damping: 24 }}
-        className={`card-fit relative flex w-full flex-col justify-between overflow-hidden rounded-3xl p-4 shadow-card ring-1 transition-shadow sm:p-5 ${
+        className={`sketch card-fit relative flex w-full flex-col justify-between overflow-hidden p-4 shadow-card transition-shadow sm:p-5 ${
           SHAPES[shape]
         } ${TONES[tone]} ${interactive ? 'cursor-pointer select-none' : ''} ${
           disabled ? 'opacity-45 grayscale' : ''

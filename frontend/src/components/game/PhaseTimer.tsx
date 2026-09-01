@@ -18,7 +18,7 @@ export function PhaseTimer({ deadlineMillis, serverTimeMillis, totalSeconds, lab
 
   return (
     <div className="flex items-center gap-3">
-      <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/10">
+      <div className="sketch-pill h-3 flex-1 overflow-hidden bg-paper">
         <motion.div
           className={`h-full rounded-full ${urgent ? 'bg-punch' : 'bg-mint'}`}
           animate={{ width: `${ratio * 100}%` }}
@@ -30,7 +30,7 @@ export function PhaseTimer({ deadlineMillis, serverTimeMillis, totalSeconds, lab
         animate={urgent ? { scale: [1, 1.18, 1] } : { scale: 1 }}
         transition={{ duration: 0.6, repeat: urgent ? Infinity : 0 }}
         className={`w-10 text-right font-display text-lg font-bold tabular-nums ${
-          urgent ? 'text-punch' : 'text-white/70'
+          urgent ? 'text-punch' : 'text-ink/75'
         }`}
       >
         {remaining}

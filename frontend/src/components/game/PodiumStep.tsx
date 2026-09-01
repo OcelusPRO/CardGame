@@ -10,9 +10,9 @@ interface Props {
 const MEDALS: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' }
 const BLOCK_HEIGHT: Record<number, string> = { 1: 'h-32', 2: 'h-24', 3: 'h-16' }
 const BLOCK_TONE: Record<number, string> = {
-  1: 'bg-linear-to-b from-zap/70 to-zap/25 ring-zap',
-  2: 'bg-white/15 ring-white/25',
-  3: 'bg-white/10 ring-white/20',
+  1: 'bg-linear-to-b from-zap/80 to-zap/30',
+  2: 'bg-ink/10',
+  3: 'bg-ink/5',
 }
 
 /** One step of the podium: the taller the block, the better the score. */
@@ -30,9 +30,9 @@ export function PodiumStep({ player, rank }: Props) {
       <Avatar avatar={player.avatar} size={rank === 1 ? 104 : 80} title={player.nickname} />
       <p className="max-w-full truncate font-display text-lg font-bold">{player.nickname}</p>
       <div
-        className={`flex w-full items-start justify-center rounded-t-2xl pt-2 ring-1 ${BLOCK_HEIGHT[rank]} ${BLOCK_TONE[rank]}`}
+        className={`flex w-full items-start justify-center rounded-t-2xl border-2 border-ink pt-2 ${BLOCK_HEIGHT[rank]} ${BLOCK_TONE[rank]}`}
       >
-        <span className="font-display text-3xl font-black tabular-nums text-paper">{player.score}</span>
+        <span className="font-display text-3xl font-black tabular-nums text-ink">{player.score}</span>
       </div>
     </motion.li>
   )

@@ -117,7 +117,7 @@ export function SettingsForm({ settings, disabled, onChange }: Props) {
         onChange={(czarAnswers) => onChange({ czarAnswers })}
       />
 
-      <p className="rounded-2xl bg-white/5 px-4 py-3 text-xs leading-relaxed text-white/55">
+      <p className="sketch bg-paper/70 px-4 py-3 text-xs leading-relaxed text-ink/65">
         {czar
           ? `Le maître du jeu choisit, et la réponse retenue rapporte ${settings.pointsPerVote} point(s). ${settings.rounds} manches, et le meilleur score l'emporte.`
           : `Chaque vote reçu rapporte ${settings.pointsPerVote} point(s). Une réponse choisie par tous ceux qui pouvaient la choisir gagne ${settings.unanimityBonus} point(s) de plus ; un seul vote ailleurs et le bonus tombe à zéro. ${settings.rounds} manches, et le meilleur score l'emporte.`}
@@ -137,7 +137,7 @@ interface ChoiceProps {
 function Choice({ label, value, lockedBecause, options, onSelect }: ChoiceProps) {
   return (
     <fieldset title={lockedBecause ?? undefined}>
-      <legend className="mb-2 text-xs font-semibold uppercase tracking-wider text-white/50">{label}</legend>
+      <legend className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink/60">{label}</legend>
       <div className="flex flex-wrap gap-2">
         {options.map((option) => (
           <button
@@ -146,8 +146,8 @@ function Choice({ label, value, lockedBecause, options, onSelect }: ChoiceProps)
             disabled={Boolean(lockedBecause)}
             aria-pressed={value === option.value}
             onClick={() => onSelect(option.value)}
-            className={`rounded-full px-4 py-2 text-sm font-semibold transition disabled:cursor-help disabled:opacity-40 ${
-              value === option.value ? 'bg-grape text-white' : 'bg-white/10 hover:bg-white/20'
+            className={`sketch-pill px-4 py-2 text-sm font-semibold transition disabled:cursor-help disabled:opacity-40 ${
+              value === option.value ? 'bg-grape text-white' : 'bg-ink/5 hover:bg-ink/10'
             }`}
           >
             {option.label}
@@ -204,7 +204,7 @@ function NumberBox({ label, value, min, max, lockedBecause, onChange }: NumberBo
       title={lockedBecause ?? undefined}
       className={`flex h-full flex-col gap-1 ${lockedBecause ? 'cursor-help' : ''}`}
     >
-      <span className="text-xs font-semibold uppercase tracking-wider text-white/50">{label}</span>
+      <span className="text-xs font-semibold uppercase tracking-wider text-ink/60">{label}</span>
       <input
         type="number"
         value={value}
@@ -215,7 +215,7 @@ function NumberBox({ label, value, min, max, lockedBecause, onChange }: NumberBo
           const next = Number(event.target.value)
           if (next >= min && next <= max) onChange(next)
         }}
-        className="mt-auto rounded-xl bg-white/10 px-3 py-2 font-display text-lg tabular-nums outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-punch disabled:opacity-40"
+        className="mt-auto sketch-input bg-paper px-3 py-2 font-display text-lg tabular-nums outline-none focus:border-punch disabled:opacity-40"
       />
     </label>
   )

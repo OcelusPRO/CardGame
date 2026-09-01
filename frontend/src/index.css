@@ -1,29 +1,32 @@
 @import "tailwindcss";
 
 /*
- * One palette for the whole app. The two decks are deliberately opposite: the situation
- * card is ink black like a bad idea, the punchline card is paper white like an excuse.
+ * One palette for the whole app: warm paper, ink drawn on top of it. The two decks stay
+ * deliberately opposite — the situation card is dark like a bad idea, the punchline card
+ * is bright paper like an excuse — but everything around them is daylight now.
  */
 @theme {
-  --color-ink: #150726;
-  --color-ink-soft: #24103c;
-  --color-ink-line: #3b1c5e;
-  --color-paper: #fdf8f3;
-  --color-paper-line: #e4d9cd;
+  --color-ink: #2b1e3f;
+  --color-ink-soft: #3d2b57;
+  --color-ink-line: #6b587f;
+  --color-paper: #fffcf5;
+  --color-paper-line: #e2d5c3;
+  --color-cream: #f6efe3;
 
-  --color-punch: #ff2e88;
-  --color-punch-soft: #ff7ab3;
-  --color-zap: #ffd23f;
-  --color-mint: #2ee6a8;
-  --color-sky: #4cc9f0;
-  --color-grape: #9b5de5;
+  --color-punch: #e5326e;
+  --color-punch-soft: #ff9dbd;
+  --color-zap: #f5bd1f;
+  --color-honey: #9a6600;
+  --color-mint: #12a97c;
+  --color-sky: #2f9fd0;
+  --color-grape: #7c4ddb;
 
   --font-display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
   --font-body: "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-hand: "Caveat", "Segoe Script", cursive;
 
-  --shadow-card: 0 18px 40px -18px rgb(0 0 0 / 0.75);
-  --shadow-glow: 0 0 45px -8px var(--color-punch);
+  --shadow-card: 4px 6px 0 -1px rgb(43 30 63 / 0.16), 0 16px 30px -22px rgb(43 30 63 / 0.5);
+  --shadow-glow: 0 0 32px -10px var(--color-punch);
 
   --animate-float: float 6s ease-in-out infinite;
   --animate-pop: pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -46,7 +49,7 @@
 }
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 html,
@@ -58,14 +61,210 @@ body,
 body {
   margin: 0;
   font-family: var(--font-body);
-  color: var(--color-paper);
+  color: var(--color-ink);
   background:
-    radial-gradient(120% 90% at 8% 0%, #3a1163 0%, transparent 55%),
-    radial-gradient(120% 90% at 92% 12%, #7a1246 0%, transparent 50%),
-    radial-gradient(100% 80% at 50% 100%, #10233f 0%, transparent 60%),
-    var(--color-ink);
+    radial-gradient(90% 70% at 6% 0%, rgb(255 205 224 / 0.55) 0%, transparent 60%),
+    radial-gradient(90% 70% at 94% 8%, rgb(255 233 176 / 0.5) 0%, transparent 58%),
+    radial-gradient(80% 60% at 50% 100%, rgb(186 232 214 / 0.45) 0%, transparent 62%),
+    var(--color-cream);
   background-attachment: fixed;
   -webkit-tap-highlight-color: transparent;
+}
+
+/*
+ * Hand-drawn borders.
+ *
+ * The trick is an asymmetric `border-radius`: giving the horizontal and vertical radii
+ * wildly different values bends each corner unevenly, the way a marker never closes a
+ * box the same way twice. Four traces are declared rather than one, because a single
+ * shape repeated over a whole page stops reading as a hand and starts reading as a
+ * stencil — every corner turned the same way.
+ *
+ * These are plain classes rather than Tailwind utilities on purpose: unlayered CSS wins
+ * over `@layer utilities`, so a `.sketch` box overrides the `rounded-*` it sits next to
+ * without any `!important`.
+ */
+:root {
+  --trace-a: 12px 96px 14px 104px / 104px 14px 96px 12px;
+  --trace-b: 104px 14px 96px 12px / 12px 96px 14px 104px;
+  --trace-c: 88px 18px 120px 10px / 14px 112px 11px 90px;
+  --trace-d: 16px 112px 9px 92px / 98px 13px 108px 17px;
+
+  --pill-a: 130px 18px 120px 22px / 22px 120px 18px 130px;
+  --pill-b: 22px 128px 20px 118px / 124px 20px 130px 19px;
+  --pill-c: 118px 24px 132px 16px / 18px 130px 22px 120px;
+  --pill-d: 20px 120px 24px 128px / 130px 17px 118px 23px;
+}
+
+.sketch,
+.sketch-alt,
+.sketch-pill,
+.sketch-input {
+  position: relative;
+  /* Every pass reads the same ink, so a component can recolour a whole frame at once
+     with `[--stroke:…]` — a dark card needs a pale outline, an alert a red one. */
+  border: 2px solid var(--stroke, var(--color-ink));
+}
+
+/*
+ * A frame is three passes of the pen, not one: the element's own border plus two
+ * pseudo-strokes, each closing its corners differently and sitting a fraction of a
+ * degree off. Where they disagree the lines cross, which is what makes it read as
+ * scribbled rather than drafted.
+ */
+.sketch::before,
+.sketch::after,
+.sketch-alt::before,
+.sketch-alt::after,
+.sketch-pill::before,
+.sketch-pill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--stroke, var(--color-ink));
+  pointer-events: none;
+}
+
+.sketch::before,
+.sketch-alt::before,
+.sketch-pill::before {
+  border-radius: var(--pass-2);
+  transform: rotate(var(--tilt)) translate(1.1px, -1.1px);
+  opacity: 0.55;
+}
+
+.sketch::after,
+.sketch-alt::after,
+.sketch-pill::after {
+  inset: 3px;
+  border-radius: var(--pass-3);
+  transform: rotate(calc(var(--tilt) * -1.9)) translate(-1.2px, 1.2px);
+  opacity: 0.4;
+}
+
+.sketch,
+.sketch-alt {
+  border-radius: var(--pass-1);
+}
+
+/*
+ * Which of the four traces a box gets depends on where it sits among its siblings, so a
+ * list of players or a row of chips is never stamped out twice the same way. It is not
+ * true randomness — CSS has none — but it breaks the grid of identical corners, and it
+ * stays stable across renders, which real randomness would not.
+ */
+.sketch {
+  --pass-1: var(--trace-a);
+  --pass-2: var(--trace-b);
+  --pass-3: var(--trace-c);
+  --tilt: 0.4deg;
+}
+
+.sketch-alt {
+  --pass-1: var(--trace-b);
+  --pass-2: var(--trace-d);
+  --pass-3: var(--trace-a);
+  --tilt: -0.35deg;
+}
+
+.sketch:nth-child(2n),
+.sketch-alt:nth-child(2n) {
+  --pass-1: var(--trace-c);
+  --pass-2: var(--trace-a);
+  --pass-3: var(--trace-d);
+  --tilt: -0.5deg;
+}
+
+.sketch:nth-child(3n),
+.sketch-alt:nth-child(3n) {
+  --pass-1: var(--trace-d);
+  --pass-2: var(--trace-c);
+  --pass-3: var(--trace-b);
+  --tilt: 0.55deg;
+}
+
+.sketch:nth-child(5n),
+.sketch-alt:nth-child(5n) {
+  --pass-1: var(--trace-b);
+  --pass-2: var(--trace-d);
+  --pass-3: var(--trace-a);
+  --tilt: -0.6deg;
+}
+
+.sketch-pill {
+  border-radius: var(--pass-1);
+  --pass-1: var(--pill-a);
+  --pass-2: var(--pill-c);
+  --pass-3: var(--pill-b);
+  --tilt: 0.5deg;
+}
+
+.sketch-pill:nth-child(2n) {
+  --pass-1: var(--pill-b);
+  --pass-2: var(--pill-d);
+  --pass-3: var(--pill-a);
+  --tilt: -0.55deg;
+}
+
+.sketch-pill:nth-child(3n) {
+  --pass-1: var(--pill-d);
+  --pass-2: var(--pill-a);
+  --pass-3: var(--pill-c);
+  --tilt: 0.6deg;
+}
+
+/*
+ * Hovering re-traces the outline: each pass flips through the four shapes on its own
+ * schedule, and `steps` makes every change a jump instead of a morph — a line being
+ * redrawn, not a shape being tweened. The passes run at lengths that do not divide into
+ * each other, so the combination keeps changing for far longer than any single loop.
+ */
+@keyframes retrace {
+  0% { border-radius: var(--pill-a); }
+  25% { border-radius: var(--pill-c); }
+  50% { border-radius: var(--pill-b); }
+  75% { border-radius: var(--pill-d); }
+  100% { border-radius: var(--pill-a); }
+}
+
+@keyframes retrace-tilt {
+  0% { border-radius: var(--pill-b); transform: rotate(1.1deg) translate(1.6px, -1.2px); }
+  25% { border-radius: var(--pill-d); transform: rotate(-0.9deg) translate(-1.3px, 1.6px); }
+  50% { border-radius: var(--pill-a); transform: rotate(0.6deg) translate(1px, 1.4px); }
+  75% { border-radius: var(--pill-c); transform: rotate(-1.3deg) translate(-1.6px, -1px); }
+  100% { border-radius: var(--pill-b); transform: rotate(1.1deg) translate(1.6px, -1.2px); }
+}
+
+.sketch-pill:hover:not(:disabled),
+.sketch-pill:focus-visible:not(:disabled) {
+  animation: retrace 0.52s steps(1, end) infinite;
+}
+
+.sketch-pill:hover:not(:disabled)::before,
+.sketch-pill:focus-visible:not(:disabled)::before {
+  animation: retrace-tilt 0.36s steps(1, end) infinite;
+}
+
+.sketch-pill:hover:not(:disabled)::after,
+.sketch-pill:focus-visible:not(:disabled)::after {
+  animation: retrace-tilt 0.44s steps(1, end) infinite reverse;
+}
+
+/* An input cannot carry pseudo-elements, so it keeps to a single, steadier line. */
+.sketch-input {
+  border-radius: 10px 60px 12px 66px / 66px 12px 60px 10px;
+}
+
+.sketch-input:nth-child(2n) {
+  border-radius: 62px 11px 68px 10px / 12px 64px 10px 60px;
+}
+
+/* The ink line of a border, on its own, for rules and separators. */
+.sketch-line {
+  border: 0;
+  border-top: 2px solid var(--color-ink);
+  border-radius: 100%;
+  opacity: 0.25;
 }
 
 /* The 3D tilt of the cards only makes sense with perspective on the container. */
@@ -79,6 +278,18 @@ body {
  */
 .card-fit {
   container-type: inline-size;
+}
+
+/*
+ * The creases of a crumpled card, faded in while it balls up. Hard-edged gradients read
+ * as folds; a soft one at the centre keeps the ball from looking flat.
+ */
+.crumple-creases {
+  background:
+    linear-gradient(115deg, rgb(43 30 63 / 0.22) 0 28%, transparent 28% 34%, rgb(43 30 63 / 0.12) 34% 46%, transparent 46%),
+    linear-gradient(-58deg, rgb(43 30 63 / 0.18) 0 22%, transparent 22% 40%, rgb(43 30 63 / 0.14) 40% 52%, transparent 52%),
+    linear-gradient(28deg, transparent 0 55%, rgb(43 30 63 / 0.16) 55% 70%, transparent 70%),
+    radial-gradient(60% 60% at 42% 38%, rgb(255 255 255 / 0.55), transparent 70%);
 }
 
 /* Respect the people who do not want the room to move. */

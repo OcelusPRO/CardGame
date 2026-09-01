@@ -23,7 +23,7 @@ export function Toast({ code, message, onDismiss }: Props) {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 30 }}
-          className="fixed inset-x-4 bottom-4 z-50 mx-auto max-w-md rounded-2xl bg-ink-soft px-5 py-4 text-center font-semibold shadow-card ring-1 ring-punch/50"
+          className="sketch fixed inset-x-4 bottom-4 z-50 mx-auto max-w-md [--stroke:var(--color-punch)] bg-ink-soft px-5 py-4 text-center font-semibold text-paper shadow-card"
         >
           {message}
         </motion.div>

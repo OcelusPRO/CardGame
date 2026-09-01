@@ -16,7 +16,7 @@ export function StartGameBar({ game, onStart }: Props) {
 
   if (!game.you.isHost) {
     return (
-      <p className="rounded-2xl bg-white/5 px-4 py-3 text-center text-sm text-white/55">
+      <p className="sketch bg-paper/70 px-4 py-3 text-center text-sm text-ink/65">
         L&apos;hôte lance la partie quand tout le monde est prêt.
       </p>
     )
@@ -27,7 +27,7 @@ export function StartGameBar({ game, onStart }: Props) {
       <Button full onClick={onStart} disabled={missing > 0}>
         {missing > 0 ? `Encore ${missing} joueur${missing > 1 ? 's' : ''}…` : 'Lancer la partie 🚀'}
       </Button>
-      <p className="text-center text-xs text-white/45">
+      <p className="text-center text-xs text-ink/55">
         {game.settings.rounds} manches · {game.deck.situationsLeft} situations dans le paquet
       </p>
     </div>

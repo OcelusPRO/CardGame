@@ -106,10 +106,10 @@ export function SubmitPanel({ game, onPlayCards, onWriteAnswers }: Props) {
             footer={`Manche ${game.round.number} · ${expected} réponse${expected > 1 ? 's' : ''}`}
           />
           {game.you.mustAnswer && blankCards.length > 0 && (
-            <div className="mt-3 flex flex-col gap-3 rounded-2xl bg-white/5 p-3">
+            <div className="sketch mt-3 flex flex-col gap-3 bg-paper/70 p-3">
               {blankCards.map((card) => (
                 <div key={card.id} className="flex flex-col gap-1.5">
-                  <span className="truncate text-xs font-semibold uppercase tracking-wider text-white/50">
+                  <span className="truncate text-xs font-semibold uppercase tracking-wider text-ink/60">
                     {card.text}
                   </span>
                   <div className="flex flex-wrap gap-2">
@@ -127,7 +127,7 @@ export function SubmitPanel({ game, onPlayCards, onWriteAnswers }: Props) {
                             return { ...current, [card.id]: next }
                           })
                         }
-                        className="min-w-32 flex-1 rounded-full bg-white/10 px-3 py-1.5 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-punch"
+                        className="min-w-32 flex-1 sketch-input bg-paper px-3 py-1.5 text-sm outline-none focus:border-punch"
                       />
                     ))}
                   </div>
@@ -136,12 +136,12 @@ export function SubmitPanel({ game, onPlayCards, onWriteAnswers }: Props) {
             </div>
           )}
           {game.you.mustAnswer && (
-            <div className="fixed inset-x-4 bottom-4 z-40 rounded-3xl bg-ink/90 p-3 shadow-card backdrop-blur lg:static lg:bg-transparent lg:p-0 lg:shadow-none lg:backdrop-blur-none">
+            <div className="sketch fixed inset-x-4 bottom-4 z-40 bg-paper/95 p-3 shadow-card backdrop-blur lg:static lg:border-none lg:bg-transparent lg:p-0 lg:shadow-none lg:backdrop-blur-none">
               <Button full disabled={!ready} onClick={send}>
                 {ready ? 'Envoyer ma réponse' : sendHint(selected.length, expected, blankCards.length > 0 && !blanksReady)}
               </Button>
               {ready && (
-                <p className="mt-2 text-center text-xs text-white/45">
+                <p className="mt-2 text-center text-xs text-ink/55">
                   Sans clic de votre part, votre choix partira tout seul {AUTO_SUBMIT_SECONDS} secondes
                   avant la fin du temps.
                 </p>
@@ -152,7 +152,7 @@ export function SubmitPanel({ game, onPlayCards, onWriteAnswers }: Props) {
       }
     >
       {game.you.isCzar && !game.you.mustAnswer ? (
-        <p className="py-10 text-center font-display text-lg text-white/60">
+        <p className="py-10 text-center font-display text-lg text-ink/70">
           Vous tranchez cette manche. Laissez les autres se ridiculiser.
         </p>
       ) : game.you.mustAnswer ? (

@@ -6,7 +6,7 @@ interface Props {
 
 const LABELS: Record<SocketStatus, { text: string; className: string }> = {
   open: { text: 'En ligne', className: 'bg-mint/15 text-mint' },
-  connecting: { text: 'Connexion…', className: 'bg-zap/15 text-zap animate-pulse' },
+  connecting: { text: 'Connexion…', className: 'bg-zap/20 text-honey animate-pulse' },
   closed: { text: 'Hors ligne', className: 'bg-red-500/15 text-red-300' },
 }
 
@@ -14,6 +14,6 @@ const LABELS: Record<SocketStatus, { text: string; className: string }> = {
 export function ConnectionBadge({ status }: Props) {
   const { text, className } = LABELS[status]
   return (
-    <span className={`rounded-full px-3 py-1 text-xs font-bold ${className}`}>{text}</span>
+    <span className={`sketch-pill px-3 py-1 text-xs font-bold ${className}`}>{text}</span>
   )
 }

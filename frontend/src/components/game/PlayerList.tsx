@@ -25,7 +25,7 @@ export function PlayerList({ game, onKick }: Props) {
           />
         ))}
       </ul>
-      <p className="mt-3 text-xs text-white/40">
+      <p className="mt-3 text-xs text-ink/50">
         Manche {game.round?.number ?? 0} / {game.settings.rounds} · le meilleur score gagne
       </p>
     </Panel>

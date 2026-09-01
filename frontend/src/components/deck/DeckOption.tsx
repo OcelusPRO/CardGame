@@ -18,13 +18,13 @@ export function DeckOption({ name, detail, official, selected, disabled, onToggl
       disabled={disabled}
       aria-pressed={selected}
       onClick={onToggle}
-      className={`flex min-w-40 flex-col rounded-2xl px-4 py-2 text-left text-sm transition disabled:opacity-40 ${
-        selected ? 'bg-mint text-ink' : 'bg-white/10 hover:bg-white/20'
+      className={`sketch-alt flex min-w-40 flex-col px-4 py-2 text-left text-sm transition disabled:opacity-40 ${
+        selected ? 'bg-mint text-ink' : 'bg-ink/5 hover:bg-ink/10'
       }`}
     >
       <span className="flex items-center gap-1.5 font-bold">
         <span aria-hidden>{official ? '⭐' : '💾'}</span>
-        <span className="sr-only">{official ? 'Deck officiel :' : 'Deck enregistré :'}</span>
+        <span className="sr-only">{official ? 'Deck officiel :' : 'Votre deck :'}</span>
         {name}
       </span>
       <span className="text-xs opacity-70">{detail}</span>

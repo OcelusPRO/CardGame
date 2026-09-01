@@ -55,7 +55,7 @@ export function CardEditor({ title, hint, cards, packs, onSave, onDelete }: Prop
     <div className="flex flex-col gap-4">
       <div>
         <h3 className="font-display text-lg font-bold">{title}</h3>
-        <p className="text-xs text-white/50">{hint}</p>
+        <p className="text-xs text-ink/60">{hint}</p>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -63,11 +63,11 @@ export function CardEditor({ title, hint, cards, packs, onSave, onDelete }: Prop
           value={packId}
           aria-label="Pack de la carte"
           onChange={(event) => setPackId(event.target.value)}
-          className="rounded-full bg-white/10 px-4 py-2 text-sm outline-none ring-1 ring-white/15"
+          className="sketch-input bg-paper px-4 py-2 text-sm outline-none"
         >
           {packs.length === 0 && <option value="">Aucun pack</option>}
           {packs.map((pack) => (
-            <option key={pack.id} value={pack.id} className="bg-ink-soft">
+            <option key={pack.id} value={pack.id} className="bg-paper">
               {pack.name}
             </option>
           ))}
@@ -77,7 +77,7 @@ export function CardEditor({ title, hint, cards, packs, onSave, onDelete }: Prop
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Rechercher une carte…"
           aria-label={`Rechercher dans ${title.toLowerCase()}`}
-          className="min-w-40 flex-1 rounded-full bg-white/10 px-4 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-punch"
+          className="min-w-40 flex-1 sketch-input bg-paper px-4 py-2 text-sm outline-none focus:border-punch"
         />
       </div>
 
@@ -88,7 +88,7 @@ export function CardEditor({ title, hint, cards, packs, onSave, onDelete }: Prop
           onKeyDown={(event) => event.key === 'Enter' && submit()}
           placeholder={editing ? 'Nouveau texte de la carte' : 'Texte de la carte'}
           aria-label={editing ? 'Texte de la carte à modifier' : 'Texte de la nouvelle carte'}
-          className="min-w-48 flex-1 rounded-full bg-white/10 px-4 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-punch"
+          className="min-w-48 flex-1 sketch-input bg-paper px-4 py-2 text-sm outline-none focus:border-punch"
         />
         <Button variant="zap" disabled={!text.trim() || !packId} onClick={submit}>
           {editing ? 'Mettre à jour' : 'Ajouter'}
@@ -100,12 +100,12 @@ export function CardEditor({ title, hint, cards, packs, onSave, onDelete }: Prop
         )}
       </div>
 
-      <p className="text-xs text-white/40">
+      <p className="text-xs text-ink/50">
         {query.trim() ? `${visible.length} sur ${inPack.length}` : `${visible.length}`} carte(s)
         {packId ? ' dans ce pack' : ''}
       </p>
 
-      <ul className="max-h-80 divide-y divide-white/10 overflow-y-auto rounded-2xl bg-white/5">
+      <ul className="max-h-80 divide-y divide-ink/15 overflow-y-auto sketch bg-paper/70">
         {visible.map((card) => (
           <li
             key={card.id}
@@ -115,13 +115,13 @@ export function CardEditor({ title, hint, cards, packs, onSave, onDelete }: Prop
           >
             <span className="min-w-0 flex-1 truncate">{card.text}</span>
             {card.blankCount !== undefined && (
-              <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs">{card.blankCount} trou(s)</span>
+              <span className="sketch-pill bg-paper px-2 py-0.5 text-xs">{card.blankCount} trou(s)</span>
             )}
             <button
               type="button"
               aria-label={`Modifier ${card.text}`}
               onClick={() => startEdit(card)}
-              className="text-white/40 transition hover:text-zap"
+              className="text-ink/50 transition hover:text-honey"
             >
               ✎
             </button>
@@ -129,14 +129,14 @@ export function CardEditor({ title, hint, cards, packs, onSave, onDelete }: Prop
               type="button"
               aria-label={`Supprimer ${card.text}`}
               onClick={() => onDelete(card.id)}
-              className="text-white/40 transition hover:text-red-300"
+              className="text-ink/50 transition hover:text-red-300"
             >
               ✕
             </button>
           </li>
         ))}
         {visible.length === 0 && (
-          <li className="px-4 py-3 text-sm text-white/50">
+          <li className="px-4 py-3 text-sm text-ink/60">
             {inPack.length === 0 ? 'Aucune carte.' : 'Aucune carte ne correspond à la recherche.'}
           </li>
         )}

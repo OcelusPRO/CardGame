@@ -7,11 +7,11 @@ interface Props {
   className?: string
 }
 
-/** A frosted block, the only container shape used across the app. */
+/** A drawn block, the only container shape used across the app. */
 export function Panel({ children, title, actions, className = '' }: Props) {
   return (
     <section
-      className={`rounded-3xl bg-white/5 p-5 ring-1 ring-white/10 backdrop-blur-sm sm:p-6 ${className}`}
+      className={`sketch bg-paper/70 p-5 shadow-card backdrop-blur-sm sm:p-6 ${className}`}
     >
       {(title || actions) && (
         <header className="mb-4 flex flex-wrap items-center justify-between gap-3">

@@ -30,7 +30,7 @@ export function QrCode({ value, size = 180 }: Props) {
   }, [value, size])
 
   if (!dataUrl) {
-    return <div style={{ width: size, height: size }} className="animate-pulse rounded-2xl bg-white/10" />
+    return <div style={{ width: size, height: size }} className="sketch animate-pulse bg-ink/5" />
   }
 
   return (
@@ -39,7 +39,7 @@ export function QrCode({ value, size = 180 }: Props) {
       width={size}
       height={size}
       alt="QR code pour rejoindre la partie"
-      className="rounded-2xl bg-paper p-2 shadow-card"
+      className="sketch bg-paper p-2 shadow-card"
     />
   )
 }

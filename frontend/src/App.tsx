@@ -32,7 +32,7 @@ export function App() {
         <Route
           path="/admin"
           element={
-            <Suspense fallback={<p className="p-10 text-center text-white/50">Chargement…</p>}>
+            <Suspense fallback={<p className="p-10 text-center text-ink/60">Chargement…</p>}>
               <AdminPage />
             </Suspense>
           }

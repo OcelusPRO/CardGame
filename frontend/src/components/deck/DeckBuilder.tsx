@@ -92,16 +92,16 @@ export function DeckBuilder({ packs, disabled, onApply }: Props) {
           />
         ))}
         {packs.length === 0 && decks.length === 0 && (
-          <p className="text-sm text-white/50">Aucun deck disponible : écrivez les vôtres ci-dessous.</p>
+          <p className="text-sm text-ink/60">Aucun deck disponible : écrivez les vôtres ci-dessous.</p>
         )}
       </div>
 
       {!disabled && (
-        <p className="text-xs text-white/40">Les changements de paquet sont appliqués automatiquement.</p>
+        <p className="text-xs text-ink/50">Les changements de paquet sont appliqués automatiquement.</p>
       )}
 
       {selectedPacks.length === 0 && selectedDecks.length === 0 && (
-        <p className="text-xs text-zap">
+        <p className="text-xs text-honey">
           Aucun deck sélectionné : la partie se jouera uniquement sur les cartes écrites ici.
         </p>
       )}
@@ -132,7 +132,7 @@ export function DeckBuilder({ packs, disabled, onApply }: Props) {
           value={deckName}
           onChange={(event) => setDeckName(event.target.value)}
           placeholder="Nom du deck"
-          className="rounded-full bg-white/10 px-4 py-2 text-sm outline-none ring-1 ring-white/15 focus:ring-2 focus:ring-punch"
+          className="sketch-input bg-paper px-4 py-2 text-sm outline-none focus:border-punch"
         />
         <Button
           variant="ghost"
@@ -149,11 +149,11 @@ export function DeckBuilder({ packs, disabled, onApply }: Props) {
             aria-label="Supprimer un deck enregistré"
             value=""
             onChange={(event) => event.target.value && remove(event.target.value)}
-            className="rounded-full bg-white/10 px-3 py-2 text-sm outline-none ring-1 ring-white/15"
+            className="sketch-input bg-paper px-3 py-2 text-sm outline-none"
           >
             <option value="">Supprimer un deck…</option>
             {decks.map((deck) => (
-              <option key={deck.id} value={deck.id} className="bg-ink-soft">
+              <option key={deck.id} value={deck.id} className="bg-paper">
                 {deck.name}
               </option>
             ))}
@@ -179,14 +179,14 @@ interface CardTextAreaProps {
 function CardTextArea({ label, value, onChange, disabled, placeholder }: CardTextAreaProps) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-xs font-semibold uppercase tracking-wider text-white/50">{label}</span>
+      <span className="text-xs font-semibold uppercase tracking-wider text-ink/60">{label}</span>
       <textarea
         value={value}
         disabled={disabled}
         placeholder={placeholder}
         rows={4}
         onChange={(event) => onChange(event.target.value)}
-        className="rounded-2xl bg-white/10 px-4 py-3 font-hand text-2xl leading-tight outline-none ring-1 ring-white/15 transition placeholder:text-white/25 focus:ring-2 focus:ring-punch disabled:opacity-40"
+        className="sketch-input bg-paper px-4 py-3 font-hand text-2xl leading-tight outline-none transition placeholder:text-ink/35 focus:border-punch disabled:opacity-40"
       />
     </label>
   )
