@@ -1,6 +1,7 @@
 package fr.ftnl.cardgame.plugins
 
 import fr.ftnl.cardgame.ApplicationServices
+import fr.ftnl.cardgame.api.admin.adminAdultAccessRoutes
 import fr.ftnl.cardgame.api.admin.adminCardRoutes
 import fr.ftnl.cardgame.api.admin.adminPackRoutes
 import fr.ftnl.cardgame.api.admin.adminStatsRoutes
@@ -24,9 +25,10 @@ fun Application.configureRouting(services: ApplicationServices) {
             discordAuthRoutes(services.discordClient, services.adminGuard)
         }
         gameRoutes(services.entry)
-        cardRoutes(services.catalog)
+        cardRoutes(services.catalog, services.adultAccessGuard)
         adminPackRoutes(services.adminPacks)
         adminCardRoutes(services.adminCards)
+        adminAdultAccessRoutes(services.adminAdultAccess)
         adminStatsRoutes(services.statsService)
         adminStatsSocket(services.statsService, ApiJson)
         gameSocketRoute(services.games, services.socketHandler)

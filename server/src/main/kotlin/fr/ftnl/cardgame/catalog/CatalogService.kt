@@ -13,12 +13,18 @@ class CatalogService(
     /**
      * The packs a host may pick from, with how many cards each one brings. When an
      * [answerMode] is given, packs that were restricted away from it are left out.
+     * Packs marked "interdit aux mineurs" are left out unless [includeAdult] is set,
+     * which the caller only does for a host cleared for adult content.
      */
-    suspend fun availablePacks(answerMode: AnswerMode? = null): List<CardPackView> {
+    suspend fun availablePacks(
+        answerMode: AnswerMode? = null,
+        includeAdult: Boolean = false,
+    ): List<CardPackView> {
         val situationCounts = situations.all().groupingBy { it.packId }.eachCount()
         val punchlineCounts = punchlines.all().groupingBy { it.packId }.eachCount()
         return packs.enabled()
             .filter { pack -> answerMode == null || pack.allows(answerMode) }
+            .filter { pack -> includeAdult || !pack.adultOnly }
             .map { pack ->
             CardPackView(
                 id = pack.id,
@@ -26,6 +32,7 @@ class CatalogService(
                 description = pack.description,
                 situationCount = situationCounts[pack.id] ?: 0,
                 punchlineCount = punchlineCounts[pack.id] ?: 0,
+                adultOnly = pack.adultOnly,
             )
         }
     }

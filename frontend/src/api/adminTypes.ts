@@ -7,6 +7,7 @@ export interface PackAdminView {
   enabled: boolean
   answerModeCards: boolean
   answerModeFreeText: boolean
+  adultOnly: boolean
   situationCount: number
   punchlineCount: number
 }
@@ -33,6 +34,18 @@ export interface PackInput {
   enabled: boolean
   answerModeCards?: boolean
   answerModeFreeText?: boolean
+  adultOnly?: boolean
+}
+
+export interface AdultAccessView {
+  discordId: string
+  label: string
+  addedAtMillis: number
+}
+
+export interface AdultAccessInput {
+  discordId: string
+  label?: string
 }
 
 export interface DeckImportInput {

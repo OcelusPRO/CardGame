@@ -8,6 +8,7 @@ import fr.ftnl.cardgame.api.dto.GameTicket
 import fr.ftnl.cardgame.api.dto.JoinGameRequest
 import fr.ftnl.cardgame.api.view.AvatarMapper
 import fr.ftnl.cardgame.api.view.SettingsMapper
+import fr.ftnl.cardgame.auth.AdultAccessGuard
 import fr.ftnl.cardgame.auth.PlayerSession
 import fr.ftnl.cardgame.catalog.CardPoolResolver
 import fr.ftnl.cardgame.catalog.DeckRequest
@@ -28,16 +29,22 @@ class GameEntryService(
     private val games: GameService,
     private val decks: CardPoolResolver,
     private val appliedDecks: GameDecks,
+    private val adultAccess: AdultAccessGuard,
 ) {
 
     suspend fun create(request: CreateGameRequest, session: PlayerSession, baseUrl: String): GameTicket {
         val host = player(session, request.nickname, request.avatar)
         val settings = SettingsMapper.merge(GameSettings(), request.settings ?: GameSettingsInput())
         val state = games.create(host, settings)
-        // Remember the default deck so a later mode switch can rebuild it against the rules.
-        val deck = DeckRequest(packIds = decks.enabledPackIds())
+        // A brand new table starts on every enabled pack the host is actually allowed to use:
+        // adult-only packs are left out unless their Discord account is cleared for them.
+        val allowAdult = adultAccess.allows(session.discordId)
+        val deck = DeckRequest(packIds = decks.enabledPackIds(includeAdult = allowAdult))
         appliedDecks.remember(state.code, deck)
-        games.dispatch(state.code, GameCommand.SetCardPool(host.id, decks.resolve(deck, settings.answerMode)))
+        games.dispatch(
+            state.code,
+            GameCommand.SetCardPool(host.id, decks.resolve(deck, settings.answerMode, allowAdult)),
+        )
         return ticket(state.code, host.id, baseUrl, isHost = true)
     }
 

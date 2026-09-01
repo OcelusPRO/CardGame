@@ -10,6 +10,7 @@ object CardPackTable : Table("card_packs") {
     val enabled = bool("enabled").default(true)
     val answerModeCards = bool("answer_mode_cards").default(true)
     val answerModeFreeText = bool("answer_mode_free_text").default(true)
+    val adultOnly = bool("adult_only").default(false)
     val createdAtMillis = long("created_at_millis")
 
     override val primaryKey = PrimaryKey(id)

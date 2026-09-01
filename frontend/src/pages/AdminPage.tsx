@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { adminApi } from '../api/admin'
 import type { AdminOverview, ComboView, DailyActivityView } from '../api/adminTypes'
 import { ActivityChart } from '../components/admin/ActivityChart'
+import { AdultAccessEditor } from '../components/admin/AdultAccessEditor'
 import { CardEditor } from '../components/admin/CardEditor'
 import { CardStatsExplorer } from '../components/admin/CardStatsExplorer'
 import { ComboTable } from '../components/admin/ComboTable'
@@ -66,6 +67,10 @@ export function AdminPage() {
 
       <Panel title="Packs">
         <PackEditor packs={catalog.packs} onSave={catalog.savePack} onDelete={catalog.deletePack} />
+      </Panel>
+
+      <Panel title="Accès aux packs 18+">
+        <AdultAccessEditor />
       </Panel>
 
       <Panel title="Import / export de deck">

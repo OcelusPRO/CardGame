@@ -16,6 +16,7 @@ data class PackAdminView(
     val enabled: Boolean,
     val answerModeCards: Boolean,
     val answerModeFreeText: Boolean,
+    val adultOnly: Boolean,
     val situationCount: Int,
     val punchlineCount: Int,
 )

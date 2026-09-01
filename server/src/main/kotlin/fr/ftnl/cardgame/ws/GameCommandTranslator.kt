@@ -29,6 +29,7 @@ class GameCommandTranslator(
         playerId: PlayerId,
         settings: GameSettings,
         code: GameCode,
+        allowAdult: Boolean,
     ): GameCommand? = when (message) {
         is ClientMessage.PlayCards ->
             GameCommand.PlayCards(playerId, message.cardIds.map(::CardId), message.fills)
@@ -40,7 +41,7 @@ class GameCommandTranslator(
         is ClientMessage.UpdateDeck -> {
             val request = deckRequest(message.deck)
             applied.remember(code, request)
-            GameCommand.SetCardPool(playerId, decks.resolve(request, settings.answerMode))
+            GameCommand.SetCardPool(playerId, decks.resolve(request, settings.answerMode, allowAdult))
         }
 
         is ClientMessage.Kick -> GameCommand.Kick(playerId, PlayerId(message.playerId))
@@ -55,9 +56,14 @@ class GameCommandTranslator(
      * Rebuilds the last deck the host applied, for [answerMode]. Null when nothing was
      * applied yet, in which case the game still holds its default (all packs) pool.
      */
-    suspend fun poolForMode(code: GameCode, by: PlayerId, answerMode: AnswerMode): GameCommand.SetCardPool? {
+    suspend fun poolForMode(
+        code: GameCode,
+        by: PlayerId,
+        answerMode: AnswerMode,
+        allowAdult: Boolean,
+    ): GameCommand.SetCardPool? {
         val request = applied.of(code) ?: return null
-        return GameCommand.SetCardPool(by, decks.resolve(request, answerMode))
+        return GameCommand.SetCardPool(by, decks.resolve(request, answerMode, allowAdult))
     }
 
     fun forget(code: GameCode) = applied.forget(code)

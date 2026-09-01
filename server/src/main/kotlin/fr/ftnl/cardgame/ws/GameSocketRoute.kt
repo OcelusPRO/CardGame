@@ -21,7 +21,7 @@ fun Route.gameSocketRoute(games: GameService, handler: GameSocketHandler) {
         val playerId = PlayerId(player.playerId)
         val state = games.find(code) ?: return@webSocket reject("Partie introuvable")
         if (!state.contains(playerId)) return@webSocket reject("Vous n'êtes pas à cette table")
-        handler.serve(this, code, playerId)
+        handler.serve(this, code, playerId, player.discordId)
     }
 }
 

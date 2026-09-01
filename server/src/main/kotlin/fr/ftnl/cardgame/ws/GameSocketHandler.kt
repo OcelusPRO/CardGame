@@ -1,6 +1,7 @@
 package fr.ftnl.cardgame.ws
 
 import fr.ftnl.cardgame.api.view.GameViewFactory
+import fr.ftnl.cardgame.auth.AdultAccessGuard
 import fr.ftnl.cardgame.domain.engine.GameCommand
 import fr.ftnl.cardgame.domain.game.GameCode
 import fr.ftnl.cardgame.domain.game.GameState
@@ -22,16 +23,23 @@ class GameSocketHandler(
     private val connections: GameConnections,
     private val views: GameViewFactory,
     private val translator: GameCommandTranslator,
+    private val adultAccess: AdultAccessGuard,
     private val json: Json,
 ) {
 
-    suspend fun serve(session: WebSocketSession, code: GameCode, playerId: PlayerId) {
+    suspend fun serve(
+        session: WebSocketSession,
+        code: GameCode,
+        playerId: PlayerId,
+        discordId: String?,
+    ) {
         val connection = GameConnection(code, playerId, session, json)
+        val allowAdult = adultAccess.allows(discordId)
         connections.add(connection)
         try {
             games.dispatch(code, GameCommand.SetConnected(playerId, connected = true))
             sendCurrentState(connection)
-            session.incoming.consumeEach { frame -> onFrame(connection, frame) }
+            session.incoming.consumeEach { frame -> onFrame(connection, frame, allowAdult) }
         } finally {
             connections.remove(connection)
             games.dispatch(code, GameCommand.SetConnected(playerId, connected = false))
@@ -54,22 +62,24 @@ class GameSocketHandler(
         connection.send(ServerMessage.State(views.create(state, connection.playerId)))
     }
 
-    private suspend fun onFrame(connection: GameConnection, frame: Frame) {
+    private suspend fun onFrame(connection: GameConnection, frame: Frame, allowAdult: Boolean) {
         val text = (frame as? Frame.Text)?.readText() ?: return
         val message = decode(text) ?: return connection.send(ServerMessage.Failure(BAD_MESSAGE))
         if (message is ClientMessage.Ping) return connection.send(ServerMessage.Pong)
-        run(connection, message)
+        run(connection, message, allowAdult)
     }
 
-    private suspend fun run(connection: GameConnection, message: ClientMessage) {
+    private suspend fun run(connection: GameConnection, message: ClientMessage, allowAdult: Boolean) {
         val state = games.find(connection.code)
             ?: return connection.send(ServerMessage.Failure(GAME_NOT_FOUND))
-        val command = translator.toCommand(message, connection.playerId, state.settings, connection.code)
-            ?: return
+        val command = translator.toCommand(
+            message, connection.playerId, state.settings, connection.code, allowAdult,
+        ) ?: return
         when (val result = games.dispatch(connection.code, command)) {
             is DispatchResult.Refused -> connection.send(ServerMessage.Failure(result.error.name))
             DispatchResult.GameNotFound -> connection.send(ServerMessage.Failure(GAME_NOT_FOUND))
-            is DispatchResult.Updated -> realignDeck(connection, before = state, after = result.state)
+            is DispatchResult.Updated ->
+                realignDeck(connection, before = state, after = result.state, allowAdult = allowAdult)
         }
     }
 
@@ -77,12 +87,18 @@ class GameSocketHandler(
      * A change of answer mode can outlaw a pack still sitting in the live deck. The picker
      * only hides it; here the server actually rebuilds the pile so the game stays legal.
      */
-    private suspend fun realignDeck(connection: GameConnection, before: GameState, after: GameState) {
+    private suspend fun realignDeck(
+        connection: GameConnection,
+        before: GameState,
+        after: GameState,
+        allowAdult: Boolean,
+    ) {
         if (before.settings.answerMode == after.settings.answerMode) return
         val rebuilt = translator.poolForMode(
             connection.code,
             connection.playerId,
             after.settings.answerMode,
+            allowAdult,
         ) ?: return
         games.dispatch(connection.code, rebuilt)
     }

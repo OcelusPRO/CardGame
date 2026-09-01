@@ -1,0 +1,18 @@
+ktor:
+  deployment:
+    port: 8080
+  application:
+    modules:
+      - fr.ftnl.HttpKt.configureHttp
+      - fr.ftnl.SerializationKt.configureSerialization
+      - fr.ftnl.SecurityKt.configureSecurity
+      - fr.ftnl.AutoHeadResponseKt.configureAutoHeadResponse
+      - fr.ftnl.ResourcesKt.configureResources
+      - fr.ftnl.SseKt.configureSse
+      - fr.ftnl.StatusPagesKt.configureStatusPages
+      - fr.ftnl.KoinKt.configureKoin
+      - fr.ftnl.ExposedKt.configureExposed
+      - fr.ftnl.PostgresKt.configurePostgres
+      - fr.ftnl.RateLimitingKt.configureRateLimiting
+      - fr.ftnl.WebsocketsKt.configureWebsockets
+      - fr.ftnl.RoutingKt.configureRouting

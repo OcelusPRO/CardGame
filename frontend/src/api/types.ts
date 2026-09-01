@@ -148,6 +148,8 @@ export interface CardPackView {
   description: string
   situationCount: number
   punchlineCount: number
+  /** Marked "interdit aux mineurs". Only ever present for hosts cleared for it. */
+  adultOnly: boolean
 }
 
 export interface AvatarInput {

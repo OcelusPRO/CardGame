@@ -1,6 +1,8 @@
 import { api } from './client'
 import type {
   AdminOverview,
+  AdultAccessInput,
+  AdultAccessView,
   CardAdminView,
   CardInput,
   CardStatsView,
@@ -36,4 +38,10 @@ export const adminApi = {
   punchlines: () => api.get<CardAdminView[]>('/api/admin/punchlines'),
   savePunchline: (input: CardInput) => api.post<CardAdminView>('/api/admin/punchlines', input),
   deletePunchline: (id: string) => api.remove<void>(`/api/admin/punchlines/${id}`),
+
+  adultAccess: () => api.get<AdultAccessView[]>('/api/admin/adult-access'),
+  addAdultAccess: (input: AdultAccessInput) =>
+    api.post<AdultAccessView>('/api/admin/adult-access', input),
+  removeAdultAccess: (discordId: string) =>
+    api.remove<void>(`/api/admin/adult-access/${encodeURIComponent(discordId)}`),
 }

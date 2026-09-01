@@ -20,6 +20,7 @@ object TestDatabase {
         "card_usage",
         "combo_stats",
         "daily_activity",
+        "adult_pack_access",
         "punchline_cards",
         "situation_cards",
         "card_packs",

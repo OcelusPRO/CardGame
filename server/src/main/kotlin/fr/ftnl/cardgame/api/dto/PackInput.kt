@@ -12,4 +12,6 @@ data class PackInput(
     /** Answer modes the pack may be played in; both true (the default) means no limit. */
     val answerModeCards: Boolean = true,
     val answerModeFreeText: Boolean = true,
+    /** Marks the pack "interdit aux mineurs". */
+    val adultOnly: Boolean = false,
 )

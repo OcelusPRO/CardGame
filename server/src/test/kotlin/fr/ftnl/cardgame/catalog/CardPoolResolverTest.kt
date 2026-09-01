@@ -81,6 +81,31 @@ class CardPoolResolverTest {
     }
 
     @Test
+    fun `an adult-only pack is dropped when the host is not cleared for it`() = runBlocking {
+        val adultPacks = FakeCardPackRepository(
+            listOf(CardPack("safe", "Safe"), CardPack("adult", "Adulte", adultOnly = true)),
+        )
+        val adultSituations = FakeSituationCardRepository(
+            listOf(
+                CatalogSituation(CardId("a"), "safe", SituationText("____ ?")),
+                CatalogSituation(CardId("b"), "adult", SituationText("____ !")),
+            )
+        )
+        val adultResolver = CardPoolResolver(adultPacks, adultSituations, FakePunchlineCardRepository())
+        val request = DeckRequest(packIds = setOf("safe", "adult"))
+
+        assertEquals(
+            listOf("a"),
+            adultResolver.resolve(request, allowAdult = false).situations.map { it.id.value },
+        )
+        assertEquals(
+            listOf("a", "b"),
+            adultResolver.resolve(request, allowAdult = true).situations.map { it.id.value }.sorted(),
+        )
+        assertEquals(setOf("safe"), adultResolver.enabledPackIds(includeAdult = false))
+    }
+
+    @Test
     fun `a pack restricted to the other mode is dropped from the resolved pool`() = runBlocking {
         val modePacks = FakeCardPackRepository(
             listOf(

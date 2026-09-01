@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import type { PackAdminView } from '../../api/adminTypes'
+import { ApiError } from '../../api/ApiError'
+import { errorMessage } from '../../lib/errorMessages'
 import { Button } from '../ui/Button'
 
 interface PackDraft {
@@ -8,13 +10,14 @@ interface PackDraft {
   description: string
   answerModeCards: boolean
   answerModeFreeText: boolean
+  adultOnly: boolean
   enabled?: boolean
 }
 
 interface Props {
   packs: PackAdminView[]
   onSave: (draft: PackDraft) => void
-  onDelete: (id: string) => void
+  onDelete: (id: string) => void | Promise<void>
 }
 
 /** Creating, editing and dropping the themed packs the cards belong to. */
@@ -24,6 +27,22 @@ export function PackEditor({ packs, onSave, onDelete }: Props) {
   const [description, setDescription] = useState('')
   const [cards, setCards] = useState(true)
   const [freeText, setFreeText] = useState(true)
+  const [adult, setAdult] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const remove = async (pack: PackAdminView) => {
+    setError(null)
+    if (!window.confirm(`Supprimer le pack « ${pack.name} » ?`)) return
+    try {
+      await onDelete(pack.id)
+    } catch (failure) {
+      setError(
+        failure instanceof ApiError
+          ? errorMessage(failure.code)
+          : 'La suppression a échoué.',
+      )
+    }
+  }
 
   const reset = () => {
     setEditing(undefined)
@@ -31,6 +50,7 @@ export function PackEditor({ packs, onSave, onDelete }: Props) {
     setDescription('')
     setCards(true)
     setFreeText(true)
+    setAdult(false)
   }
 
   const edit = (pack: PackAdminView) => {
@@ -39,6 +59,7 @@ export function PackEditor({ packs, onSave, onDelete }: Props) {
     setDescription(pack.description)
     setCards(pack.answerModeCards)
     setFreeText(pack.answerModeFreeText)
+    setAdult(pack.adultOnly)
   }
 
   const submit = () => {
@@ -48,6 +69,7 @@ export function PackEditor({ packs, onSave, onDelete }: Props) {
       description: description.trim(),
       answerModeCards: cards,
       answerModeFreeText: freeText,
+      adultOnly: adult,
       enabled: editing ? packs.find((pack) => pack.id === editing)?.enabled : true,
     })
     reset()
@@ -67,6 +89,11 @@ export function PackEditor({ packs, onSave, onDelete }: Props) {
               <span className="block font-semibold">
                 {pack.name}
                 {!pack.enabled && <span className="ml-2 text-xs text-ink/50">désactivé</span>}
+                {pack.adultOnly && (
+                  <span className="ml-2 sketch-pill bg-red-300/20 px-2 py-0.5 text-[11px] font-semibold text-red-300">
+                    18+
+                  </span>
+                )}
               </span>
               <span className="block text-xs text-ink/60">
                 {pack.situationCount} situations · {pack.punchlineCount} réponses
@@ -87,7 +114,7 @@ export function PackEditor({ packs, onSave, onDelete }: Props) {
             <button
               type="button"
               aria-label={`Supprimer ${pack.name}`}
-              onClick={() => onDelete(pack.id)}
+              onClick={() => remove(pack)}
               className="text-ink/50 transition hover:text-red-300"
             >
               ✕
@@ -96,6 +123,8 @@ export function PackEditor({ packs, onSave, onDelete }: Props) {
         ))}
         {packs.length === 0 && <li className="text-sm text-ink/60">Aucun pack pour l&apos;instant.</li>}
       </ul>
+
+      {error && <p className="text-sm text-red-300">{error}</p>}
 
       <div className="sketch flex flex-col gap-3 bg-paper/70 p-3">
         <p className="text-xs font-semibold uppercase tracking-wider text-ink/60">
@@ -140,6 +169,16 @@ export function PackEditor({ packs, onSave, onDelete }: Props) {
             Sans limites (on écrit)
           </label>
         </fieldset>
+
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={adult}
+            onChange={(event) => setAdult(event.target.checked)}
+            className="size-4 accent-red-300"
+          />
+          Interdit aux mineurs (18+) — visible seulement pour les hôtes autorisés
+        </label>
 
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="zap" disabled={!name.trim() || (!cards && !freeText)} onClick={submit}>

@@ -28,6 +28,7 @@ class ExposedCardPackRepository : CardPackRepository {
             row[enabled] = pack.enabled
             row[answerModeCards] = pack.allows(AnswerMode.CARDS)
             row[answerModeFreeText] = pack.allows(AnswerMode.FREE_TEXT)
+            row[adultOnly] = pack.adultOnly
         }
         if (updated == 0) insert(pack)
     }
@@ -44,6 +45,7 @@ class ExposedCardPackRepository : CardPackRepository {
             row[enabled] = pack.enabled
             row[answerModeCards] = pack.allows(AnswerMode.CARDS)
             row[answerModeFreeText] = pack.allows(AnswerMode.FREE_TEXT)
+            row[adultOnly] = pack.adultOnly
             row[createdAtMillis] = pack.createdAtMillis
         }
     }
@@ -53,6 +55,7 @@ class ExposedCardPackRepository : CardPackRepository {
         name = row[CardPackTable.name],
         description = row[CardPackTable.description],
         enabled = row[CardPackTable.enabled],
+        adultOnly = row[CardPackTable.adultOnly],
         answerModes = buildSet {
             if (row[CardPackTable.answerModeCards]) add(AnswerMode.CARDS)
             if (row[CardPackTable.answerModeFreeText]) add(AnswerMode.FREE_TEXT)

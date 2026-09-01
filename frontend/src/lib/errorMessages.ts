@@ -30,6 +30,7 @@ const MESSAGES: Record<string, string> = {
   ADMIN_REQUIRED: "Réservé aux administrateurs.",
   PACK_NOT_EMPTY: "Ce pack contient encore des cartes.",
   PACK_NOT_FOUND: "Ce pack n'existe pas.",
+  ADULT_ACCESS_NOT_FOUND: "Cet identifiant n'est pas dans la liste.",
   CARD_NOT_FOUND: "Cette carte n'existe pas.",
   BAD_MESSAGE: "Cette action n'a pas été comprise.",
   INTERNAL_ERROR: "Panne de notre côté. Réessayez dans un instant.",

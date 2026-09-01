@@ -75,6 +75,7 @@ export function DeckBuilder({ packs, disabled, onApply }: Props) {
             name={pack.name}
             detail={`${pack.situationCount} situations · ${pack.punchlineCount} réponses`}
             official
+            adult={pack.adultOnly}
             selected={selectedPacks.includes(pack.id)}
             disabled={disabled}
             onToggle={() => togglePack(pack.id)}

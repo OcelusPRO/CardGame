@@ -10,4 +10,6 @@ data class CardPackView(
     val description: String,
     val situationCount: Int,
     val punchlineCount: Int,
+    /** Marked "interdit aux mineurs": only ever sent to hosts cleared for it. */
+    val adultOnly: Boolean = false,
 )

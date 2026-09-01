@@ -28,7 +28,15 @@ class DevDeckSeeder(
     suspend fun seed(): Boolean {
         if (situations.count() > 0 || punchlines.count() > 0) return false
         val deck = load() ?: return false
-        packs.save(CardPack(deck.packId, deck.packName, deck.packDescription, true, clock.nowMillis()))
+        packs.save(
+            CardPack(
+                id = deck.packId,
+                name = deck.packName,
+                description = deck.packDescription,
+                enabled = true,
+                createdAtMillis = clock.nowMillis(),
+            )
+        )
         insertSituations(deck)
         insertPunchlines(deck)
         return true

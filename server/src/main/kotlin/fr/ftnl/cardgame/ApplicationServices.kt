@@ -2,13 +2,17 @@ package fr.ftnl.cardgame
 
 import fr.ftnl.cardgame.api.view.GameViewFactory
 import fr.ftnl.cardgame.auth.AdminGuard
+import fr.ftnl.cardgame.auth.AdultAccessGuard
 import fr.ftnl.cardgame.auth.DiscordClient
 import fr.ftnl.cardgame.catalog.AdminCardService
 import fr.ftnl.cardgame.catalog.AdminPackService
+import fr.ftnl.cardgame.catalog.AdultAccessService
+import fr.ftnl.cardgame.catalog.AdultPackAccessRepository
 import fr.ftnl.cardgame.catalog.CardPackRepository
 import fr.ftnl.cardgame.catalog.CardPoolResolver
 import fr.ftnl.cardgame.catalog.CatalogService
 import fr.ftnl.cardgame.catalog.CustomCardFactory
+import fr.ftnl.cardgame.catalog.ExposedAdultPackAccessRepository
 import fr.ftnl.cardgame.catalog.ExposedCardPackRepository
 import fr.ftnl.cardgame.catalog.ExposedPunchlineCardRepository
 import fr.ftnl.cardgame.catalog.ExposedSituationCardRepository
@@ -65,12 +69,15 @@ class ApplicationServices(
     val packRepository: CardPackRepository = ExposedCardPackRepository()
     val situationRepository: SituationCardRepository = ExposedSituationCardRepository()
     val punchlineRepository: PunchlineCardRepository = ExposedPunchlineCardRepository()
+    val adultAccessRepository: AdultPackAccessRepository = ExposedAdultPackAccessRepository()
     private val statsWriter: UsageStatsWriter = ExposedUsageStatsWriter()
     private val statsReader: UsageStatsReader = ExposedUsageStatsReader()
 
+    val adultAccessGuard = AdultAccessGuard(adultAccessRepository, config.admin)
     val catalog = CatalogService(packRepository, situationRepository, punchlineRepository)
     val adminPacks = AdminPackService(packRepository, situationRepository, punchlineRepository, clock)
     val adminCards = AdminCardService(situationRepository, punchlineRepository, clock)
+    val adminAdultAccess = AdultAccessService(adultAccessRepository, clock)
     private val deckResolver = CardPoolResolver(packRepository, situationRepository, punchlineRepository)
     private val appliedDecks = GameDecks()
 
@@ -87,7 +94,7 @@ class ApplicationServices(
     )
 
     val views = GameViewFactory(clock)
-    val entry = GameEntryService(games, deckResolver, appliedDecks)
+    val entry = GameEntryService(games, deckResolver, appliedDecks, adultAccessGuard)
     val statsService = StatsService(statsReader, packRepository, situationRepository, punchlineRepository, connections, clock)
     val discordClient = DiscordClient(httpClient)
     val adminGuard = AdminGuard(config.admin)
@@ -97,6 +104,7 @@ class ApplicationServices(
         connections = connections,
         views = views,
         translator = GameCommandTranslator(deckResolver, CustomCardFactory(), appliedDecks),
+        adultAccess = adultAccessGuard,
         json = ApiJson,
     )
 

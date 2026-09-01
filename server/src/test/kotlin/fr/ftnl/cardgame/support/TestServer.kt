@@ -4,6 +4,7 @@ import fr.ftnl.cardgame.ApplicationServices
 import fr.ftnl.cardgame.HttpClientFactory
 import fr.ftnl.cardgame.session.InMemoryGameSessionStore
 import fr.ftnl.cardgame.auth.AdminSession
+import fr.ftnl.cardgame.auth.playerSession
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.http.HttpStatusCode
@@ -42,7 +43,21 @@ fun ApplicationTestBuilder.startTestServer(): ApplicationServices {
             // Test-only door. The real one is the Discord OAuth callback, which cannot run
             // here, so this hands out the very same signed session the callback would set.
             get(ADMIN_LOGIN_PATH) {
+                call.sessions.set(
+                    call.playerSession().copy(
+                        discordId = TestConfig.ADMIN_DISCORD_ID,
+                        discordUsername = "Root",
+                    )
+                )
                 call.sessions.set(AdminSession(TestConfig.ADMIN_DISCORD_ID, "Root"))
+                call.respond(HttpStatusCode.NoContent)
+            }
+            // Test-only Discord sign in for a non-admin account: `?id=123` picks the id.
+            get(DISCORD_LOGIN_PATH) {
+                val id = call.request.queryParameters["id"] ?: "100000000000000001"
+                call.sessions.set(
+                    call.playerSession().copy(discordId = id, discordUsername = "User $id")
+                )
                 call.respond(HttpStatusCode.NoContent)
             }
         }
@@ -51,6 +66,7 @@ fun ApplicationTestBuilder.startTestServer(): ApplicationServices {
 }
 
 const val ADMIN_LOGIN_PATH = "/test/sign-in-as-admin"
+const val DISCORD_LOGIN_PATH = "/test/sign-in-with-discord"
 
 /** A browser that carries an administrator session from its very first call. */
 suspend fun ApplicationTestBuilder.adminBrowser(): HttpClient =

@@ -29,6 +29,7 @@ class AdminPackService(
             name = input.name.trim().ifEmpty { throw IllegalArgumentException("Le nom du pack est vide") },
             description = input.description.trim(),
             enabled = input.enabled,
+            adultOnly = input.adultOnly,
             answerModes = answerModesOf(input.answerModeCards, input.answerModeFreeText),
             createdAtMillis = clock.nowMillis(),
         )
@@ -55,6 +56,7 @@ class AdminPackService(
             name = name,
             description = input.description.trim(),
             enabled = existing?.enabled ?: true,
+            adultOnly = existing?.adultOnly ?: false,
             answerModes = answerModesOf(input.answerModeCards, input.answerModeFreeText),
             createdAtMillis = existing?.createdAtMillis ?: clock.nowMillis(),
         )
@@ -111,6 +113,7 @@ class AdminPackService(
         enabled = pack.enabled,
         answerModeCards = pack.allows(AnswerMode.CARDS),
         answerModeFreeText = pack.allows(AnswerMode.FREE_TEXT),
+        adultOnly = pack.adultOnly,
         situationCount = situationCounts[pack.id] ?: 0,
         punchlineCount = punchlineCounts[pack.id] ?: 0,
     )

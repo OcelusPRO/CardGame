@@ -8,6 +8,8 @@ data class CardPack(
     val name: String,
     val description: String = "",
     val enabled: Boolean = true,
+    /** When true the pack is hidden from hosts who are not cleared for adult content. */
+    val adultOnly: Boolean = false,
     val createdAtMillis: Long = 0,
     /**
      * The answer modes this pack may be played in. A pack offered in both modes carries
