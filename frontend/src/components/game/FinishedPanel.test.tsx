@@ -66,13 +66,14 @@ describe('FinishedPanel', () => {
     expect(send).toHaveBeenCalledWith({ type: 'lobby' })
   })
 
-  it('offers a guest the way home instead of the lobby button', () => {
+  it('leaves a guest waiting on the host, with nothing to press', () => {
     const game = finishedGame([['Alice', 9], ['Bob', 7]])
     game.you = { ...game.you, isHost: false }
     renderPanel(game)
 
     expect(screen.queryByRole('button', { name: /retour au salon/i })).not.toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /retour à l/i })).toBeInTheDocument()
+    expect(screen.queryByRole('link')).not.toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent(/en attente de l/i)
   })
 
   it('copes with a table of two', () => {

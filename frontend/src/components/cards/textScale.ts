@@ -29,5 +29,10 @@ export function celebratedAnswerFontSize(text: string): string {
   return 'clamp(1.2rem, 8.5cqi, 2.2rem)'
 }
 
-/** Wrapping rules shared by every card: hyphenate first, break a word only as a last resort. */
-export const WRAP_CLASSES = 'hyphens-auto break-words text-pretty'
+/**
+ * Wrapping rules shared by every card: move a word that does not fit down to the next
+ * line, whole. Automatic hyphenation was tried and dropped — a card is read at a glance,
+ * and "an-glais" split across two lines is a stumble every time. `break-words` stays as
+ * the last resort, for the single word too long to fit a line at all.
+ */
+export const WRAP_CLASSES = 'break-words text-pretty'

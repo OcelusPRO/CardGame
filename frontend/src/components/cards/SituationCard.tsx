@@ -59,7 +59,12 @@ function Blank({ answer, celebrate }: { answer?: string; celebrate: boolean }) {
     return <span className="mx-1 inline-block w-24 border-b-3 border-punch align-baseline" />
   }
 
-  const words = answer.trim().split(/\s+/)
+  // Lines the player typed are kept as lines; inside each, every word is its own box.
+  const lines = answer
+    .trim()
+    .split(/\r?\n/)
+    .map((line) => line.trim().split(/[^\S\r\n]+/))
+  let order = 0
 
   return (
     <span
@@ -69,17 +74,22 @@ function Blank({ answer, celebrate }: { answer?: string; celebrate: boolean }) {
         celebrate ? 'drop-shadow-[0_0_18px_rgba(255,210,63,0.55)]' : ''
       }`}
     >
-      {words.map((word, index) => (
-        <span key={`${answer}-${index}`}>
-          {index > 0 && ' '}
-          <motion.span
-            className="inline-block"
-            initial={{ opacity: 0, y: 10, rotate: -3, scale: celebrate ? 0.7 : 0.95 }}
-            animate={{ opacity: 1, y: 0, rotate: -1, scale: 1 }}
-            transition={{ type: 'spring', stiffness: 280, damping: 16, delay: index * 0.06 }}
-          >
-            {word}
-          </motion.span>
+      {lines.map((words, line) => (
+        <span key={`line-${line}`}>
+          {line > 0 && <br />}
+          {words.map((word, index) => (
+            <span key={`${line}-${index}`}>
+              {index > 0 && ' '}
+              <motion.span
+                className="inline-block"
+                initial={{ opacity: 0, y: 10, rotate: -3, scale: celebrate ? 0.7 : 0.95 }}
+                animate={{ opacity: 1, y: 0, rotate: -1, scale: 1 }}
+                transition={{ type: 'spring', stiffness: 280, damping: 16, delay: order++ * 0.06 }}
+              >
+                {word}
+              </motion.span>
+            </span>
+          ))}
         </span>
       ))}
     </span>

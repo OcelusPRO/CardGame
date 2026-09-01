@@ -46,7 +46,9 @@ export function AnswerCard({ answer, author, onVote, onPreview, voted, winner, d
         <p
           lang="fr"
           style={{ fontSize: punchlineFontSize(label) }}
-          className={`font-display leading-snug font-semibold ${WRAP_CLASSES}`}
+          // `pre-line` keeps the line breaks a player typed on their card and still
+          // collapses the ordinary runs of spaces around them.
+          className={`whitespace-pre-line font-display leading-snug font-semibold ${WRAP_CLASSES}`}
         >
           {label}
         </p>

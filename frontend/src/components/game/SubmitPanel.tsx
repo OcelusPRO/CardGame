@@ -158,6 +158,9 @@ export function SubmitPanel({ game, onPlayCards, onWriteAnswers }: Props) {
                 label={`Réponse ${index + 1}`}
                 value={text}
                 onChange={(value) => setTexts(texts.map((old, i) => (i === index ? value : old)))}
+                onSubmit={() => {
+                  if (ready) send()
+                }}
               />
             ))}
           </div>

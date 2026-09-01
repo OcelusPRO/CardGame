@@ -81,19 +81,24 @@ function wrap(
   maxWidth: number,
   lineHeight: number,
 ): void {
-  let line = ''
   let cursor = y
 
-  for (const word of text.split(/\s+/)) {
-    const candidate = line ? `${line} ${word}` : word
-    if (line && context.measureText(candidate).width > maxWidth) {
-      context.fillText(line, x, cursor)
-      cursor += lineHeight
-      line = word
-    } else {
-      line = candidate
-    }
-  }
+  // A line the player typed always starts a new one here, whatever room is left.
+  for (const paragraph of text.split(/\r?\n/)) {
+    let line = ''
 
-  if (line) context.fillText(line, x, cursor)
+    for (const word of paragraph.split(/[^\S\r\n]+/).filter(Boolean)) {
+      const candidate = line ? `${line} ${word}` : word
+      if (line && context.measureText(candidate).width > maxWidth) {
+        context.fillText(line, x, cursor)
+        cursor += lineHeight
+        line = word
+      } else {
+        line = candidate
+      }
+    }
+
+    if (line) context.fillText(line, x, cursor)
+    cursor += lineHeight
+  }
 }

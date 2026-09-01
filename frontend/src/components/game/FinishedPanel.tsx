@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom'
 import type { GameView, PlayerView } from '../../api/types'
 import type { ClientMessage } from '../../game/messages'
 import { messages } from '../../game/messages'
@@ -53,13 +52,16 @@ export function FinishedPanel({ game, send }: Props) {
         {game.you.isHost ? (
           <Button onClick={() => send(messages.lobby())}>Retour au salon 🔄</Button>
         ) : (
+          // Nothing for a guest to press here: the table reopens on the host's move, and
+          // the panel says so rather than offering a way out of a game still going on.
           <>
-            <p className="text-sm text-ink/65">
-              L&apos;hôte peut relancer une partie depuis le salon.
+            <p
+              role="status"
+              className="sketch bg-paper/70 px-5 py-3 text-center font-display text-sm font-bold text-ink/70"
+            >
+              ⏳ En attente de l&apos;hôte…
             </p>
-            <Link to="/">
-              <Button variant="ghost">Retour à l&apos;accueil</Button>
-            </Link>
+            <p className="text-xs text-ink/55">Il peut relancer une partie depuis le salon.</p>
           </>
         )}
       </div>
