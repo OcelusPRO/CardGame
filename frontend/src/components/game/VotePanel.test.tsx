@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import type { GameView } from '../../api/types'
 import { aGame } from '../../test/gameFixtures'
+import { writtenIntoSituation } from '../../test/writtenAnswer'
 import { VotePanel } from './VotePanel'
 
 function votingGame(overrides: Partial<GameView> = {}): GameView {
@@ -76,11 +77,11 @@ describe('VotePanel', () => {
 
   it('writes the pointed answer into the situation card', async () => {
     render(<VotePanel game={votingGame()} onChoose={vi.fn()} />)
-    expect(screen.getAllByText('la honte')).toHaveLength(1)
+    expect(writtenIntoSituation('la honte')).toHaveLength(0)
 
     await userEvent.hover(screen.getByRole('button', { name: 'la honte' }))
 
-    expect(screen.getAllByText('la honte')).toHaveLength(2)
+    expect(writtenIntoSituation('la honte')).toHaveLength(1)
   })
 
   it('keeps showing the answer it voted for', () => {
@@ -89,7 +90,8 @@ describe('VotePanel', () => {
       <VotePanel game={{ ...game, round: { ...game.round!, myVote: 1 } }} onChoose={vi.fn()} />,
     )
 
-    expect(screen.getAllByText('la honte')).toHaveLength(2)
+    expect(screen.getByText('la honte')).toBeInTheDocument()
+    expect(writtenIntoSituation('la honte')).toHaveLength(1)
   })
 
   it('keeps the authors hidden while the vote is open', () => {

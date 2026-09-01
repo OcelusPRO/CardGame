@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { GameView, PunchlineCardView } from '../../api/types'
-import { AUTO_SUBMIT_SECONDS, pickAutoAnswer, shouldAutoSubmit } from '../../game/autoAnswer'
+import { pickAutoAnswer, shouldAutoSubmit } from '../../game/autoAnswer'
 import { useCountdown } from '../../hooks/useCountdown'
 import { CardHand } from '../cards/CardHand'
 import { fillAnswerBlanks } from '../cards/situationParts'
@@ -136,16 +136,10 @@ export function SubmitPanel({ game, onPlayCards, onWriteAnswers }: Props) {
             </div>
           )}
           {game.you.mustAnswer && (
-            <div className="sketch fixed inset-x-4 bottom-4 z-40 bg-paper/95 p-3 shadow-card backdrop-blur lg:static lg:border-none lg:bg-transparent lg:p-0 lg:shadow-none lg:backdrop-blur-none">
+            <div className="fixed inset-x-4 bottom-4 z-40 lg:static">
               <Button full disabled={!ready} onClick={send}>
                 {ready ? 'Envoyer ma réponse' : sendHint(selected.length, expected, blankCards.length > 0 && !blanksReady)}
               </Button>
-              {ready && (
-                <p className="mt-2 text-center text-xs text-ink/55">
-                  Sans clic de votre part, votre choix partira tout seul {AUTO_SUBMIT_SECONDS} secondes
-                  avant la fin du temps.
-                </p>
-              )}
             </div>
           )}
         </>

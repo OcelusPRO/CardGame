@@ -127,7 +127,7 @@ export function GamePage() {
         <div className="flex flex-col gap-4 lg:sticky lg:top-6">
           <PlayerList game={game} onKick={(playerId) => send(messages.kick(playerId))} />
           {inLobby && (
-            <div className="sketch fixed inset-x-4 bottom-4 z-40 bg-paper/95 p-3 shadow-card backdrop-blur lg:static lg:border-none lg:bg-transparent lg:p-0 lg:shadow-none lg:backdrop-blur-none">
+            <div className="fixed inset-x-4 bottom-4 z-40 lg:static">
               <StartGameBar game={game} onStart={() => send(messages.start())} />
             </div>
           )}

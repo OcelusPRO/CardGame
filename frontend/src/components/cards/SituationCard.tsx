@@ -44,23 +44,44 @@ export function SituationCard({ card, filledWith = [], footer, celebrate = false
   )
 }
 
+/**
+ * The answer dropped into a hole.
+ *
+ * It is written word by word rather than as one block, because a block cannot be broken:
+ * an `inline-block` long enough to overflow the line is pushed whole onto the next one,
+ * which is how a two-word situation ended up with its answer stranded on a line of its
+ * own. Each word is its own block, with real spaces between them, so the sentence wraps
+ * wherever it needs to — and each word can still be animated, which a bare `inline` span
+ * could not be. They land one after another, like a hand writing them in.
+ */
 function Blank({ answer, celebrate }: { answer?: string; celebrate: boolean }) {
   if (!answer) {
     return <span className="mx-1 inline-block w-24 border-b-3 border-punch align-baseline" />
   }
+
+  const words = answer.trim().split(/\s+/)
+
   return (
-    <motion.span
-      key={answer}
-      initial={{ opacity: 0, y: 10, rotate: -3, scale: celebrate ? 0.7 : 0.95 }}
-      animate={{ opacity: 1, y: 0, rotate: -1, scale: 1 }}
-      transition={{ type: 'spring', stiffness: 280, damping: 16 }}
+    <span
       lang="fr"
       style={{ fontSize: celebrate ? celebratedAnswerFontSize(answer) : punchlineFontSize(answer) }}
-      className={`mx-1 inline-block font-hand leading-none ${WRAP_CLASSES} ${
-        celebrate ? 'text-zap drop-shadow-[0_0_18px_rgba(255,210,63,0.55)]' : 'text-zap'
+      className={`mx-1 font-hand leading-none text-zap ${WRAP_CLASSES} ${
+        celebrate ? 'drop-shadow-[0_0_18px_rgba(255,210,63,0.55)]' : ''
       }`}
     >
-      {answer}
-    </motion.span>
+      {words.map((word, index) => (
+        <span key={`${answer}-${index}`}>
+          {index > 0 && ' '}
+          <motion.span
+            className="inline-block"
+            initial={{ opacity: 0, y: 10, rotate: -3, scale: celebrate ? 0.7 : 0.95 }}
+            animate={{ opacity: 1, y: 0, rotate: -1, scale: 1 }}
+            transition={{ type: 'spring', stiffness: 280, damping: 16, delay: index * 0.06 }}
+          >
+            {word}
+          </motion.span>
+        </span>
+      ))}
+    </span>
   )
 }

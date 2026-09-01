@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import type { GameView } from '../../api/types'
 import { aGame } from '../../test/gameFixtures'
+import { writtenIntoSituation } from '../../test/writtenAnswer'
 import { ResultPanel } from './ResultPanel'
 
 function scoredGame(overrides: Partial<GameView> = {}): GameView {
@@ -41,7 +42,8 @@ describe('ResultPanel', () => {
     render(<ResultPanel game={scoredGame()} onNext={vi.fn()} />)
 
     // Once on the answer card, once written large into the situation.
-    expect(screen.getAllByText('la honte')).toHaveLength(2)
+    expect(screen.getByText('la honte')).toBeInTheDocument()
+    expect(writtenIntoSituation('la honte')).toHaveLength(1)
   })
 
   it('names the winner under the situation', () => {

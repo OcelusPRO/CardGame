@@ -21,7 +21,6 @@ export function IdentityForm({ identity, onChange, me, autoFocus = false }: Prop
         placeholder="Jean-Michel"
         maxLength={20}
         autoFocus={autoFocus}
-        hint={me?.discordConnected ? 'Repris de votre compte Discord, modifiable à volonté.' : undefined}
       />
       <AvatarBuilder
         value={identity.avatar}

@@ -62,7 +62,15 @@ export function ResultPanel({ game, onNext }: Props) {
             return won ? (
               <div key={answer.id}>{card}</div>
             ) : (
-              <CrumpledAnswer key={answer.id} delay={2 + (ranked.length - index) * 0.25}>
+              <CrumpledAnswer
+                key={answer.id}
+                delay={2 + (ranked.length - index) * 0.25}
+                face={{
+                  text: answer.texts.join(' · '),
+                  author: game.players.find((player) => player.id === answer.authorId)?.nickname ?? 'Anonyme',
+                  votes: answer.votes,
+                }}
+              >
                 {card}
               </CrumpledAnswer>
             )

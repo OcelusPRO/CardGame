@@ -7,19 +7,18 @@ import { QrCode } from '../ui/QrCode'
 
 interface Props {
   code: string
-  isHost: boolean
 }
 
 /**
- * The invitation. Everybody can pass the link along, but only the host can put the code
- * and the QR on screen: they own the table, and a lobby is often shown on a screen other
- * people can see.
+ * The invitation, which belongs to the host alone — the lobby leaves it out entirely for
+ * everybody else, rather than handing a guest a half-empty panel.
  *
- * For the host the block keeps its footprint whether it shows or not: hiding it with
- * `visibility` rather than unmounting it means the panel never jumps when the button is
- * pressed.
+ * The code and the QR stay out of sight until asked for, because a lobby is often on a
+ * screen other people can see. The block keeps its footprint whether it shows or not:
+ * hiding it with `visibility` rather than unmounting it means the panel never jumps when
+ * the button is pressed.
  */
-export function SharePanel({ code, isHost }: Props) {
+export function SharePanel({ code }: Props) {
   const [revealed, setRevealed] = useState(false)
   const url = gameUrl(code)
 
@@ -33,26 +32,22 @@ export function SharePanel({ code, isHost }: Props) {
           </p>
           <div className="mt-3 flex flex-wrap justify-center gap-2 sm:justify-start">
             <CopyButton value={url} />
-            {isHost && (
-              <Button variant="ghost" onClick={() => setRevealed(!revealed)}>
-                {revealed ? '🙈 Masquer le code' : '👁️ Afficher le code et le QR'}
-              </Button>
-            )}
+            <Button variant="ghost" onClick={() => setRevealed(!revealed)}>
+              {revealed ? '🙈 Masquer le code' : '👁️ Afficher le code et le QR'}
+            </Button>
           </div>
         </div>
 
-        {isHost && (
-          <div
-            aria-hidden={!revealed}
-            className={`flex h-60 w-52 shrink-0 flex-col items-center justify-between transition-opacity duration-200 ${
-              revealed ? 'opacity-100' : 'invisible opacity-0'
-            }`}
-          >
-            <p className="font-display text-4xl font-extrabold tracking-[0.2em] text-punch">{code}</p>
-            <QrCode value={url} size={150} />
-            <CopyButton value={code} label="Copier le code" />
-          </div>
-        )}
+        <div
+          aria-hidden={!revealed}
+          className={`flex h-60 w-52 shrink-0 flex-col items-center justify-between transition-opacity duration-200 ${
+            revealed ? 'opacity-100' : 'invisible opacity-0'
+          }`}
+        >
+          <p className="font-display text-4xl font-extrabold tracking-[0.2em] text-punch">{code}</p>
+          <QrCode value={url} size={150} />
+          <CopyButton value={code} label="Copier le code" />
+        </div>
       </div>
     </Panel>
   )
