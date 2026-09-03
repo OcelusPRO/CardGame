@@ -25,7 +25,7 @@ fun Application.configureRouting(services: ApplicationServices) {
             discordAuthRoutes(services.discordClient, services.adminGuard)
         }
         gameRoutes(services.entry)
-        cardRoutes(services.catalog, services.adultAccessGuard)
+        cardRoutes(services.catalog, services.adultAccessGuard, services.appliedDecks)
         adminPackRoutes(services.adminPacks)
         adminCardRoutes(services.adminCards)
         adminAdultAccessRoutes(services.adminAdultAccess)

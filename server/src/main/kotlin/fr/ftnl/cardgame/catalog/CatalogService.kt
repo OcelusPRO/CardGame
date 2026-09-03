@@ -19,21 +19,38 @@ class CatalogService(
     suspend fun availablePacks(
         answerMode: AnswerMode? = null,
         includeAdult: Boolean = false,
+    ): List<CardPackView> = view(answerMode) { pack ->
+        !pack.isSecret && (includeAdult || !pack.adultOnly)
+    }
+
+    /**
+     * The packs a game is actually running on, named by [ids]. Used to show a non-host
+     * exactly the paquet the host built — never a pack the host could not pick — instead
+     * of the viewer's own catalogue. Hidden packs stay hidden even once unlocked.
+     */
+    suspend fun packsInGame(ids: Set<String>, answerMode: AnswerMode? = null): List<CardPackView> {
+        if (ids.isEmpty()) return emptyList()
+        return view(answerMode) { pack -> pack.id in ids && !pack.isSecret }
+    }
+
+    private suspend fun view(
+        answerMode: AnswerMode?,
+        keep: (CardPack) -> Boolean,
     ): List<CardPackView> {
         val situationCounts = situations.all().groupingBy { it.packId }.eachCount()
         val punchlineCounts = punchlines.all().groupingBy { it.packId }.eachCount()
         return packs.enabled()
             .filter { pack -> answerMode == null || pack.allows(answerMode) }
-            .filter { pack -> includeAdult || !pack.adultOnly }
+            .filter(keep)
             .map { pack ->
-            CardPackView(
-                id = pack.id,
-                name = pack.name,
-                description = pack.description,
-                situationCount = situationCounts[pack.id] ?: 0,
-                punchlineCount = punchlineCounts[pack.id] ?: 0,
-                adultOnly = pack.adultOnly,
-            )
-        }
+                CardPackView(
+                    id = pack.id,
+                    name = pack.name,
+                    description = pack.description,
+                    situationCount = situationCounts[pack.id] ?: 0,
+                    punchlineCount = punchlineCounts[pack.id] ?: 0,
+                    adultOnly = pack.adultOnly,
+                )
+            }
     }
 }

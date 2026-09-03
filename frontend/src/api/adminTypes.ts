@@ -8,6 +8,8 @@ export interface PackAdminView {
   answerModeCards: boolean
   answerModeFreeText: boolean
   adultOnly: boolean
+  /** When set, the pack is hidden from the lobby and only joins a game via this code. */
+  secretCode?: string | null
   situationCount: number
   punchlineCount: number
 }
@@ -35,6 +37,7 @@ export interface PackInput {
   answerModeCards?: boolean
   answerModeFreeText?: boolean
   adultOnly?: boolean
+  secretCode?: string | null
 }
 
 export interface AdultAccessView {

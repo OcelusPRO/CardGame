@@ -2,7 +2,12 @@ package fr.ftnl.cardgame.api
 
 import fr.ftnl.cardgame.api.dto.AdultAccessInput
 import fr.ftnl.cardgame.api.dto.AdultAccessView
+import fr.ftnl.cardgame.api.dto.AvatarInput
 import fr.ftnl.cardgame.api.dto.CardPackView
+import fr.ftnl.cardgame.api.dto.CreateGameRequest
+import fr.ftnl.cardgame.api.dto.GameSettingsInput
+import fr.ftnl.cardgame.api.dto.GameTicket
+import fr.ftnl.cardgame.api.dto.JoinGameRequest
 import fr.ftnl.cardgame.api.dto.PackAdminView
 import fr.ftnl.cardgame.api.dto.PackInput
 import fr.ftnl.cardgame.support.DISCORD_LOGIN_PATH
@@ -84,6 +89,50 @@ class AdultPackAccessTest {
             admin.delete("/api/admin/adult-access/100000000000000042").status,
         )
         assertFalse(user.get("/api/packs").body<List<CardPackView>>().any { it.id == packId })
+    }
+
+    @Test
+    fun `a guest lobby list follows the host, not the guest's own clearance`() = testApplication {
+        startTestServer()
+        val admin = adminBrowser()
+        val adultPackId = createAdultPack(admin)
+        val plainPackId = admin.post("/api/admin/packs") {
+            contentType(ContentType.Application.Json)
+            setBody(PackInput(name = "Tout public", description = "", enabled = true))
+        }.body<PackAdminView>().id
+
+        // A guest who is personally cleared for the 18+ pack.
+        val guest = browser()
+        guest.get("$DISCORD_LOGIN_PATH?id=100000000000000042")
+        admin.post("/api/admin/adult-access") {
+            contentType(ContentType.Application.Json)
+            setBody(AdultAccessInput(discordId = "100000000000000042", label = "Alex"))
+        }
+        assertTrue(guest.get("/api/packs").body<List<CardPackView>>().any { it.id == adultPackId })
+
+        // An anonymous host opens a table: their paquet cannot contain the 18+ pack.
+        val host = browser()
+        val code = host.post("/api/games") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                CreateGameRequest(
+                    "Alice",
+                    AvatarInput("head-1", "#fff", "body-1", "#000"),
+                    GameSettingsInput(minPlayers = 2),
+                ),
+            )
+        }.body<GameTicket>().code
+        guest.post("/api/games/$code/players") {
+            contentType(ContentType.Application.Json)
+            setBody(JoinGameRequest("Bob", AvatarInput("head-1", "#fff", "body-1", "#000")))
+        }
+
+        val seenByGuest = guest.get("/api/packs?code=$code").body<List<CardPackView>>()
+        assertTrue(seenByGuest.any { it.id == plainPackId }, "the guest still sees the host's public packs")
+        assertFalse(
+            seenByGuest.any { it.id == adultPackId },
+            "a guest must not see a pack the host has no access to, even one they are cleared for",
+        )
     }
 
     @Test

@@ -134,6 +134,41 @@ class GameSocketTest {
     }
 
     @Test
+    fun `typing a secret code pulls the hidden pack into the live deck`() = testApplication {
+        val services = startTestServer()
+        runBlocking {
+            services.seedTestDeck() // pack "test", both modes, 5 situations
+            services.packRepository.save(
+                CardPack("hidden", "Caché", secretCode = "sesame"),
+            )
+            repeat(3) { index ->
+                services.situationRepository.save(
+                    CatalogSituation(CardId("h-s${index + 1}"), "hidden", SituationText("____ ?")),
+                )
+            }
+        }
+        val host = browser()
+        val code = host.createGame("Alice").code
+
+        val socket = host.webSocketSession("/ws/game/$code")
+        assertEquals(5, socket.awaitState().deck.situationsLeft)
+
+        socket.emit(
+            ClientMessage.UpdateDeck(
+                fr.ftnl.cardgame.api.dto.DeckInput(
+                    packIds = setOf("test"),
+                    customSituations = listOf("sesame"),
+                ),
+            ),
+        )
+
+        // The 3 hidden situations join; the "sesame" line itself is not turned into a card.
+        val unlocked = socket.awaitState { it.deck.situationsLeft == 8 }
+        assertEquals(8, unlocked.deck.situationsLeft)
+        socket.cancel()
+    }
+
+    @Test
     fun `a guest cannot start the game`() = testApplication {
         val services = startTestServer()
         runBlocking { services.seedTestDeck() }

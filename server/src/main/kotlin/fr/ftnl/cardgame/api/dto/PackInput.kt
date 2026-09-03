@@ -14,4 +14,9 @@ data class PackInput(
     val answerModeFreeText: Boolean = true,
     /** Marks the pack "interdit aux mineurs". */
     val adultOnly: Boolean = false,
+    /**
+     * When non-blank the pack is hidden from the lobby and only enters a game when the
+     * host types this code into the situations box. Blank or null keeps the pack public.
+     */
+    val secretCode: String? = null,
 )

@@ -106,6 +106,47 @@ class CardPoolResolverTest {
     }
 
     @Test
+    fun `a secret pack is left out of the default deck but joins when its code is typed`() = runBlocking {
+        val secretPacks = FakeCardPackRepository(
+            listOf(
+                CardPack("open", "Ouvert"),
+                CardPack("hidden", "Caché", secretCode = "Licorne-42"),
+            )
+        )
+        val secretSituations = FakeSituationCardRepository(
+            listOf(
+                CatalogSituation(CardId("o1"), "open", SituationText("____ ?")),
+                CatalogSituation(CardId("h1"), "hidden", SituationText("____ !")),
+            )
+        )
+        val secretResolver = CardPoolResolver(secretPacks, secretSituations, FakePunchlineCardRepository())
+
+        assertEquals(setOf("open"), secretResolver.enabledPackIds())
+        assertEquals(
+            listOf("o1"),
+            secretResolver.resolveDefault().situations.map { it.id.value },
+        )
+
+        val unlock = secretResolver.unlock(listOf("Chez moi, ____.", "licorne-42"))
+        assertEquals(setOf("hidden"), unlock.packIds)
+        assertEquals(setOf("licorne-42"), unlock.codeLines)
+
+        val pool = secretResolver.resolve(DeckRequest(packIds = setOf("open") + unlock.packIds))
+        assertEquals(listOf("h1", "o1"), pool.situations.map { it.id.value }.sorted())
+    }
+
+    @Test
+    fun `an unknown line unlocks nothing`() = runBlocking {
+        val secretResolver = CardPoolResolver(
+            FakeCardPackRepository(listOf(CardPack("hidden", "Caché", secretCode = "sesame"))),
+            FakeSituationCardRepository(),
+            FakePunchlineCardRepository(),
+        )
+
+        assertEquals(SecretUnlock.NONE, secretResolver.unlock(listOf("pas le bon code", "   ")))
+    }
+
+    @Test
     fun `a pack restricted to the other mode is dropped from the resolved pool`() = runBlocking {
         val modePacks = FakeCardPackRepository(
             listOf(

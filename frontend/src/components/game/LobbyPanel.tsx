@@ -19,13 +19,15 @@ export function LobbyPanel({ game, onSettings, onDeck }: Props) {
   const answerMode = game.settings.answerMode
 
   // Packs can be restricted to a mode, so the list is refetched whenever the host
-  // switches between "cartes distribuées" and "sans limites".
+  // switches between "cartes distribuées" and "sans limites". A guest asks for the
+  // paquet as the host built it (passing the game code), so the 18+ packs the host
+  // has no access to never show up here.
   useEffect(() => {
     sessionApi
-      .packs(answerMode)
+      .packs(answerMode, notHost ? game.code : undefined)
       .then(setPacks)
       .catch(() => setPacks([]))
-  }, [answerMode])
+  }, [answerMode, notHost, game.code])
 
   return (
     <div className="flex flex-col gap-5">

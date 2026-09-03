@@ -11,6 +11,7 @@ interface PackDraft {
   answerModeCards: boolean
   answerModeFreeText: boolean
   adultOnly: boolean
+  secretCode?: string | null
   enabled?: boolean
 }
 
@@ -28,6 +29,7 @@ export function PackEditor({ packs, onSave, onDelete }: Props) {
   const [cards, setCards] = useState(true)
   const [freeText, setFreeText] = useState(true)
   const [adult, setAdult] = useState(false)
+  const [secretCode, setSecretCode] = useState('')
   const [error, setError] = useState<string | null>(null)
 
   const remove = async (pack: PackAdminView) => {
@@ -51,6 +53,7 @@ export function PackEditor({ packs, onSave, onDelete }: Props) {
     setCards(true)
     setFreeText(true)
     setAdult(false)
+    setSecretCode('')
   }
 
   const edit = (pack: PackAdminView) => {
@@ -60,6 +63,7 @@ export function PackEditor({ packs, onSave, onDelete }: Props) {
     setCards(pack.answerModeCards)
     setFreeText(pack.answerModeFreeText)
     setAdult(pack.adultOnly)
+    setSecretCode(pack.secretCode ?? '')
   }
 
   const submit = () => {
@@ -70,6 +74,7 @@ export function PackEditor({ packs, onSave, onDelete }: Props) {
       answerModeCards: cards,
       answerModeFreeText: freeText,
       adultOnly: adult,
+      secretCode: secretCode.trim() || null,
       enabled: editing ? packs.find((pack) => pack.id === editing)?.enabled : true,
     })
     reset()
@@ -92,6 +97,14 @@ export function PackEditor({ packs, onSave, onDelete }: Props) {
                 {pack.adultOnly && (
                   <span className="ml-2 rounded bg-red-600 px-2 py-0.5 text-[11px] font-bold leading-none text-white">
                     18+
+                  </span>
+                )}
+                {pack.secretCode && (
+                  <span
+                    className="ml-2 rounded bg-ink/80 px-2 py-0.5 text-[11px] font-bold leading-none text-paper"
+                    title={`Deck secret — code : ${pack.secretCode}`}
+                  >
+                    🔒 secret
                   </span>
                 )}
               </span>
@@ -178,6 +191,20 @@ export function PackEditor({ packs, onSave, onDelete }: Props) {
             className="size-4 accent-red-300"
           />
           Interdit aux mineurs (18+) — visible seulement pour les hôtes autorisés
+        </label>
+
+        <label className="flex flex-col gap-1 text-sm">
+          <span>
+            Code secret — laisse vide pour un pack public. Renseigné, le pack disparaît de la
+            liste du salon : l&apos;hôte l&apos;active en tapant ce code sur une ligne de la
+            zone « Vos situations ».
+          </span>
+          <input
+            value={secretCode}
+            onChange={(event) => setSecretCode(event.target.value)}
+            placeholder="ex. licorne-42"
+            className="sketch-input bg-paper px-4 py-2 text-sm outline-none focus:border-punch"
+          />
         </label>
 
         <div className="flex flex-wrap items-center gap-2">

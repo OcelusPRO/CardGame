@@ -17,6 +17,8 @@ data class PackAdminView(
     val answerModeCards: Boolean,
     val answerModeFreeText: Boolean,
     val adultOnly: Boolean,
+    /** The code that unlocks this pack in a game; null/blank means the pack is public. */
+    val secretCode: String? = null,
     val situationCount: Int,
     val punchlineCount: Int,
 )

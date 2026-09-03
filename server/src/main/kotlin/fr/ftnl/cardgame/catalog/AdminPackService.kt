@@ -30,6 +30,7 @@ class AdminPackService(
             description = input.description.trim(),
             enabled = input.enabled,
             adultOnly = input.adultOnly,
+            secretCode = input.secretCode?.trim()?.takeIf { it.isNotEmpty() },
             answerModes = answerModesOf(input.answerModeCards, input.answerModeFreeText),
             createdAtMillis = clock.nowMillis(),
         )
@@ -57,6 +58,7 @@ class AdminPackService(
             description = input.description.trim(),
             enabled = existing?.enabled ?: true,
             adultOnly = existing?.adultOnly ?: false,
+            secretCode = existing?.secretCode,
             answerModes = answerModesOf(input.answerModeCards, input.answerModeFreeText),
             createdAtMillis = existing?.createdAtMillis ?: clock.nowMillis(),
         )
@@ -114,6 +116,7 @@ class AdminPackService(
         answerModeCards = pack.allows(AnswerMode.CARDS),
         answerModeFreeText = pack.allows(AnswerMode.FREE_TEXT),
         adultOnly = pack.adultOnly,
+        secretCode = pack.secretCode,
         situationCount = situationCounts[pack.id] ?: 0,
         punchlineCount = punchlineCounts[pack.id] ?: 0,
     )

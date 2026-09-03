@@ -68,9 +68,19 @@ class GameCommandTranslator(
 
     fun forget(code: GameCode) = applied.forget(code)
 
-    private suspend fun deckRequest(deck: DeckInput) = DeckRequest(
-        packIds = deck.packIds,
-        customSituations = customCards.situations(deck.customSituations),
-        customPunchlines = customCards.punchlines(deck.customPunchlines),
-    )
+    /**
+     * A line the host typed into "Vos situations" that matches a hidden pack's secret code
+     * pulls that pack in and is dropped from the custom cards, so the code never shows up
+     * on the table as a situation.
+     */
+    private suspend fun deckRequest(deck: DeckInput): DeckRequest {
+        val unlock = decks.unlock(deck.customSituations)
+        return DeckRequest(
+            packIds = deck.packIds + unlock.packIds,
+            customSituations = customCards.situations(
+                deck.customSituations.filter { it.trim() !in unlock.codeLines },
+            ),
+            customPunchlines = customCards.punchlines(deck.customPunchlines),
+        )
+    }
 }

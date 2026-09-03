@@ -80,7 +80,7 @@ class ApplicationServices(
     val adminCards = AdminCardService(situationRepository, punchlineRepository, clock)
     val adminAdultAccess = AdultAccessService(adultAccessRepository, clock)
     private val deckResolver = CardPoolResolver(packRepository, situationRepository, punchlineRepository)
-    private val appliedDecks = GameDecks()
+    val appliedDecks = GameDecks()
 
     val sessions: GameSessionStore = sessionStore ?: redis?.let {
         RedisGameSessionStore(it, GameSessionCodec(), config.redis.sessionTtlMinutes)

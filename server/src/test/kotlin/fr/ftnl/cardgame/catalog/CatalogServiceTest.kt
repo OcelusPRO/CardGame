@@ -18,6 +18,7 @@ class CatalogServiceTest {
             CardPack("cardsOnly", "Cartes", answerModes = setOf(AnswerMode.CARDS)),
             CardPack("freeOnly", "Sans limites", answerModes = setOf(AnswerMode.FREE_TEXT)),
             CardPack("off", "Désactivé", enabled = false),
+            CardPack("hidden", "Caché", secretCode = "sesame"),
         )
     )
     private val situations = FakeSituationCardRepository(
@@ -31,6 +32,24 @@ class CatalogServiceTest {
     @Test
     fun `without a mode every enabled pack is offered`() = runBlocking {
         assertEquals(setOf("both", "cardsOnly", "freeOnly"), service.availablePacks().map { it.id }.toSet())
+    }
+
+    @Test
+    fun `a secret pack is never offered in the lobby, even by id`() = runBlocking {
+        assertEquals(emptyList(), service.availablePacks().filter { it.id == "hidden" })
+        assertEquals(
+            setOf("both"),
+            service.packsInGame(setOf("both", "hidden", "off")).map { it.id }.toSet(),
+        )
+    }
+
+    @Test
+    fun `packsInGame returns only the ids asked for that are still enabled`() = runBlocking {
+        assertEquals(
+            setOf("both", "cardsOnly"),
+            service.packsInGame(setOf("both", "cardsOnly", "off", "gone")).map { it.id }.toSet(),
+        )
+        assertEquals(emptyList(), service.packsInGame(emptySet()))
     }
 
     @Test

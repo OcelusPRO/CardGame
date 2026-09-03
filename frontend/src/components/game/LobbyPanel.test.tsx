@@ -1,11 +1,12 @@
 import { render, screen, waitFor } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { aGame } from '../../test/gameFixtures'
 import { LobbyPanel } from './LobbyPanel'
 
 // The lobby asks the server which packs the current mode allows; nothing here depends on
 // the answer, so an empty list keeps the component from reaching the network.
-vi.mock('../../api/session', () => ({ sessionApi: { packs: () => Promise.resolve([]) } }))
+const { packs } = vi.hoisted(() => ({ packs: vi.fn(() => Promise.resolve([])) }))
+vi.mock('../../api/session', () => ({ sessionApi: { packs } }))
 
 function lobby(isHost: boolean) {
   const base = aGame()
@@ -13,6 +14,23 @@ function lobby(isHost: boolean) {
 }
 
 describe('LobbyPanel', () => {
+  beforeEach(() => packs.mockClear())
+
+  it('asks for the packs plainly when the host looks at the lobby', async () => {
+    render(<LobbyPanel game={lobby(true)} onSettings={vi.fn()} onDeck={vi.fn()} />)
+
+    await waitFor(() => expect(packs).toHaveBeenCalled())
+    expect(packs).toHaveBeenLastCalledWith('CARDS', undefined)
+  })
+
+  it('asks for the packs as the host built them when a guest looks at the lobby', async () => {
+    const game = lobby(false)
+    render(<LobbyPanel game={game} onSettings={vi.fn()} onDeck={vi.fn()} />)
+
+    await waitFor(() => expect(packs).toHaveBeenCalled())
+    expect(packs).toHaveBeenLastCalledWith('CARDS', game.code)
+  })
+
   it('offers the invitation to the host', async () => {
     render(<LobbyPanel game={lobby(true)} onSettings={vi.fn()} onDeck={vi.fn()} />)
 

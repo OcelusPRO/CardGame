@@ -10,6 +10,12 @@ data class CardPack(
     val enabled: Boolean = true,
     /** When true the pack is hidden from hosts who are not cleared for adult content. */
     val adultOnly: Boolean = false,
+    /**
+     * A secret handshake. While it holds a non-blank value the pack is left out of the
+     * lobby and out of every default deck; a host pulls it into their game by typing this
+     * exact code as a line in the "Vos situations" box.
+     */
+    val secretCode: String? = null,
     val createdAtMillis: Long = 0,
     /**
      * The answer modes this pack may be played in. A pack offered in both modes carries
@@ -19,4 +25,7 @@ data class CardPack(
     val answerModes: Set<AnswerMode> = AnswerMode.entries.toSet(),
 ) {
     fun allows(mode: AnswerMode): Boolean = mode in answerModes
+
+    /** True when the pack only ever joins a game through its [secretCode]. */
+    val isSecret: Boolean get() = !secretCode.isNullOrBlank()
 }
