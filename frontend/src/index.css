@@ -360,3 +360,16 @@ button.sketch-alt:focus-visible:not(:disabled)::after {
     transition-duration: 0.001ms !important;
   }
 }
+
+/*
+ * The same stillness, chosen by hand from the header switch — for anyone the movement
+ * bothers even when the operating system was never told to ask for less. `MotionConfig`
+ * covers the JavaScript animations; this covers the CSS ones.
+ */
+[data-motion='off'] *,
+[data-motion='off'] *::before,
+[data-motion='off'] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}

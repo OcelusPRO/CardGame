@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { motion } from 'motion/react'
+import { motion, useReducedMotionConfig } from 'motion/react'
 import { usePointerFine } from '../../hooks/usePointerFine'
 import { useCardTilt } from './useCardTilt'
 
@@ -52,8 +52,10 @@ export function GameCard({
   ariaLabel,
 }: Props) {
   const tilt = useCardTilt()
+  const pointerFine = usePointerFine()
+  const still = useReducedMotionConfig()
   const interactive = Boolean(onClick) && !disabled
-  const canTilt = usePointerFine()
+  const canTilt = pointerFine && !still
 
   return (
     <div className="card-stage h-full">
