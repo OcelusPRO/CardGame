@@ -290,6 +290,23 @@ button.sketch-alt:focus-visible:not(:disabled)::after {
   animation: retrace-box-tilt 0.44s steps(1, end) infinite reverse;
 }
 
+/* A frame that is not a button but still invites the pointer — the home feature
+   cards — opts into the same re-tracing by carrying `.sketch-hover`. */
+.sketch-hover:hover,
+.sketch-hover:focus-visible {
+  animation: retrace-box 0.52s steps(1, end) infinite;
+}
+
+.sketch-hover:hover::before,
+.sketch-hover:focus-visible::before {
+  animation: retrace-box-tilt 0.36s steps(1, end) infinite;
+}
+
+.sketch-hover:hover::after,
+.sketch-hover:focus-visible::after {
+  animation: retrace-box-tilt 0.44s steps(1, end) infinite reverse;
+}
+
 
 /* An input cannot carry pseudo-elements, so it keeps to a single, steadier line. */
 .sketch-input {

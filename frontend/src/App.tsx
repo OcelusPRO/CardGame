@@ -7,6 +7,7 @@ import { JoinPage } from './pages/JoinPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { DiscordButton } from './components/ui/DiscordButton'
 import { useSession } from './session/useSession'
+import logo from './assets/logo.png'
 
 // The dashboard pulls in the charting library; players never download it.
 const AdminPage = lazy(() => import('./pages/AdminPage').then((module) => ({ default: module.AdminPage })))
@@ -18,8 +19,9 @@ export function App() {
   return (
     <div className="min-h-dvh">
       <header className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4">
-        <Link to="/" className="font-display text-xl font-black tracking-tight">
-          Sans<span className="text-punch">Filtre</span>
+        <Link to="/" className="flex items-center gap-2 font-display text-xl font-black tracking-tight">
+          <img src={logo} alt="" className="h-9 w-auto" />
+          Sans<span className="text-punch">Filtres</span>
         </Link>
         <DiscordButton me={me} />
       </header>

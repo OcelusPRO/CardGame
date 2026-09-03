@@ -2,6 +2,7 @@ import { motion } from 'motion/react'
 import { Link } from 'react-router-dom'
 import { Button } from '../components/ui/Button'
 import { useSession } from '../session/useSession'
+import logo from '../assets/logo.png'
 
 /** The front door: what the game is, and the two ways in. */
 export function HomePage() {
@@ -9,6 +10,14 @@ export function HomePage() {
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col items-center gap-10 px-4 py-14 text-center">
+      <motion.img
+        src={logo}
+        alt=""
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="-mb-4 w-52 max-w-[68%] drop-shadow-[0_12px_24px_rgba(43,30,63,0.18)] sm:w-64"
+      />
+
       <motion.h1
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -63,10 +72,15 @@ export function HomePage() {
 
 function Feature({ emoji, title, text }: { emoji: string; title: string; text: string }) {
   return (
-    <div className="sketch bg-paper/70 p-5 text-left">
+    <motion.div
+      whileHover={{ y: -4 }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+      className="sketch sketch-hover bg-paper/70 p-5 text-left shadow-card transition hover:bg-paper/90 hover:shadow-glow"
+    >
       <span className="text-2xl">{emoji}</span>
       <h2 className="mt-2 font-display text-lg font-bold">{title}</h2>
       <p className="mt-1 text-sm text-ink/70">{text}</p>
-    </div>
+    </motion.div>
   )
 }
