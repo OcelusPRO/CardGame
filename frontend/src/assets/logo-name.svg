@@ -1,0 +1,40 @@
+<!--
+  Source for public/logo-name.png (600x800): the app's paper background + the game name.
+  The existing logo (assets/logo.png) is layered on top at render time. Regenerate with:
+
+    magick -density 288 -background none frontend/src/assets/logo-name.svg -resize 600x800 _c.png
+    magick _c.png \( frontend/src/assets/logo.png -resize 470x \) -gravity North -geometry +0+120 \
+      -composite -depth 8 -strip frontend/public/logo-name.png && rm _c.png
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800" viewBox="0 0 600 800">
+  <defs>
+    <radialGradient id="glowPink" cx="12%" cy="4%" r="70%">
+      <stop offset="0%" stop-color="#ffcde0" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#ffcde0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowHoney" cx="92%" cy="8%" r="72%">
+      <stop offset="0%" stop-color="#ffe9b0" stop-opacity="0.65"/>
+      <stop offset="100%" stop-color="#ffe9b0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowMint" cx="50%" cy="100%" r="72%">
+      <stop offset="0%" stop-color="#bae8d6" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#bae8d6" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- warm paper, lit like the app -->
+  <rect width="600" height="800" fill="#f6efe3"/>
+  <rect width="600" height="800" fill="url(#glowPink)"/>
+  <rect width="600" height="800" fill="url(#glowHoney)"/>
+  <rect width="600" height="800" fill="url(#glowMint)"/>
+
+  <!-- assets/logo.png is composited here (see header), roughly x65 y120 w470 -->
+
+  <!-- game name, directly under the logo -->
+  <g transform="rotate(-1.5 300 632)">
+    <text x="300" y="632" text-anchor="middle" textLength="512" lengthAdjust="spacingAndGlyphs"
+          font-family="'Arial Black','Arial',sans-serif" font-weight="900" font-size="84" fill="#2b1e3f"
+      >Sans<tspan fill="#e5326e">Filtres</tspan></text>
+    <path d="M70 668 q110 26 230 8 t230 -6" fill="none" stroke="#f5bd1f" stroke-width="13" stroke-linecap="round"/>
+  </g>
+</svg>
