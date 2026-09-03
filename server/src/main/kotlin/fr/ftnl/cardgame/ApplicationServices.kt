@@ -74,7 +74,7 @@ class ApplicationServices(
     private val statsWriter: UsageStatsWriter = ExposedUsageStatsWriter()
     private val statsReader: UsageStatsReader = ExposedUsageStatsReader()
 
-    val adultAccessGuard = AdultAccessGuard(adultAccessRepository, config.admin)
+    val adultAccessGuard = AdultAccessGuard(adultAccessRepository, config.admin, clock, config.adultAccess)
     val catalog = CatalogService(packRepository, situationRepository, punchlineRepository)
     val adminPacks = AdminPackService(packRepository, situationRepository, punchlineRepository, clock)
     val adminCards = AdminCardService(situationRepository, punchlineRepository, clock)

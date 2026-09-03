@@ -10,6 +10,9 @@ object AppConfigLoader {
         redis = redis(config),
         discord = discord(config),
         admin = AdminConfig(config.list("app.admin.discordIds")),
+        adultAccess = AdultAccessConfig(
+            minAccountAgeDays = config.number("app.adultAccess.minAccountAgeDays", default = 1095),
+        ),
         session = SessionConfig(config.text("app.session.signKey")),
         seed = SeedConfig(config.flag("app.seed.enabled")),
     )

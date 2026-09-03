@@ -22,6 +22,10 @@ app:
     redirectUrl: "$DISCORD_REDIRECT_URL:http://localhost:8080/auth/discord/callback"
   admin:
     discordIds: "$ADMIN_DISCORD_IDS:"
+  adultAccess:
+    # A Discord account at least this many days old is trusted as an adult for the 18+
+    # packs, on top of the allowlist. Set to 0 to rely on the allowlist alone.
+    minAccountAgeDays: "$ADULT_MIN_ACCOUNT_AGE_DAYS:1095"
   session:
     signKey: "$SESSION_SIGN_KEY:dev-secret-change-me-please-32chars"
   seed:

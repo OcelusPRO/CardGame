@@ -6,6 +6,7 @@ data class AppConfig(
     val redis: RedisConfig,
     val discord: DiscordConfig,
     val admin: AdminConfig,
+    val adultAccess: AdultAccessConfig,
     val session: SessionConfig,
     val seed: SeedConfig,
 )

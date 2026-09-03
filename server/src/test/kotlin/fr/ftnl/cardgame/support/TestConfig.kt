@@ -1,6 +1,7 @@
 package fr.ftnl.cardgame.support
 
 import fr.ftnl.cardgame.config.AdminConfig
+import fr.ftnl.cardgame.config.AdultAccessConfig
 import fr.ftnl.cardgame.config.AppConfig
 import fr.ftnl.cardgame.config.DatabaseConfig
 import fr.ftnl.cardgame.config.DiscordConfig
@@ -18,6 +19,9 @@ object TestConfig {
         redis = RedisConfig(url = "", sessionTtlMinutes = 60, enabled = false),
         discord = DiscordConfig(clientId = "", clientSecret = "", redirectUrl = ""),
         admin = AdminConfig(setOf(ADMIN_DISCORD_ID)),
+        // Off by default so tests exercise the allowlist explicitly; the account-age
+        // heuristic has its own unit test.
+        adultAccess = AdultAccessConfig(minAccountAgeDays = 0),
         session = SessionConfig("test-sign-key-please-change-0123456789"),
         seed = SeedConfig(enabled = false),
     )
