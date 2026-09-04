@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotionConfig } from 'motion/react'
 import type { PunchlineCardView } from '../../api/types'
+import { playSound } from '../../audio/engine'
 import { CardBack } from './CardBack'
 import { PunchlineCard } from './PunchlineCard'
 
@@ -76,7 +77,14 @@ export function CardHand({ cards, selected, onToggle, disabled = false, fills = 
                   order={order >= 0 ? order + 1 : undefined}
                   disabled={disabled}
                   fills={fills[card.id]}
-                  onClick={disabled ? undefined : () => onToggle(card.id)}
+                  onClick={
+                    disabled
+                      ? undefined
+                      : () => {
+                          playSound(order >= 0 ? 'cardDeselect' : 'cardSelect')
+                          onToggle(card.id)
+                        }
+                  }
                 />
               </HandCard>
             )

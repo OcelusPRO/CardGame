@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect } from 'react'
+import { playSound } from '../../audio/engine'
 
 interface Props {
   code: string | null
@@ -11,6 +12,7 @@ interface Props {
 export function Toast({ code, message, onDismiss }: Props) {
   useEffect(() => {
     if (!code) return
+    playSound('error')
     const timer = setTimeout(onDismiss, 4000)
     return () => clearTimeout(timer)
   }, [code, onDismiss])

@@ -7,8 +7,10 @@ import { HomePage } from './pages/HomePage'
 import { JoinPage } from './pages/JoinPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { AnimationToggle } from './components/ui/AnimationToggle'
+import { SoundToggle } from './components/ui/SoundToggle'
 import { DiscordButton } from './components/ui/DiscordButton'
 import { useAnimationPref } from './session/useAnimationPref'
+import { useSoundPref } from './audio/useSoundPref'
 import { useSession } from './session/useSession'
 import logo from './assets/logo.png'
 
@@ -19,6 +21,7 @@ const AdminPage = lazy(() => import('./pages/AdminPage').then((module) => ({ def
 export function App() {
   const { me } = useSession()
   const { enabled: animate, toggle: toggleAnimations } = useAnimationPref()
+  const { enabled: sound, toggle: toggleSound } = useSoundPref()
 
   // Kill CSS-driven motion too (the hand-drawn borders re-tracing on hover, and the like)
   // when the switch is off, mirroring the `prefers-reduced-motion` rule in index.css.
@@ -35,6 +38,7 @@ export function App() {
             Sans<span className="text-punch">Filtres</span>
           </Link>
           <div className="flex items-center gap-2">
+            <SoundToggle enabled={sound} onToggle={toggleSound} />
             <AnimationToggle enabled={animate} onToggle={toggleAnimations} />
             <DiscordButton me={me} />
           </div>

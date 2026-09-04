@@ -1,4 +1,5 @@
 import { motion } from 'motion/react'
+import { useTimerSound } from '../../audio/useGameSounds'
 import { useCountdown } from '../../hooks/useCountdown'
 
 interface Props {
@@ -6,11 +7,14 @@ interface Props {
   serverTimeMillis: number
   totalSeconds: number
   label: string
+  /** Whether running out of time is worth hearing. A result screen simply moves on. */
+  chime?: boolean
 }
 
 /** A shrinking bar plus the seconds left, so the pressure is visible without a glance. */
-export function PhaseTimer({ deadlineMillis, serverTimeMillis, totalSeconds, label }: Props) {
+export function PhaseTimer({ deadlineMillis, serverTimeMillis, totalSeconds, label, chime = true }: Props) {
   const remaining = useCountdown(deadlineMillis, serverTimeMillis)
+  useTimerSound(remaining, chime)
   if (remaining === null) return null
 
   const ratio = Math.max(0, Math.min(1, remaining / totalSeconds))

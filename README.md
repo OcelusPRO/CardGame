@@ -37,6 +37,7 @@ Tout se joue dans le navigateur, sans installation : l'hôte crée une table, pa
 | Reconnexion | Le siège, le score et la main survivent à un rafraîchissement ou à une coupure réseau |
 | Administration | Édition des packs et des cartes officielles, statistiques d'usage et compteurs en direct |
 | Fin de partie | Podium pour les trois premiers, classement simple pour la suite |
+| Bruitages | Clics, sélection de carte, vote, révélation et derniers battements du chrono, coupables d'un seul bouton |
 
 Les deux modes se cumulent : un paquet de situations maison avec des réponses écrites à la volée
 fonctionne exactement comme le reste.
@@ -116,6 +117,20 @@ garde son type, et tout le reste retombe sur `index.html` pour qu'un lien profon
 rechargement. Un seul `GameView` arrive par le socket et pilote tout l'écran. Les cartes s'inclinent en 3D
 sous le pointeur (uniquement sur les appareils avec une souris), les cartes vierges s'écrivent
 avec une police manuscrite, et l'ensemble reste utilisable au pouce sur un téléphone.
+
+Le son vit dans `frontend/src/audio/`. Les bruitages ne sont pas des fichiers mais des
+descriptions — quelques oscillateurs et bouffées de bruit que `engine.ts` synthétise à la
+volée à partir du catalogue de `sounds.ts` : rien à télécharger, rien à créditer, et un
+son se retouche en changeant un nombre. Le haut-parleur de l'en-tête coupe tout d'un geste,
+et le choix reste dans le navigateur.
+
+Pour remplacer un bruitage par un vrai enregistrement, poser le fichier dans
+`frontend/public/sounds/` et le nommer dans la table `SAMPLES` de `sounds.ts` ; un fichier
+absent ou illisible retombe sur la version synthétisée. Pour une musique de fond, la
+tuyauterie est en place dans `music.ts` : déposer une boucle dans `frontend/public/music/`
+et la déclarer dans `TRACKS`, qui associe une piste à chaque temps de la partie (salon,
+manche, fin). Les fondus, le rappel de la piste après une coupure et le respect de
+l'interrupteur sont déjà gérés.
 
 ---
 

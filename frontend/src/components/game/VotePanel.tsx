@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { AnswerView, GameView } from '../../api/types'
+import { playSound } from '../../audio/engine'
 import { SituationCard } from '../cards/SituationCard'
 import { AnswerCard } from './AnswerCard'
 import { RoundStage } from './RoundStage'
@@ -58,7 +59,14 @@ export function VotePanel({ game, onChoose }: Props) {
                 voted={round.myVote === answer.id}
                 disabled={!canChoose || blocked}
                 onPreview={() => setPreviewId(answer.id)}
-                onVote={canChoose && !blocked ? () => onChoose(answer.id) : undefined}
+                onVote={
+                  canChoose && !blocked
+                    ? () => {
+                        playSound('vote')
+                        onChoose(answer.id)
+                      }
+                    : undefined
+                }
               />
             )
           })}

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { gamesApi } from '../api/games'
+import { useGameSounds } from '../audio/useGameSounds'
 import type { GamePreview } from '../api/types'
 import { ConnectionBadge } from '../components/game/ConnectionBadge'
 import { GameBoard } from '../components/game/GameBoard'
@@ -29,6 +30,7 @@ export function GamePage() {
   const [identity, setIdentity] = useIdentity(me)
   const { game, status, lastError, connect, disconnect, send, dismissError } = useGameStore()
   const [lookup, setLookup] = useState<Lookup>('loading')
+  useGameSounds(game)
 
   const refresh = useCallback(() => {
     gamesApi
@@ -118,6 +120,7 @@ export function GamePage() {
           serverTimeMillis={game.serverTimeMillis}
           totalSeconds={timerLength(game.phase, game.settings)}
           label="Temps restant"
+          chime={game.phase === 'SUBMITTING' || game.phase === 'SELECTING'}
         />
 
         <GameBoard game={game} send={send} />

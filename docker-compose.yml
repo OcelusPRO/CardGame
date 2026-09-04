@@ -2,6 +2,9 @@ services:
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
+    # Sur la boucle locale seulement : c'est un accès de dépannage, pas un service exposé.
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-cardgame}
       POSTGRES_USER: ${POSTGRES_USER:-cardgame}
@@ -20,6 +23,8 @@ services:
     image: redis:7-alpine
     restart: unless-stopped
     command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -29,6 +34,8 @@ services:
   app:
     image: harbor.ftnl.link/yarp/cardgame:latest
     restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8080}:8080"
     depends_on:
       postgres:
         condition: service_healthy
