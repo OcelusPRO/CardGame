@@ -2,6 +2,7 @@ package fr.ftnl.cardgame.support
 
 import fr.ftnl.cardgame.ApplicationServices
 import fr.ftnl.cardgame.HttpClientFactory
+import fr.ftnl.cardgame.config.AppConfig
 import fr.ftnl.cardgame.session.InMemoryGameSessionStore
 import fr.ftnl.cardgame.auth.AdminSession
 import fr.ftnl.cardgame.auth.playerSession
@@ -28,10 +29,12 @@ import fr.ftnl.cardgame.plugins.ApiJson
  * session store, so an integration test exercises the true routing, serialisation,
  * session handling and SQL.
  */
-fun ApplicationTestBuilder.startTestServer(): ApplicationServices {
+fun ApplicationTestBuilder.startTestServer(
+    appConfig: AppConfig = TestConfig.create(),
+): ApplicationServices {
     TestDatabase.connect()
     val services = ApplicationServices(
-        config = TestConfig.create(),
+        config = appConfig,
         scope = testScope(),
         httpClient = HttpClientFactory.create(),
         sessionStore = InMemoryGameSessionStore(),
@@ -49,18 +52,20 @@ fun ApplicationTestBuilder.startTestServer(): ApplicationServices {
                         discordUsername = "Root",
                     )
                 )
-                call.sessions.set(AdminSession(TestConfig.ADMIN_DISCORD_ID, "Root"))
+                call.sessions.set(AdminSession("DISCORD", TestConfig.ADMIN_DISCORD_ID, "Root"))
                 call.respond(HttpStatusCode.NoContent)
             }
             // Test-only Twitch sign in: `?login=kameto` picks the channel that would be
             // read from the real callback.
             get(TWITCH_LOGIN_PATH) {
                 val login = call.request.queryParameters["login"] ?: "kameto"
+                val id = call.request.queryParameters["id"] ?: "200000000000000001"
                 call.sessions.set(
                     call.playerSession().copy(
-                        twitchId = "twitch-$login",
+                        twitchId = id,
                         twitchLogin = login,
                         twitchUsername = login,
+                        twitchCreatedAtMillis = call.request.queryParameters["createdAt"]?.toLongOrNull(),
                     )
                 )
                 call.respond(HttpStatusCode.NoContent)

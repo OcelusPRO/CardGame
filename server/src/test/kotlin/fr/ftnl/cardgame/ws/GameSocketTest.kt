@@ -184,8 +184,8 @@ class GameSocketTest {
         // Nothing is read until the host asks for it.
         assertTrue(seated.chatChannels.isEmpty())
 
-        socket.emit(ClientMessage.UpdateSettings(GameSettingsInput(twitchChatVote = true)))
-        val watching = socket.awaitState { it.settings.twitchChatVote }
+        socket.emit(ClientMessage.UpdateSettings(GameSettingsInput(selectionMode = "CHAT")))
+        val watching = socket.awaitState { it.settings.selectionMode == "CHAT" }
 
         assertEquals(listOf("kameto"), watching.chatChannels)
         socket.cancel()

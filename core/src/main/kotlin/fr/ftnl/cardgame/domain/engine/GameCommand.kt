@@ -2,6 +2,7 @@ package fr.ftnl.cardgame.domain.engine
 
 import fr.ftnl.cardgame.domain.card.CardId
 import fr.ftnl.cardgame.domain.card.CardPool
+import fr.ftnl.cardgame.domain.game.ChatVoteTally
 import fr.ftnl.cardgame.domain.game.GameSettings
 import fr.ftnl.cardgame.domain.game.SubmissionId
 import fr.ftnl.cardgame.domain.player.Player
@@ -54,10 +55,10 @@ sealed interface GameCommand {
 
     /**
      * The live tally read from the Twitch chats, pushed by the server while the vote is
-     * open: channel name to the number of viewers who typed each answer. It replaces the
-     * previous snapshot, so a lost frame simply corrects itself on the next one.
+     * open: per answer, how many viewers picked it and the first faces behind them. It
+     * replaces the previous snapshot, so a lost frame corrects itself on the next one.
      */
-    data class SetChatVotes(val tallies: Map<String, Map<SubmissionId, Int>>) : GameCommand
+    data class SetChatVotes(val tallies: Map<SubmissionId, ChatVoteTally>) : GameCommand
 
     /** Issued by the scheduler when the submission timer runs out. */
     data object CloseSubmissions : GameCommand

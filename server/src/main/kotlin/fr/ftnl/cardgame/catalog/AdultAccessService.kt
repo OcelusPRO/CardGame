@@ -2,31 +2,43 @@ package fr.ftnl.cardgame.catalog
 
 import fr.ftnl.cardgame.api.dto.AdultAccessInput
 import fr.ftnl.cardgame.api.dto.AdultAccessView
+import fr.ftnl.cardgame.auth.AccountProvider
 import fr.ftnl.cardgame.domain.game.GameClock
 
-/** Managing the allowlist of Discord accounts cleared for adult-only packs. */
+/** Managing the allowlist of accounts cleared for adult-only packs. */
 class AdultAccessService(
     private val access: AdultPackAccessRepository,
     private val clock: GameClock,
 ) {
 
-    suspend fun all(): List<AdultAccessView> = access.all().map { entry ->
-        AdultAccessView(entry.discordId, entry.label, entry.addedAtMillis)
-    }
+    suspend fun all(): List<AdultAccessView> = access.all().map(::toView)
 
     suspend fun add(input: AdultAccessInput): AdultAccessView {
-        val discordId = input.discordId.trim()
-        require(discordId.isNotEmpty()) { "L'identifiant Discord est vide" }
-        require(discordId.all { it.isDigit() }) { "Un identifiant Discord ne contient que des chiffres" }
-        val existing = access.all().firstOrNull { it.discordId == discordId }
+        val provider = AccountProvider.ofOrNull(input.provider)
+        requireNotNull(provider) { "Fournisseur inconnu : ${input.provider}" }
+        val accountId = input.accountId.trim()
+        require(accountId.isNotEmpty()) { "L'identifiant est vide" }
+        // Both providers hand out plain numbers; a channel name or a pseudo would silently
+        // never match anything, so it is refused here rather than at the first game.
+        require(accountId.all { it.isDigit() }) {
+            "Un identifiant ${provider.name.lowercase()} ne contient que des chiffres"
+        }
+        val existing = access.all().firstOrNull { it.provider == provider && it.accountId == accountId }
         val entry = AdultPackAccess(
-            discordId = discordId,
+            provider = provider,
+            accountId = accountId,
             label = input.label.trim(),
             addedAtMillis = existing?.addedAtMillis ?: clock.nowMillis(),
         )
         access.add(entry)
-        return AdultAccessView(entry.discordId, entry.label, entry.addedAtMillis)
+        return toView(entry)
     }
 
-    suspend fun remove(discordId: String): Boolean = access.remove(discordId.trim())
+    suspend fun remove(provider: String, accountId: String): Boolean {
+        val known = AccountProvider.ofOrNull(provider) ?: return false
+        return access.remove(known, accountId.trim())
+    }
+
+    private fun toView(entry: AdultPackAccess) =
+        AdultAccessView(entry.provider.name, entry.accountId, entry.label, entry.addedAtMillis)
 }

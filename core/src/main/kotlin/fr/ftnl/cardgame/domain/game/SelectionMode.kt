@@ -7,4 +7,10 @@ enum class SelectionMode {
 
     /** A rotating card czar picks the winner and does not play that round. */
     CZAR,
+
+    /**
+     * The Twitch chats judge, and them alone: everybody at the table answers, nobody at
+     * the table votes, and the viewers pick the winner by typing an answer number.
+     */
+    CHAT,
 }

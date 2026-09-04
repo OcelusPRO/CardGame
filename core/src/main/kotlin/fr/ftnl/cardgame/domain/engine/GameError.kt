@@ -26,4 +26,5 @@ enum class GameError {
     CANNOT_VOTE_OWN_ANSWER,
     CANNOT_KICK_SELF,
     CHAT_VOTE_CLOSED,
+    ONLY_THE_CHAT_VOTES,
 }

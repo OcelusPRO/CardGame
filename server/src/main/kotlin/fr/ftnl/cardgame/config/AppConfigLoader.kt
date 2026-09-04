@@ -10,7 +10,10 @@ object AppConfigLoader {
         redis = redis(config),
         discord = discord(config),
         twitch = twitch(config),
-        admin = AdminConfig(config.list("app.admin.discordIds")),
+        admin = AdminConfig(
+            discordIds = config.list("app.admin.discordIds"),
+            twitchIds = config.list("app.admin.twitchIds"),
+        ),
         adultAccess = AdultAccessConfig(
             minAccountAgeDays = config.number("app.adultAccess.minAccountAgeDays", default = 1095),
         ),

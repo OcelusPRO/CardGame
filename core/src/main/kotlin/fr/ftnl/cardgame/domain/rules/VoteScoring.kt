@@ -14,8 +14,10 @@ import fr.ftnl.cardgame.domain.player.PlayerId
  * "Everyone who could" leaves the author out, since they are normally barred from voting
  * for themselves; with self voting allowed they count like anybody else.
  *
- * A Twitch chat reading the table is one more voice, see [Round.chatVoices]: it counts
- * exactly like a player vote, both for the points and for the unanimity.
+ * A viewer voting from a Twitch chat is a voice like any other: they weigh exactly what a
+ * player at the table weighs, and they count for the unanimity just the same. In
+ * [fr.ftnl.cardgame.domain.game.SelectionMode.CHAT] the table casts no vote at all, so
+ * the very same counting leaves the viewers as the only voices.
  */
 class VoteScoring : RoundScoring {
 
@@ -30,17 +32,20 @@ class VoteScoring : RoundScoring {
         )
     }
 
-    /** Every voice of the round: one per player who voted, one per chat that spoke. */
+    /** Every voice of the round: the players who voted, plus every viewer who typed. */
     private fun countVotes(round: Round): Map<SubmissionId, Int> {
-        val voices = round.votes.values + round.chatVoices
-        return round.revealed.associate { (id, _) -> id to voices.count { it == id } }
+        val chat = round.chatTally
+        return round.revealed.associate { (id, _) ->
+            id to round.votes.values.count { it == id } + (chat[id] ?: 0)
+        }
     }
 
     private fun isUnanimous(round: Round, submission: SubmissionId, settings: GameSettings): Boolean {
         val author = round.authorOf(submission)
-        val eligible = round.votes.filterKeys { settings.allowSelfVote || it != author }.values +
-            round.chatVoices
-        return eligible.isNotEmpty() && eligible.all { it == submission }
+        val players = round.votes.filterKeys { settings.allowSelfVote || it != author }.values
+        val chatElsewhere = round.chatTally.filterKeys { it != submission }.values.sum()
+        val voices = players.size + round.chatVoiceCount
+        return voices > 0 && players.all { it == submission } && chatElsewhere == 0
     }
 
     private fun bestOf(counts: Map<SubmissionId, Int>): SubmissionId? =

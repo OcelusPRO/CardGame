@@ -1,8 +1,11 @@
 package fr.ftnl.cardgame.catalog
 
-/** One Discord account cleared to see and pick the packs marked "interdit aux mineurs". */
+import fr.ftnl.cardgame.auth.AccountProvider
+
+/** One account cleared to see and pick the packs marked "interdit aux mineurs". */
 data class AdultPackAccess(
-    val discordId: String,
+    val provider: AccountProvider,
+    val accountId: String,
     val label: String = "",
     val addedAtMillis: Long = 0,
 )

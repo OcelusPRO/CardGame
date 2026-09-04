@@ -19,4 +19,12 @@ data class DiscordUser(
      */
     val avatarUrl: String?
         get() = avatar?.let { "https://cdn.discordapp.com/avatars/$id/$it?size=128" }
+
+    /** The account as the rest of the application knows it, provider included. */
+    fun account(): Account = Account(
+        provider = AccountProvider.DISCORD,
+        id = id,
+        displayName = displayName,
+        createdAtMillis = DiscordSnowflake.createdAtMillis(id),
+    )
 }

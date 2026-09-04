@@ -4,7 +4,7 @@
  */
 
 export type GamePhase = 'LOBBY' | 'SUBMITTING' | 'SELECTING' | 'ROUND_RESULT' | 'FINISHED'
-export type SelectionMode = 'VOTE' | 'CZAR'
+export type SelectionMode = 'VOTE' | 'CZAR' | 'CHAT'
 export type AnswerMode = 'CARDS' | 'FREE_TEXT'
 
 export interface AvatarPartView {
@@ -48,6 +48,19 @@ export interface SituationCardView {
   custom: boolean
 }
 
+/** One viewer who voted from a Twitch chat, as their own chat shows them. */
+export interface ChatVoterView {
+  id: string
+  name: string
+  avatarUrl?: string
+}
+
+/** What the Twitch chats gave an answer: a number of voices, and the first faces. */
+export interface ChatVotesView {
+  count: number
+  voters: ChatVoterView[]
+}
+
 export interface AnswerView {
   id: number
   texts: string[]
@@ -55,6 +68,8 @@ export interface AnswerView {
   authorId?: string
   votes?: number
   isMine: boolean
+  /** Live while the chat judges: one voice per viewer, plus the faces to show. */
+  chatVotes?: ChatVotesView
 }
 
 export interface RoundOutcomeView {
@@ -72,8 +87,6 @@ export interface RoundView {
   answers: AnswerView[]
   myVote?: number
   outcome?: RoundOutcomeView
-  /** Live count of viewers per answer id, all watched Twitch chats together. */
-  chatVotes?: Record<string, number>
 }
 
 export interface SelfView {
@@ -105,9 +118,7 @@ export interface GameSettingsView {
   pointsPerVote: number
   unanimityBonus: number
   czarWinPoints: number
-  /** The chat of the streaming host votes too, by typing an answer number. */
-  twitchChatVote: boolean
-  /** The chats of the other streamers at the table are read as well. */
+  /** In the `CHAT` mode, the chats of the other streamers at the table are read too. */
   twitchGuestChats: boolean
 }
 
@@ -191,7 +202,6 @@ export interface GameSettingsInput {
   pointsPerVote?: number
   unanimityBonus?: number
   czarWinPoints?: number
-  twitchChatVote?: boolean
   twitchGuestChats?: boolean
 }
 

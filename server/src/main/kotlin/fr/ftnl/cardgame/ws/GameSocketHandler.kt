@@ -35,7 +35,7 @@ class GameSocketHandler(
     suspend fun serve(session: WebSocketSession, code: GameCode, identity: PlayerSession) {
         val playerId = PlayerId(identity.playerId)
         val connection = GameConnection(code, playerId, session, json)
-        val allowAdult = adultAccess.allows(identity.discordId)
+        val allowAdult = adultAccess.allows(identity)
         connections.add(connection)
         try {
             // Signing in with Twitch is a full page redirect, so it usually happens once

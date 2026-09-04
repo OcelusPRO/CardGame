@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import type { GameSettingsInput, GameSettingsView } from '../../api/types'
+import type { GameSettingsInput, GameSettingsView, SelectionMode } from '../../api/types'
 
 interface Props {
   settings: GameSettingsView
@@ -12,9 +12,6 @@ interface Props {
 }
 
 const NOT_HOST = "Seul l'hôte peut changer les règles."
-
-/** The third way of judging: everybody votes, and the streamer's chat votes along. */
-const CHAT = 'CHAT'
 
 /**
  * The host control panel of the lobby. Every change is pushed live to the table.
@@ -32,15 +29,16 @@ export function SettingsForm({
 }: Props) {
   const freeText = settings.answerMode === 'FREE_TEXT'
   const czar = settings.selectionMode === 'CZAR'
-  // Without a channel to read there is nothing to show, even on a game that had it on.
-  const chatVotes = settings.twitchChatVote && !czar && Boolean(hostTwitchLogin)
+  const chatVotes = settings.selectionMode === 'CHAT'
   const lockedBecause = disabled ? NOT_HOST : null
 
+  // The chat only shows up as a choice once the host has a channel to be read — but a
+  // game already set on it keeps showing it, so the pressed button is never a ghost.
   const judging = [
     { value: 'VOTE', label: 'Tout le monde vote' },
     { value: 'CZAR', label: 'Maître du jeu tournant' },
-    ...(hostTwitchLogin
-      ? [{ value: CHAT, label: `Le tchat de ${hostTwitchLogin} vote aussi` }]
+    ...(hostTwitchLogin || chatVotes
+      ? [{ value: 'CHAT', label: hostTwitchLogin ? `Le tchat de ${hostTwitchLogin} vote` : 'Le tchat vote' }]
       : []),
   ]
 
@@ -48,16 +46,10 @@ export function SettingsForm({
     <div className="flex flex-col gap-4">
       <Choice
         label="Qui désigne la meilleure réponse ?"
-        value={chatVotes ? CHAT : settings.selectionMode}
+        value={settings.selectionMode}
         lockedBecause={lockedBecause}
         options={judging}
-        onSelect={(mode) =>
-          onChange(
-            mode === CHAT
-              ? { selectionMode: 'VOTE', twitchChatVote: true }
-              : { selectionMode: mode as 'VOTE' | 'CZAR', twitchChatVote: false },
-          )
-        }
+        onSelect={(mode) => onChange({ selectionMode: mode as SelectionMode })}
       />
 
       {chatVotes && (
@@ -147,7 +139,7 @@ export function SettingsForm({
         />
       </div>
 
-      {!czar && (
+      {!czar && !chatVotes && (
         <Toggle
           label="Autoriser à voter pour sa propre carte"
           checked={settings.allowSelfVote}
@@ -168,9 +160,9 @@ export function SettingsForm({
       <p className="sketch bg-paper/70 px-4 py-3 text-xs leading-relaxed text-ink/65">
         {czar
           ? `Le maître du jeu choisit, et la réponse retenue rapporte ${settings.pointsPerVote} point(s). ${settings.rounds} manches, et le meilleur score l'emporte.`
-          : `Chaque vote reçu rapporte ${settings.pointsPerVote} point(s). Une réponse choisie par tous ceux qui pouvaient la choisir gagne ${settings.unanimityBonus} point(s) de plus ; un seul vote ailleurs et le bonus tombe à zéro. ${settings.rounds} manches, et le meilleur score l'emporte.`}
+          : `Chaque voix reçue rapporte ${settings.pointsPerVote} point(s). Une réponse choisie par tous ceux qui pouvaient la choisir gagne ${settings.unanimityBonus} point(s) de plus ; une seule voix ailleurs et le bonus tombe à zéro. ${settings.rounds} manches, et le meilleur score l'emporte.`}
         {chatVotes &&
-          " Chaque tchat compte pour une voix, celle de sa majorité, et le vote va au bout de son chrono pour laisser aux spectateurs le temps de répondre."}
+          " Personne à la table ne vote : chaque spectateur compte pour une voix, et la manche va au bout de son chrono pour laisser aux tchats le temps de répondre."}
       </p>
     </div>
   )

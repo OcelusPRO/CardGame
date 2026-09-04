@@ -26,7 +26,7 @@ fun Application.configureRouting(services: ApplicationServices) {
             discordAuthRoutes(services.discordClient, services.adminGuard)
         }
         if (services.config.twitch.enabled) {
-            twitchAuthRoutes(services.twitchClient)
+            twitchAuthRoutes(services.twitchClient, services.adminGuard)
         }
         gameRoutes(services.entry)
         cardRoutes(services.catalog, services.adultAccessGuard, services.appliedDecks)

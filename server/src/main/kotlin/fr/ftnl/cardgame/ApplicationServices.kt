@@ -44,9 +44,12 @@ import fr.ftnl.cardgame.stats.StatsRecorder
 import fr.ftnl.cardgame.stats.StatsService
 import fr.ftnl.cardgame.stats.UsageStatsReader
 import fr.ftnl.cardgame.stats.UsageStatsWriter
+import fr.ftnl.cardgame.twitch.TwitchAppTokens
 import fr.ftnl.cardgame.twitch.TwitchChatReader
 import fr.ftnl.cardgame.twitch.TwitchChatSocket
 import fr.ftnl.cardgame.twitch.TwitchChatVoting
+import fr.ftnl.cardgame.twitch.TwitchViewers
+import fr.ftnl.cardgame.twitch.ViewerPictures
 import fr.ftnl.cardgame.ws.GameBroadcaster
 import fr.ftnl.cardgame.ws.GameCommandTranslator
 import fr.ftnl.cardgame.ws.GameConnections
@@ -125,9 +128,14 @@ class ApplicationServices(
      * Idle until a host actually asks for it: with nobody signed in with Twitch a game
      * carries no channel, and the listener never opens a single connection.
      */
-    private val chatVoting = TwitchChatVoting(chatReader, scope) { code, command ->
+    private val chatVoting = TwitchChatVoting(chatReader, scope, viewerPictures()) { code, command ->
         games.dispatch(code, command)
     }
+
+    /** The faces under the answers; without Twitch credentials, voters keep their names. */
+    private fun viewerPictures(): ViewerPictures =
+        if (config.twitch.enabled) TwitchViewers(twitchClient, TwitchAppTokens(httpClient, config.twitch))
+        else ViewerPictures.NONE
 
     init {
         games.addListener(GameBroadcaster(connections, views))

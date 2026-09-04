@@ -9,9 +9,9 @@ import kotlinx.serialization.Serializable
  * Answers stay keyed by player while they are secret, and are exposed through
  * [revealed] in a shuffled order once the submission step closes.
  *
- * [chatVotes] holds, per Twitch channel read for this table, how many viewers typed the
- * number of each answer. It is a live tally: the server pushes a fresh snapshot of it
- * while the vote is open, and it never carries a viewer name.
+ * [chatVotes] holds, per answer, what the Twitch chats gave it: one voice per viewer,
+ * plus the first faces to show under it. It is a live tally, refreshed by the server
+ * while the vote is open.
  */
 @Serializable
 data class Round(
@@ -21,7 +21,7 @@ data class Round(
     val submissions: Map<PlayerId, Submission> = emptyMap(),
     val revealOrder: List<PlayerId> = emptyList(),
     val votes: Map<PlayerId, SubmissionId> = emptyMap(),
-    val chatVotes: Map<String, Map<SubmissionId, Int>> = emptyMap(),
+    val chatVotes: Map<SubmissionId, ChatVoteTally> = emptyMap(),
     val outcome: RoundOutcome? = null,
 ) {
     init {
@@ -52,24 +52,12 @@ data class Round(
     fun revealedInOrder(order: List<PlayerId>): Round = copy(revealOrder = order)
 
     /** Replaces the whole live tally with the snapshot the chat reader just produced. */
-    fun withChatVotes(tallies: Map<String, Map<SubmissionId, Int>>): Round =
-        copy(chatVotes = tallies)
+    fun withChatVotes(tallies: Map<SubmissionId, ChatVoteTally>): Round = copy(chatVotes = tallies)
 
-    /** How many viewers picked each answer, all watched chats taken together. */
+    /** How many viewers picked each answer, every watched chat taken together. */
     val chatTally: Map<SubmissionId, Int>
-        get() = chatVotes.values.flatMap { it.entries }
-            .groupingBy { it.key }
-            .fold(0) { total, entry -> total + entry.value }
+        get() = chatVotes.mapValues { (_, tally) -> tally.count }
 
-    /**
-     * One voice per chat, given to the answer that chat preferred. A chat weighing as
-     * much as its whole audience would drown the table out, so a community speaks with a
-     * single voice — and a table of streamers gets one voice per community. A tie inside
-     * a chat is an abstention.
-     */
-    val chatVoices: List<SubmissionId>
-        get() = chatVotes.values.mapNotNull { tally ->
-            val best = tally.values.maxOrNull()?.takeIf { it > 0 } ?: return@mapNotNull null
-            tally.entries.filter { it.value == best }.singleOrNull()?.key
-        }
+    /** Voices coming from the chats this round, all answers taken together. */
+    val chatVoiceCount: Int get() = chatVotes.values.sumOf { it.count }
 }

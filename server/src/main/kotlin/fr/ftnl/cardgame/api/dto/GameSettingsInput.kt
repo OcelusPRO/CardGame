@@ -18,6 +18,5 @@ data class GameSettingsInput(
     val czarAnswers: Boolean? = null,
     val pointsPerVote: Int? = null,
     val unanimityBonus: Int? = null,
-    val twitchChatVote: Boolean? = null,
     val twitchGuestChats: Boolean? = null,
 )

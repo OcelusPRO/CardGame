@@ -21,6 +21,5 @@ data class GameSettingsView(
     val czarAnswers: Boolean,
     val pointsPerVote: Int,
     val unanimityBonus: Int,
-    val twitchChatVote: Boolean = false,
     val twitchGuestChats: Boolean = false,
 )

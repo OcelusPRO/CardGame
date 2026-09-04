@@ -1,8 +1,9 @@
 import { motion } from 'motion/react'
-import type { AnswerView, PlayerView } from '../../api/types'
+import type { AnswerView, ChatVotesView, PlayerView } from '../../api/types'
 import { GameCard } from '../cards/GameCard'
 import { WRAP_CLASSES, punchlineFontSize } from '../cards/textScale'
 import { Avatar } from '../avatar/Avatar'
+import { ChatVoterFaces } from './ChatVoterFaces'
 
 interface Props {
   answer: AnswerView
@@ -15,7 +16,7 @@ interface Props {
   /** The number the Twitch chat types to pick this answer, shown only when a chat votes. */
   number?: number
   /** Viewers who picked it so far, counted live while the chat votes. */
-  chatVotes?: number
+  chatVotes?: ChatVotesView
 }
 
 /** One answer on the table, revealed a little more at every step of the round. */
@@ -54,7 +55,7 @@ export function AnswerCard({
             {author?.nickname ?? (answer.isMine ? 'Votre réponse' : 'Anonyme')}
             {answer.votes !== undefined && <span className="ml-auto">{answer.votes} vote(s)</span>}
             {chatVotes !== undefined && answer.votes === undefined && (
-              <span className="ml-auto text-[#772ce8]">{chatVotes} tchat</span>
+              <span className="ml-auto text-[#772ce8]">{chatVotes.count} tchat</span>
             )}
           </span>
         }
@@ -76,6 +77,7 @@ export function AnswerCard({
         >
           {label}
         </p>
+        {chatVotes && <ChatVoterFaces votes={chatVotes} />}
         {winner && (
           <motion.span
             initial={{ scale: 0 }}

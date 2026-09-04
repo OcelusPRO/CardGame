@@ -2,11 +2,11 @@ package fr.ftnl.cardgame.auth
 
 import fr.ftnl.cardgame.config.AdminConfig
 
-/** Decides whether a signed in Discord account may reach the administration area. */
+/** Decides whether a signed in account — Discord or Twitch — may reach the administration. */
 class AdminGuard(private val config: AdminConfig) {
 
-    fun isAdmin(user: DiscordUser): Boolean = config.grants(user.id)
+    fun isAdmin(account: Account): Boolean = config.grants(account)
 
-    fun sessionFor(user: DiscordUser): AdminSession? =
-        AdminSession(user.id, user.displayName).takeIf { isAdmin(user) }
+    fun sessionFor(account: Account): AdminSession? =
+        AdminSession(account.provider.name, account.id, account.displayName).takeIf { isAdmin(account) }
 }

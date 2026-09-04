@@ -5,7 +5,8 @@ import kotlinx.serialization.Serializable
 /** One entry of the adult-pack allowlist, as listed in the administration. */
 @Serializable
 data class AdultAccessView(
-    val discordId: String,
+    val provider: String,
+    val accountId: String,
     val label: String,
     val addedAtMillis: Long,
 )

@@ -27,7 +27,7 @@ fun Route.cardRoutes(catalog: CatalogService, adultAccess: AdultAccessGuard, app
             return@get
         }
 
-        val includeAdult = adultAccess.allows(call.playerSession().discordId)
+        val includeAdult = adultAccess.allows(call.playerSession())
         call.respond(catalog.availablePacks(answerMode, includeAdult))
     }
 }

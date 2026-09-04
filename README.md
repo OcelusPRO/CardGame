@@ -38,7 +38,7 @@ Tout se joue dans le navigateur, sans installation : l'hôte crée une table, pa
 | Reconnexion | Le siège, le score et la main survivent à un rafraîchissement ou à une coupure réseau |
 | Administration | Édition des packs et des cartes officielles, statistiques d'usage et compteurs en direct |
 | Fin de partie | Podium pour les trois premiers, classement simple pour la suite |
-| Vote du tchat Twitch | L'hôte connecté avec Twitch fait voter son tchat au numéro de la carte, et peut inclure les tchats des autres joueurs streamers |
+| Vote du tchat Twitch | Un troisième mode de jeu : les joueurs répondent, et c'est le tchat de l'hôte — plus, s'il le veut, celui des autres joueurs streamers — qui désigne la meilleure réponse au numéro de la carte |
 | Bruitages | Clics, sélection de carte, vote, révélation et derniers battements du chrono, coupables d'un seul bouton |
 
 Les deux modes se cumulent : un paquet de situations maison avec des réponses écrites à la volée
@@ -60,8 +60,9 @@ Chaque temps a un chronomètre, et se ferme tout seul dès que tout le monde a j
 **Mode maître du jeu** — un joueur différent tranche à chaque manche et ne joue pas :
 son choix vaut une voix, donc la réponse retenue rapporte le même **`pointsPerVote`**.
 
-Un **tchat Twitch** que l'hôte a invité compte lui aussi pour une voix, celle de sa majorité :
-voir [Connexion Twitch et vote du tchat](#connexion-twitch-et-vote-du-tchat).
+**Mode tchat** — les joueurs répondent et ne votent plus : **chaque spectateur compte pour une
+voix**, exactement comme un joueur dans le mode vote, et le décompte des points ne change pas.
+Voir [Connexion Twitch et vote du tchat](#connexion-twitch-et-vote-du-tchat).
 
 Personne ne saute un tour pour avoir hésité : à l'expiration du chronomètre, la réponse
 déjà sélectionnée part d'elle-même, et une main restée intacte joue une carte au hasard.
@@ -218,6 +219,8 @@ Toutes les valeurs se pilotent par variables d'environnement (voir `.env.example
 | `TWITCH_CLIENT_ID` / `TWITCH_CLIENT_SECRET` | vide | Connexion Twitch ; vide = bouton masqué |
 | `TWITCH_REDIRECT_URL` | `http://localhost:8080/auth/twitch/callback` | URL de retour OAuth |
 | `ADMIN_DISCORD_IDS` | vide | Identifiants Discord admin, séparés par des virgules |
+| `ADMIN_TWITCH_IDS` | vide | Identifiants Twitch admin, séparés par des virgules |
+| `ADULT_MIN_ACCOUNT_AGE_DAYS` | `1095` | Âge à partir duquel un compte est cru adulte ; `0` pour n'écouter que la liste |
 
 ---
 
@@ -235,6 +238,10 @@ dans `ADMIN_DISCORD_IDS`.
 Sur le [portail développeur Discord](https://discord.com/developers/applications), créez une
 application, ajoutez `http://localhost:8080/auth/discord/callback` comme *redirect URI*, puis
 reportez l'identifiant et le secret dans `.env`. Le scope demandé est `identify`, et rien d'autre.
+
+L'administration s'ouvre aux comptes listés dans `ADMIN_DISCORD_IDS` **ou** `ADMIN_TWITCH_IDS` :
+les deux services distribuent de simples nombres, alors les deux listes restent séparées et un
+identifiant n'a de sens qu'à côté du service qui l'a émis.
 
 L'administration (`/admin`) permet de créer et corriger les packs et les cartes officielles, et
 affiche l'activité des 30 derniers jours, les cartes les plus jouées, les meilleurs duos
@@ -255,28 +262,39 @@ connecté n'en réclame pas, et le tchat est lu anonymement.
 Une fois l'hôte connecté avec Twitch, la question **« Qui désigne la meilleure réponse ? »**
 gagne un troisième choix, à côté de « tout le monde vote » et du maître du jeu tournant :
 
-> **Le tchat de _votre chaîne_ vote aussi** — pendant le vote, chaque réponse porte un numéro,
-> et les spectateurs le tapent dans le tchat (`2`, `!2`, `#2`, `!vote 2`).
+> **Le tchat de _votre chaîne_ vote** — les joueurs répondent, puis **eux ne votent plus du
+> tout** : chaque réponse porte un numéro, et ce sont les spectateurs qui le tapent dans le
+> tchat (`2`, `!2`, `#2`, `!vote 2`).
 
 Choisir ce mode fait apparaître, juste en dessous, **« Inclure les tchats des autres joueurs »**,
 qui lit aussi le tchat de chaque joueur connecté avec Twitch — une table de streamers joue alors
 devant toutes ses communautés à la fois. Rien de tout cela n'apparaît si l'hôte n'est pas
-connecté avec Twitch, et choisir le maître du jeu tournant remet le vote du tchat à zéro :
-un seul joueur tranche, il n'y a pas de voix à ajouter.
+connecté avec Twitch, et repasser sur un autre mode rend la main à la table.
 
 Le salon suit la même règle partout : une option qui ne peut pas s'appliquer n'est pas grisée,
 elle **disparaît** (pas de « cartes en main » en mode sans limites, pas de bonus d'unanimité
 quand un maître du jeu décide seul).
 
-**Comment le tchat pèse.** Un tchat parle d'**une seule voix** : la réponse que sa majorité a
-choisie reçoit une voix, valant exactement le même `pointsPerVote` qu'un vote de la table. Une
-communauté de trois mille personnes n'écrase donc pas quatre joueurs — mais une table de trois
-streamers apporte trois voix. Une égalité dans un tchat vaut abstention. Un spectateur ne vote
-qu'une fois par manche, et son premier message est celui qui compte.
+**Comment le tchat pèse.** Chaque spectateur vaut **une voix** sur la carte qu'il choisit, au
+même `pointsPerVote` qu'un vote de table dans les autres modes : une réponse plébiscitée par
+quatre cents personnes rapporte quatre cents fois ce point. Un spectateur ne vote qu'une fois
+par manche — son premier message compte, et taper dans deux tchats à la fois ne change rien.
 
-Tant qu'un tchat vote, l'étape de vote **ne se ferme plus en avance** : elle va au bout de son
-chronomètre, pour laisser aux spectateurs le temps de lire les réponses. Le décompte des tchats
-s'affiche en direct sous chaque carte, et les consignes pour les spectateurs restent à l'écran.
+Sous chaque réponse, le jeu affiche les **avatars Twitch** des votants, au plus quinze, puis
+« +X votes ». Les photos viennent de l'API Twitch, lues avec un jeton applicatif : seules les
+quinze premières têtes de chaque réponse sont demandées, et un habitué du tchat n'est cherché
+qu'une fois. Sans photo trouvée, l'initiale du pseudo tient lieu de portrait.
+
+**Accès aux packs 18+.** Un compte Twitch y a droit exactement comme un compte Discord : parce
+qu'il est administrateur, parce qu'il figure dans la liste d'accès de l'administration, ou parce
+qu'il a **plus de trois ans** (`ADULT_MIN_ACCOUNT_AGE_DAYS`). L'âge d'un compte Discord se lit
+dans son identifiant ; celui d'un compte Twitch vient de la date de création que Twitch renvoie
+à la connexion — dans les deux cas sans appel supplémentaire et sans rien demander au joueur.
+
+Dans ce mode, l'étape de sélection **ne se ferme plus en avance** — il n'y a personne à la table
+à attendre : elle va au bout de son chronomètre, pour laisser aux spectateurs le temps de lire
+les réponses. Le décompte des tchats s'affiche en direct sous chaque carte, et les consignes
+pour les spectateurs restent à l'écran.
 
 Le tchat est lu par IRC anonyme (`justinfan`), en lecture seule : le serveur ne peut écrire
 aucun message, et rien n'est conservé — les compteurs vivent le temps de la manche, et un

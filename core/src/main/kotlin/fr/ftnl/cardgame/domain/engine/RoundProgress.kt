@@ -20,24 +20,25 @@ object RoundProgress {
     /**
      * Every eligible voter has chosen, or there was simply nothing to choose from.
      *
-     * With a Twitch chat voting, the step never ends early: the players are a handful and
-     * would close the vote before the viewers had time to read the answers, so the timer
-     * alone decides when it is over.
+     * When the chat judges, the step never ends early: nobody at the table votes, and the
+     * viewers need the whole timer to read the answers, so the timer alone ends it.
      */
     fun selectionComplete(state: GameState): Boolean {
         val round = state.round ?: return false
         if (round.revealOrder.isEmpty()) return true
-        if (state.chatChannels.isNotEmpty()) return false
+        if (state.settings.selectionMode == SelectionMode.CHAT) return false
         return voters(state).all(round::hasVoted)
     }
 
     /**
-     * Who may vote: the czar alone, or every connected player. Without self voting, a
-     * player is only a voter once there is an answer on the table that is not their own.
+     * Who may vote: the czar alone, every connected player, or — when the chat judges —
+     * nobody at all. Without self voting, a player is only a voter once there is an
+     * answer on the table that is not their own.
      */
     fun voters(state: GameState): List<PlayerId> {
         val round = state.round ?: return emptyList()
         return when (state.settings.selectionMode) {
+            SelectionMode.CHAT -> emptyList()
             SelectionMode.CZAR -> listOfNotNull(round.czarId)
             SelectionMode.VOTE -> state.connectedPlayers.map { it.id }.filter { voter ->
                 state.settings.allowSelfVote || round.revealed.any { (_, answer) -> answer.playerId != voter }

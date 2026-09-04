@@ -19,4 +19,16 @@ data class PlayerSession(
     val twitchLogin: String? = null,
     val twitchUsername: String? = null,
     val twitchAvatarUrl: String? = null,
-)
+    /** When the Twitch account was opened, read once at sign in for the 18+ age rule. */
+    val twitchCreatedAtMillis: Long? = null,
+) {
+    /** The signed in accounts behind this browser, in the order they were linked. */
+    fun accounts(): List<Account> = listOfNotNull(
+        discordId?.let {
+            Account(AccountProvider.DISCORD, it, discordUsername.orEmpty(), DiscordSnowflake.createdAtMillis(it))
+        },
+        twitchId?.let {
+            Account(AccountProvider.TWITCH, it, twitchUsername.orEmpty(), twitchCreatedAtMillis)
+        },
+    )
+}

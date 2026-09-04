@@ -11,6 +11,8 @@ import fr.ftnl.cardgame.api.dto.JoinGameRequest
 import fr.ftnl.cardgame.api.dto.PackAdminView
 import fr.ftnl.cardgame.api.dto.PackInput
 import fr.ftnl.cardgame.support.DISCORD_LOGIN_PATH
+import fr.ftnl.cardgame.support.TWITCH_LOGIN_PATH
+import fr.ftnl.cardgame.support.TestConfig
 import fr.ftnl.cardgame.support.adminBrowser
 import fr.ftnl.cardgame.support.browser
 import fr.ftnl.cardgame.support.startTestServer
@@ -75,7 +77,7 @@ class AdultPackAccessTest {
 
         val added = admin.post("/api/admin/adult-access") {
             contentType(ContentType.Application.Json)
-            setBody(AdultAccessInput(discordId = "100000000000000042", label = "Alex"))
+            setBody(AdultAccessInput(accountId = "100000000000000042", label = "Alex"))
         }.body<AdultAccessView>()
         assertEquals("Alex", added.label)
 
@@ -86,9 +88,52 @@ class AdultPackAccessTest {
 
         assertEquals(
             HttpStatusCode.NoContent,
-            admin.delete("/api/admin/adult-access/100000000000000042").status,
+            admin.delete("/api/admin/adult-access/DISCORD/100000000000000042").status,
         )
         assertFalse(user.get("/api/packs").body<List<CardPackView>>().any { it.id == packId })
+    }
+
+    @Test
+    fun `a listed Twitch account gains access just like a Discord one`() = testApplication {
+        startTestServer()
+        val admin = adminBrowser()
+        val packId = createAdultPack(admin)
+        val streamer = browser()
+        streamer.get("$TWITCH_LOGIN_PATH?login=kameto&id=44444")
+
+        assertFalse(streamer.get("/api/packs").body<List<CardPackView>>().any { it.id == packId })
+
+        admin.post("/api/admin/adult-access") {
+            contentType(ContentType.Application.Json)
+            setBody(AdultAccessInput(provider = "TWITCH", accountId = "44444", label = "Kameto"))
+        }
+
+        assertTrue(
+            streamer.get("/api/packs").body<List<CardPackView>>().any { it.id == packId },
+            "once on the allowlist the Twitch host should see the 18+ pack",
+        )
+
+        assertEquals(
+            HttpStatusCode.NoContent,
+            admin.delete("/api/admin/adult-access/TWITCH/44444").status,
+        )
+        assertFalse(streamer.get("/api/packs").body<List<CardPackView>>().any { it.id == packId })
+    }
+
+    @Test
+    fun `a Twitch account past three years is trusted on its age alone`() = testApplication {
+        startTestServer(TestConfig.trustingAccountAge())
+        val admin = adminBrowser()
+        val packId = createAdultPack(admin)
+        val streamer = browser()
+        val fourYearsAgo = System.currentTimeMillis() - 4L * 365 * 24 * 60 * 60 * 1000
+
+        streamer.get("$TWITCH_LOGIN_PATH?login=ancien&id=55555&createdAt=$fourYearsAgo")
+
+        assertTrue(
+            streamer.get("/api/packs").body<List<CardPackView>>().any { it.id == packId },
+            "an account opened four years ago is old enough for the 18+ packs",
+        )
     }
 
     @Test
@@ -106,7 +151,7 @@ class AdultPackAccessTest {
         guest.get("$DISCORD_LOGIN_PATH?id=100000000000000042")
         admin.post("/api/admin/adult-access") {
             contentType(ContentType.Application.Json)
-            setBody(AdultAccessInput(discordId = "100000000000000042", label = "Alex"))
+            setBody(AdultAccessInput(accountId = "100000000000000042", label = "Alex"))
         }
         assertTrue(guest.get("/api/packs").body<List<CardPackView>>().any { it.id == adultPackId })
 
@@ -143,12 +188,12 @@ class AdultPackAccessTest {
     }
 
     @Test
-    fun `a non numeric Discord id is refused`() = testApplication {
+    fun `a non numeric account id is refused`() = testApplication {
         startTestServer()
 
         val response = adminBrowser().post("/api/admin/adult-access") {
             contentType(ContentType.Application.Json)
-            setBody(AdultAccessInput(discordId = "not-an-id"))
+            setBody(AdultAccessInput(accountId = "not-an-id"))
         }
         assertEquals(HttpStatusCode.BadRequest, response.status)
     }

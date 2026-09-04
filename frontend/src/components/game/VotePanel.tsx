@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { AnswerView, GameView } from '../../api/types'
+import type { AnswerView, ChatVotesView, GameView } from '../../api/types'
 import { playSound } from '../../audio/engine'
 import { SituationCard } from '../cards/SituationCard'
 import { AnswerCard } from './AnswerCard'
@@ -15,13 +15,15 @@ interface Props {
  * The judging step. Pointing at an answer writes it straight into the situation card, so
  * the joke is read the way it will be scored before anybody commits a vote.
  *
- * When a Twitch chat votes too, every answer wears the number the viewers type, and the
- * count coming back from the chats is shown live under each one.
+ * When the chat is the judge, nobody at the table votes: every answer wears the number
+ * the viewers type, and the count coming back from the chats is shown live under each one.
  */
 export function VotePanel({ game, onChoose }: Props) {
   const [previewId, setPreviewId] = useState<number | null>(null)
   const round = game.round
   const czarMode = game.settings.selectionMode === 'CZAR'
+  // The chat judges alone: nobody at the table gets a say this round.
+  const chatMode = game.settings.selectionMode === 'CHAT'
   const canChoose = game.you.mustVote
   // The host can allow voting for one's own answer, but only in the everybody-votes mode.
   const canVoteOwn = !czarMode && game.settings.allowSelfVote
@@ -33,7 +35,6 @@ export function VotePanel({ game, onChoose }: Props) {
   if (!round) return null
 
   const shown = answerOf(round.answers, previewId ?? round.myVote ?? null)
-  const chatVotes = round.chatVotes ?? {}
 
   return (
     <RoundStage
@@ -47,17 +48,19 @@ export function VotePanel({ game, onChoose }: Props) {
     >
       <div className="flex flex-col gap-4">
         <p className="text-center font-display text-lg text-ink/75">
-          {canChoose
-            ? czarMode
-              ? 'À vous de trancher.'
-              : 'Votez pour la meilleure réponse.'
-            : czarMode
-              ? 'Le maître du jeu délibère…'
-              : 'Vote enregistré, on attend les autres.'}
+          {chatMode
+            ? 'Le tchat tranche : regardez les votes tomber.'
+            : canChoose
+              ? czarMode
+                ? 'À vous de trancher.'
+                : 'Votez pour la meilleure réponse.'
+              : czarMode
+                ? 'Le maître du jeu délibère…'
+                : 'Vote enregistré, on attend les autres.'}
         </p>
 
         {chatVoting && (
-          <ChatVoteNotice channels={game.chatChannels} viewers={totalChatVotes(chatVotes)} />
+          <ChatVoteNotice channels={game.chatChannels} viewers={totalChatVotes(round.answers)} />
         )}
 
         <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(13rem,1fr))]">
@@ -70,7 +73,7 @@ export function VotePanel({ game, onChoose }: Props) {
                 voted={round.myVote === answer.id}
                 disabled={!canChoose || blocked}
                 number={chatVoting ? answer.id + 1 : undefined}
-                chatVotes={chatVoting ? (chatVotes[String(answer.id)] ?? 0) : undefined}
+                chatVotes={chatVoting ? (answer.chatVotes ?? EMPTY_CHAT_VOTES) : undefined}
                 onPreview={() => setPreviewId(answer.id)}
                 onVote={
                   canChoose && !blocked
@@ -93,6 +96,8 @@ function answerOf(answers: AnswerView[], id: number | null): AnswerView | undefi
   return id === null ? undefined : answers.find((answer) => answer.id === id)
 }
 
-function totalChatVotes(votes: Record<string, number>): number {
-  return Object.values(votes).reduce((total, count) => total + count, 0)
+const EMPTY_CHAT_VOTES: ChatVotesView = { count: 0, voters: [] }
+
+function totalChatVotes(answers: AnswerView[]): number {
+  return answers.reduce((total, answer) => total + (answer.chatVotes?.count ?? 0), 0)
 }

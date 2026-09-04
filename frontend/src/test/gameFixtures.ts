@@ -21,7 +21,6 @@ export function aGame(overrides: Partial<GameView> = {}): GameView {
       pointsPerVote: 1,
       unanimityBonus: 3,
       czarWinPoints: 3,
-      twitchChatVote: false,
       twitchGuestChats: false,
     },
     players: [aPlayer('alice', 'Alice'), aPlayer('bob', 'Bob')],

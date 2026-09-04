@@ -2,6 +2,8 @@ package fr.ftnl.cardgame.twitch
 
 import fr.ftnl.cardgame.domain.engine.GameCommand
 import fr.ftnl.cardgame.domain.engine.GameEvent
+import fr.ftnl.cardgame.domain.game.ChatVoteTally
+import fr.ftnl.cardgame.domain.game.ChatVoter
 import fr.ftnl.cardgame.domain.game.GameCode
 import fr.ftnl.cardgame.domain.game.GameState
 import fr.ftnl.cardgame.domain.game.SubmissionId
@@ -19,9 +21,9 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * Lets the Twitch chats vote alongside the table. While a round is being judged it reads
- * the watched channels, counts one voice per viewer, and pushes the running tally into
- * the game so every screen shows the same numbers.
+ * Lets the Twitch chats judge the round. While a round is being voted on it reads the
+ * watched channels, counts one voice per viewer, and pushes the running tally into the
+ * game so every screen shows the same numbers and the same faces.
  *
  * Nothing is kept: the counts live for the round, and a viewer is only ever remembered
  * long enough to stop them voting twice.
@@ -29,6 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 class TwitchChatVoting(
     private val reader: TwitchChatReader,
     private val scope: CoroutineScope,
+    private val pictures: ViewerPictures = ViewerPictures.NONE,
     private val flushMillis: Long = FLUSH_MILLIS,
     private val dispatch: suspend (GameCode, GameCommand) -> Unit,
 ) : GameListener {
@@ -63,12 +66,17 @@ class TwitchChatVoting(
         val flusher = launch {
             while (isActive) {
                 delay(flushMillis)
-                if (tally.takeChanged()) dispatch(code, GameCommand.SetChatVotes(tally.snapshot()))
+                if (!tally.takeChanged()) continue
+                // Only the faces the table will show are ever looked up.
+                tally.withPictures(pictures.of(tally.facesWithoutPicture()))
+                dispatch(code, GameCommand.SetChatVotes(tally.snapshot()))
             }
         }
         try {
             keepReading(channels) { line ->
-                ChatVote.parse(line.text, answers)?.let { tally.record(line.channel, line.viewer, it) }
+                ChatVote.parse(line.text, answers)?.let { choice ->
+                    tally.record(ChatVoter(line.viewerId, line.viewerName), choice)
+                }
             }
         } finally {
             flusher.cancel()
@@ -92,24 +100,48 @@ class TwitchChatVoting(
     private class Watch(val round: Int, val job: Job)
 
     /**
-     * The counts being built, per channel. One viewer, one voice: their first vote is the
-     * one that counts, so a chat cannot be flooded by a single very fast typist.
+     * The counts being built. One viewer, one voice, wherever they typed it: their first
+     * vote is the one that counts, so nobody votes twice by switching chat or by typing
+     * faster than everybody else.
+     *
+     * Only the first [ChatVoteTally.MAX_FACES] voters of an answer are kept by name: they
+     * are the faces the table shows, and the rest of a large chat is a number.
      */
     private class Tally {
-        private val votes = ConcurrentHashMap<String, ConcurrentHashMap<SubmissionId, Int>>()
-        private val voters = ConcurrentHashMap<String, MutableSet<String>>()
+        private val lock = Any()
+        private val heard = mutableSetOf<String>()
+        private val counts = mutableMapOf<SubmissionId, Int>()
+        private val faces = mutableMapOf<SubmissionId, MutableList<ChatVoter>>()
         private val changed = AtomicBoolean(false)
 
-        fun record(channel: String, viewer: String, choice: SubmissionId) {
-            val seen = voters.computeIfAbsent(channel) { ConcurrentHashMap.newKeySet() }
-            if (!seen.add(viewer)) return
-            votes.computeIfAbsent(channel) { ConcurrentHashMap() }.merge(choice, 1, Int::plus)
+        fun record(voter: ChatVoter, choice: SubmissionId) = synchronized(lock) {
+            if (!heard.add(voter.id)) return
+            counts[choice] = (counts[choice] ?: 0) + 1
+            val shown = faces.getOrPut(choice) { mutableListOf() }
+            if (shown.size < ChatVoteTally.MAX_FACES) shown += voter
             changed.set(true)
+        }
+
+        fun facesWithoutPicture(): List<String> = synchronized(lock) {
+            faces.values.flatten().filter { it.avatarUrl == null }.map { it.id }
+        }
+
+        fun withPictures(found: Map<String, String>) = synchronized(lock) {
+            if (found.isEmpty()) return
+            faces.values.forEach { shown ->
+                shown.forEachIndexed { index, voter ->
+                    found[voter.id]?.let { shown[index] = voter.copy(avatarUrl = it) }
+                }
+            }
         }
 
         fun takeChanged(): Boolean = changed.getAndSet(false)
 
-        fun snapshot(): Map<String, Map<SubmissionId, Int>> = votes.mapValues { it.value.toMap() }
+        fun snapshot(): Map<SubmissionId, ChatVoteTally> = synchronized(lock) {
+            counts.mapValues { (choice, count) ->
+                ChatVoteTally(count = count, voters = faces[choice].orEmpty().toList())
+            }
+        }
     }
 
     private companion object {

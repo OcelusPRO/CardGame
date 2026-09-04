@@ -25,14 +25,8 @@ data class GameSettings(
      */
     val czarAnswers: Boolean = false,
     /**
-     * Lets the chat of the Twitch streamer hosting the table vote too, by typing the
-     * number of an answer. Only offered in [SelectionMode.VOTE]: in czar mode a single
-     * player decides, and there is nothing for a chat to weigh in on.
-     */
-    val twitchChatVote: Boolean = false,
-    /**
-     * Reads the chat of every other player signed in with Twitch as well, so a table of
-     * streamers plays in front of all of their communities at once.
+     * In [SelectionMode.CHAT], reads the chat of every other player signed in with Twitch
+     * as well, so a table of streamers plays in front of all of their communities at once.
      */
     val twitchGuestChats: Boolean = false,
 ) {

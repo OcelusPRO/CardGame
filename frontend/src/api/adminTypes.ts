@@ -40,14 +40,19 @@ export interface PackInput {
   secretCode?: string | null
 }
 
+/** Both providers hand out plain numbers, so an id only means something next to one. */
+export type AccountProvider = 'DISCORD' | 'TWITCH'
+
 export interface AdultAccessView {
-  discordId: string
+  provider: AccountProvider
+  accountId: string
   label: string
   addedAtMillis: number
 }
 
 export interface AdultAccessInput {
-  discordId: string
+  provider: AccountProvider
+  accountId: string
   label?: string
 }
 

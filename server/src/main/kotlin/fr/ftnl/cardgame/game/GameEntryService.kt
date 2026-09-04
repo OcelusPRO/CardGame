@@ -37,8 +37,8 @@ class GameEntryService(
         val settings = SettingsMapper.merge(GameSettings(), request.settings ?: GameSettingsInput())
         val state = games.create(host, settings)
         // A brand new table starts on every enabled pack the host is actually allowed to use:
-        // adult-only packs are left out unless their Discord account is cleared for them.
-        val allowAdult = adultAccess.allows(session.discordId)
+        // adult-only packs are left out unless one of their accounts is cleared for them.
+        val allowAdult = adultAccess.allows(session)
         val deck = DeckRequest(packIds = decks.enabledPackIds(includeAdult = allowAdult))
         appliedDecks.remember(state.code, deck)
         games.dispatch(

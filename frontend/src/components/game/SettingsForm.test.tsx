@@ -27,10 +27,10 @@ describe('SettingsForm', () => {
         />,
       )
 
-      expect(screen.getByRole('button', { name: /Le tchat de kameto vote aussi/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Le tchat de kameto vote/i })).toBeInTheDocument()
     })
 
-    it('turns the vote on for everybody plus the chat', async () => {
+    it('hands the whole vote over to the chat', async () => {
       const onChange = vi.fn()
       render(
         <SettingsForm
@@ -43,14 +43,14 @@ describe('SettingsForm', () => {
 
       await userEvent.click(screen.getByRole('button', { name: /Le tchat de kameto/i }))
 
-      expect(onChange).toHaveBeenCalledWith({ selectionMode: 'VOTE', twitchChatVote: true })
+      expect(onChange).toHaveBeenCalledWith({ selectionMode: 'CHAT' })
     })
 
     it('is switched off again by picking another way of judging', async () => {
       const onChange = vi.fn()
       render(
         <SettingsForm
-          settings={settings({ twitchChatVote: true })}
+          settings={settings({ selectionMode: 'CHAT' })}
           disabled={false}
           hostTwitchLogin="kameto"
           onChange={onChange}
@@ -59,13 +59,13 @@ describe('SettingsForm', () => {
 
       await userEvent.click(screen.getByRole('button', { name: 'Maître du jeu tournant' }))
 
-      expect(onChange).toHaveBeenCalledWith({ selectionMode: 'CZAR', twitchChatVote: false })
+      expect(onChange).toHaveBeenCalledWith({ selectionMode: 'CZAR' })
     })
 
     it('shows as the chosen one while it is on', () => {
       render(
         <SettingsForm
-          settings={settings({ twitchChatVote: true })}
+          settings={settings({ selectionMode: 'CHAT' })}
           disabled={false}
           hostTwitchLogin="kameto"
           onChange={vi.fn()}
@@ -93,7 +93,7 @@ describe('SettingsForm', () => {
 
       rerender(
         <SettingsForm
-          settings={settings({ twitchChatVote: true })}
+          settings={settings({ selectionMode: 'CHAT' })}
           disabled={false}
           hostTwitchLogin="kameto"
           guestTwitchLogins={['ponce', 'zerator']}
@@ -137,6 +137,20 @@ describe('SettingsForm', () => {
       expect(screen.queryByLabelText('Bonus unanimité')).not.toBeInTheDocument()
       expect(screen.queryByRole('checkbox', { name: /sa propre carte/i })).not.toBeInTheDocument()
       expect(screen.getByRole('checkbox', { name: /Le maître du jeu répond aussi/i })).toBeInTheDocument()
+    })
+
+    it('drops the self-vote rule when the chat judges alone', () => {
+      render(
+        <SettingsForm
+          settings={settings({ selectionMode: 'CHAT' })}
+          disabled={false}
+          hostTwitchLogin="kameto"
+          onChange={vi.fn()}
+        />,
+      )
+
+      expect(screen.queryByRole('checkbox', { name: /sa propre carte/i })).not.toBeInTheDocument()
+      expect(screen.getByLabelText('Bonus unanimité')).toBeInTheDocument()
     })
 
     it("keeps the czar's own rule out of the everybody-votes mode", () => {

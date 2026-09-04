@@ -8,7 +8,9 @@ object RoundScorings {
     private val czar = CzarScoring()
 
     fun of(mode: SelectionMode): RoundScoring = when (mode) {
-        SelectionMode.VOTE -> vote
+        // Chat mode is the vote with an empty table: the round holds no player vote, so
+        // the very same counting leaves the chats as the only voices.
+        SelectionMode.VOTE, SelectionMode.CHAT -> vote
         SelectionMode.CZAR -> czar
     }
 }

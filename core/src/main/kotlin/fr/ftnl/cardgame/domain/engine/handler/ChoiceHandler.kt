@@ -11,7 +11,10 @@ import fr.ftnl.cardgame.domain.game.Round
 import fr.ftnl.cardgame.domain.game.SelectionMode
 import fr.ftnl.cardgame.domain.player.PlayerId
 
-/** Records a vote, or the pick of the card czar depending on the selected mode. */
+/**
+ * Records a vote, or the pick of the card czar depending on the selected mode. In
+ * [SelectionMode.CHAT] the table has no say at all: the viewers judge alone.
+ */
 internal class ChoiceHandler(private val roundFlow: RoundFlow) {
 
     fun handle(state: GameState, command: GameCommand.Choose): CommandResult {
@@ -33,6 +36,7 @@ internal class ChoiceHandler(private val roundFlow: RoundFlow) {
         voter: PlayerId,
         author: PlayerId,
     ): GameError? = when {
+        state.settings.selectionMode == SelectionMode.CHAT -> GameError.ONLY_THE_CHAT_VOTES
         round.hasVoted(voter) -> GameError.ALREADY_VOTED
         state.settings.selectionMode == SelectionMode.CZAR && round.czarId != voter -> GameError.NOT_THE_CZAR
         state.settings.selectionMode == SelectionMode.CZAR && author == voter -> GameError.CANNOT_VOTE_OWN_ANSWER

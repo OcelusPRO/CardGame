@@ -18,8 +18,8 @@ export function ChatVoteNotice({ channels, viewers }: Props) {
       </p>
       <p className="text-ink/70">
         Sur {channels.length > 1 ? 'les tchats de' : 'le tchat de'}{' '}
-        <span className="font-semibold">{channels.join(', ')}</span>. Chaque tchat pèse une
-        voix&nbsp;: celle de sa majorité, un seul vote par spectateur. Le vote reste ouvert
+        <span className="font-semibold">{channels.join(', ')}</span>. Personne à la table ne
+        vote&nbsp;: chaque spectateur pèse une voix, une seule, et la manche reste ouverte
         jusqu&apos;à la fin du temps.
       </p>
       <p aria-live="polite" className="font-semibold text-ink/60">

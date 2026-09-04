@@ -1,6 +1,8 @@
 package fr.ftnl.cardgame.domain.engine
 
 import fr.ftnl.cardgame.domain.card.CardId
+import fr.ftnl.cardgame.domain.game.ChatVoteTally
+import fr.ftnl.cardgame.domain.game.ChatVoter
 import fr.ftnl.cardgame.domain.game.GamePhase
 import fr.ftnl.cardgame.domain.game.GameSettings
 import fr.ftnl.cardgame.domain.game.GameState
@@ -49,9 +51,35 @@ class GameEngineChatVoteTest {
 
     @Test
     fun `a czar deciding alone leaves no room for a chat`() {
-        val czar = chatVote().copy(selectionMode = SelectionMode.CZAR)
+        val czar = GameFixtures.duoFriendly().copy(selectionMode = SelectionMode.CZAR)
 
         assertTrue(lobby(czar).chatChannels.isEmpty())
+    }
+
+    @Test
+    fun `nobody at the table votes once the chat judges`() {
+        val voting = everybodyAnswers(chatVote())
+        val handle = voting.round?.handleOf(bob)!!
+
+        assertEquals(
+            GameError.ONLY_THE_CHAT_VOTES,
+            engine.refusal(voting, GameCommand.Choose(alice, handle)),
+        )
+    }
+
+    @Test
+    fun `the chat alone hands out the points, one voice per viewer`() {
+        val voting = everybodyAnswers(chatVote())
+        val forAlice = voting.round?.handleOf(alice)!!
+        val counted = engine.perform(voting, GameCommand.SetChatVotes(mapOf(forAlice to tally(240))))
+
+        val scored = engine.perform(counted, GameCommand.CloseSelection)
+
+        assertEquals(GamePhase.ROUND_RESULT, scored.phase)
+        // Every viewer went the same way, so the answer also takes the unanimity bonus.
+        val expected = 240 * scored.settings.scoring.pointsPerVote + scored.settings.scoring.unanimityBonus
+        assertEquals(expected, scored.scoreboard.pointsOf(alice))
+        assertEquals(0, scored.scoreboard.pointsOf(bob))
     }
 
     @Test
@@ -62,33 +90,25 @@ class GameEngineChatVoteTest {
     }
 
     @Test
-    fun `the tally read from the chats lands on the round`() {
+    fun `the tally read from the chats lands on the round, faces included`() {
         val voting = everybodyAnswers(chatVote())
-        val tallies = mapOf("kameto" to mapOf(SubmissionId(0) to 12))
+        val tallies = mapOf(SubmissionId(0) to tally(12, faces = 3))
 
         val counted = engine.perform(voting, GameCommand.SetChatVotes(tallies))
 
-        assertEquals(mapOf(SubmissionId(0) to 12), counted.round?.chatVotes?.get("kameto"))
-    }
-
-    @Test
-    fun `a channel nobody at the table streams on is ignored`() {
-        val voting = everybodyAnswers(chatVote())
-        val tallies = mapOf("someone-else" to mapOf(SubmissionId(0) to 9_000))
-
-        val counted = engine.perform(voting, GameCommand.SetChatVotes(tallies))
-
-        assertTrue(counted.round?.chatVotes.orEmpty().isEmpty())
+        val landed = counted.round?.chatVotes?.get(SubmissionId(0))
+        assertEquals(12, landed?.count)
+        assertEquals(listOf("Viewer 1", "Viewer 2", "Viewer 3"), landed?.voters?.map { it.name })
     }
 
     @Test
     fun `an answer number the viewers made up is dropped`() {
         val voting = everybodyAnswers(chatVote())
-        val tallies = mapOf("kameto" to mapOf(SubmissionId(0) to 3, SubmissionId(8) to 40))
+        val tallies = mapOf(SubmissionId(0) to tally(3), SubmissionId(8) to tally(40))
 
         val counted = engine.perform(voting, GameCommand.SetChatVotes(tallies))
 
-        assertEquals(mapOf(SubmissionId(0) to 3), counted.round?.chatVotes?.get("kameto"))
+        assertEquals(setOf(SubmissionId(0)), counted.round?.chatVotes?.keys)
     }
 
     @Test
@@ -97,7 +117,7 @@ class GameEngineChatVoteTest {
 
         assertEquals(
             GameError.WRONG_PHASE,
-            engine.refusal(answering, GameCommand.SetChatVotes(mapOf("kameto" to mapOf(SubmissionId(0) to 1)))),
+            engine.refusal(answering, GameCommand.SetChatVotes(mapOf(SubmissionId(0) to tally(1)))),
         )
     }
 
@@ -107,26 +127,26 @@ class GameEngineChatVoteTest {
 
         assertEquals(
             GameError.CHAT_VOTE_CLOSED,
-            engine.refusal(voting, GameCommand.SetChatVotes(mapOf("kameto" to mapOf(SubmissionId(0) to 1)))),
+            engine.refusal(voting, GameCommand.SetChatVotes(mapOf(SubmissionId(0) to tally(1)))),
         )
     }
 
     @Test
-    fun `the timer alone closes a vote the chat takes part in`() {
+    fun `the timer alone closes a round the chat is judging`() {
         val voting = everybodyAnswers(chatVote())
-        val handles = listOf(alice, bob, carl).associateWith { voting.round?.handleOf(it) }
 
-        // Every player has voted, and the step still waits for the viewers.
-        val allVoted = listOf(alice to bob, bob to carl, carl to alice)
-            .fold(voting) { state, (voter, choice) ->
-                engine.perform(state, GameCommand.Choose(voter, handles.getValue(choice)!!))
-            }
-
-        assertEquals(GamePhase.SELECTING, allVoted.phase)
-        assertEquals(GamePhase.ROUND_RESULT, engine.perform(allVoted, GameCommand.CloseSelection).phase)
+        // There is nobody left to wait for at the table, and the step stays open anyway.
+        assertEquals(GamePhase.SELECTING, voting.phase)
+        assertEquals(GamePhase.ROUND_RESULT, engine.perform(voting, GameCommand.CloseSelection).phase)
     }
 
-    private fun chatVote(): GameSettings = GameFixtures.duoFriendly().copy(twitchChatVote = true)
+    private fun chatVote(): GameSettings =
+        GameFixtures.duoFriendly().copy(selectionMode = SelectionMode.CHAT)
+
+    private fun tally(count: Int, faces: Int = 0) = ChatVoteTally(
+        count = count,
+        voters = (1..minOf(faces, count)).map { ChatVoter("v$it", "Viewer $it") },
+    )
 
     private fun lobby(settings: GameSettings): GameState = GameFixtures.lobby(players, settings)
 

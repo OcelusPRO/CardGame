@@ -1,5 +1,6 @@
 package fr.ftnl.cardgame.api
 
+import fr.ftnl.cardgame.auth.AdminGuard
 import fr.ftnl.cardgame.auth.TwitchClient
 import fr.ftnl.cardgame.auth.TwitchUser
 import fr.ftnl.cardgame.auth.playerSession
@@ -16,10 +17,10 @@ import io.ktor.server.sessions.set
 
 /**
  * Optional Twitch sign in. It enriches the session with a name and a picture like Discord
- * does, and it hands the host the two chat options: a channel name is all the server
- * needs to read a chat.
+ * does, hands the host the chat mode — a channel name is all the server needs to read a
+ * chat — and opens the administration area for the allowlisted accounts.
  */
-fun Route.twitchAuthRoutes(twitch: TwitchClient) {
+fun Route.twitchAuthRoutes(twitch: TwitchClient, guard: AdminGuard) {
     authenticate(TWITCH_PROVIDER) {
 
         get("/auth/twitch") {
@@ -31,19 +32,21 @@ fun Route.twitchAuthRoutes(twitch: TwitchClient) {
                 ?: return@get call.respondRedirect("/?twitch=refused")
             val user = twitch.me(token.accessToken)
                 ?: return@get call.respondRedirect("/?twitch=failed")
-            call.remember(user)
+            call.remember(user, guard)
             call.respondRedirect("/?twitch=ok")
         }
     }
 }
 
-private fun ApplicationCall.remember(user: TwitchUser) {
+private fun ApplicationCall.remember(user: TwitchUser, guard: AdminGuard) {
     sessions.set(
         playerSession().copy(
             twitchId = user.id,
             twitchLogin = user.login,
             twitchUsername = user.displayName,
             twitchAvatarUrl = user.profileImageUrl,
+            twitchCreatedAtMillis = user.createdAtMillis,
         )
     )
+    guard.sessionFor(user.account())?.let { sessions.set(it) }
 }

@@ -1,11 +1,14 @@
 package fr.ftnl.cardgame.api.view
 
 import fr.ftnl.cardgame.api.dto.AnswerView
+import fr.ftnl.cardgame.api.dto.ChatVotesView
+import fr.ftnl.cardgame.api.dto.ChatVoterView
 import fr.ftnl.cardgame.api.dto.RoundOutcomeView
 import fr.ftnl.cardgame.api.dto.RoundView
 import fr.ftnl.cardgame.api.dto.SituationCardView
 import fr.ftnl.cardgame.domain.card.CardOrigin
 import fr.ftnl.cardgame.domain.card.SituationCard
+import fr.ftnl.cardgame.domain.game.ChatVoteTally
 import fr.ftnl.cardgame.domain.game.GamePhase
 import fr.ftnl.cardgame.domain.game.GameState
 import fr.ftnl.cardgame.domain.game.Round
@@ -30,7 +33,6 @@ class RoundViewFactory {
             answers = answers(state, round, viewer),
             myVote = round.votes[viewer]?.index,
             outcome = round.outcome?.let(::outcomeView),
-            chatVotes = round.chatTally.mapKeys { it.key.index.toString() },
         )
     }
 
@@ -55,6 +57,12 @@ class RoundViewFactory {
         authorId = submission.playerId.value.takeIf { revealAuthors },
         votes = round.outcome?.voteCounts?.get(id).takeIf { revealAuthors },
         isMine = submission.playerId == viewer,
+        chatVotes = round.chatVotes[id]?.let(::chatVotesView),
+    )
+
+    private fun chatVotesView(tally: ChatVoteTally) = ChatVotesView(
+        count = tally.count,
+        voters = tally.voters.map { ChatVoterView(it.id, it.name, it.avatarUrl) },
     )
 
     private fun situationView(card: SituationCard) = SituationCardView(

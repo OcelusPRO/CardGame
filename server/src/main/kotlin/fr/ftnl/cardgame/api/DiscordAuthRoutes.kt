@@ -45,5 +45,5 @@ private fun ApplicationCall.remember(user: DiscordUser, guard: AdminGuard) {
             discordAvatarUrl = user.avatarUrl,
         )
     )
-    guard.sessionFor(user)?.let { sessions.set(it) }
+    guard.sessionFor(user.account())?.let { sessions.set(it) }
 }

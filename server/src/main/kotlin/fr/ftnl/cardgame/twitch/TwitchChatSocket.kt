@@ -13,6 +13,10 @@ import kotlin.random.Random
  * how Twitch lets anyone listen to a public room. No token is involved, so a player never
  * grants this application anything beyond reading their profile — and the server can
  * never write a single word in their chat.
+ *
+ * The `tags` capability is asked for because a bare IRC line only carries a nickname:
+ * the tags add the account id, which is what makes one voice one viewer, and the display
+ * name the chat itself shows.
  */
 class TwitchChatSocket(
     private val http: HttpClient,
@@ -23,6 +27,7 @@ class TwitchChatSocket(
         val rooms = channels.map { it.lowercase() }.filter { it.isNotBlank() }.distinct()
         if (rooms.isEmpty()) return
         http.webSocket(url) {
+            send("CAP REQ :twitch.tv/tags")
             send("NICK justinfan${Random.nextInt(10_000, 99_999)}")
             rooms.forEach { send("JOIN #$it") }
             incoming.consumeEach { frame ->
@@ -36,16 +41,35 @@ class TwitchChatSocket(
         }
     }
 
-    /** `:viewer!viewer@viewer.tmi.twitch.tv PRIVMSG #channel :the message` */
+    /**
+     * `@display-name=Foo;user-id=42;… :foo!foo@foo.tmi.twitch.tv PRIVMSG #channel :hello`
+     *
+     * The tag block is optional: should Twitch ever answer without it, the nickname
+     * stands in for both the id and the name rather than dropping the vote.
+     */
     private fun privmsg(line: String): ChatLine? {
-        if (!line.startsWith(":")) return null
-        val space = line.indexOf(' ').takeIf { it > 0 } ?: return null
-        val viewer = line.substring(1, space).substringBefore('!').lowercase()
-        val rest = line.substring(space + 1)
-        if (!rest.startsWith("PRIVMSG #")) return null
-        val channel = rest.removePrefix("PRIVMSG #").substringBefore(' ')
-        val message = rest.substringAfter(" :", missingDelimiterValue = "")
-        return if (channel.isBlank() || message.isBlank()) null
-        else ChatLine(channel = channel, viewer = viewer, text = message)
+        val tags = if (line.startsWith("@")) tagsOf(line.substringBefore(' ')) else emptyMap()
+        val rest = if (line.startsWith("@")) line.substringAfter(' ') else line
+        if (!rest.startsWith(":")) return null
+        val space = rest.indexOf(' ').takeIf { it > 0 } ?: return null
+        val nick = rest.substring(1, space).substringBefore('!').lowercase()
+        val command = rest.substring(space + 1)
+        if (!command.startsWith("PRIVMSG #")) return null
+        val channel = command.removePrefix("PRIVMSG #").substringBefore(' ')
+        val message = command.substringAfter(" :", missingDelimiterValue = "")
+        if (channel.isBlank() || message.isBlank() || nick.isBlank()) return null
+        return ChatLine(
+            channel = channel,
+            viewerId = tags["user-id"]?.takeIf { it.isNotBlank() } ?: nick,
+            viewerName = tags["display-name"]?.takeIf { it.isNotBlank() } ?: nick,
+            text = message,
+        )
     }
+
+    private fun tagsOf(block: String): Map<String, String> =
+        block.removePrefix("@").split(';').mapNotNull { tag ->
+            val name = tag.substringBefore('=')
+            val value = tag.substringAfter('=', missingDelimiterValue = "")
+            if (name.isBlank()) null else name to value
+        }.toMap()
 }

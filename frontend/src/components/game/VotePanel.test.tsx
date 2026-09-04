@@ -114,10 +114,32 @@ describe('VotePanel', () => {
       return {
         ...game,
         chatChannels: ['kameto'],
-        settings: { ...game.settings, twitchChatVote: true },
-        round: { ...game.round!, chatVotes: { '1': 12 } },
+        settings: { ...game.settings, selectionMode: 'CHAT' as const },
+        round: {
+          ...game.round!,
+          answers: game.round!.answers.map((answer) =>
+            answer.id === 1
+              ? {
+                  ...answer,
+                  chatVotes: {
+                    count: 12,
+                    voters: [
+                      { id: 'v1', name: 'Neo', avatarUrl: 'https://static-cdn.jtvnw.net/neo.png' },
+                      { id: 'v2', name: 'Trinity' },
+                    ],
+                  },
+                }
+              : answer,
+          ),
+        },
       }
     }
+
+    it('says the table has no say this round', () => {
+      render(<VotePanel game={chatGame()} onChoose={vi.fn()} />)
+
+      expect(screen.getByText(/Le tchat tranche/i)).toBeInTheDocument()
+    })
 
     it('tells the viewers what to type, and where', () => {
       render(<VotePanel game={chatGame()} onChoose={vi.fn()} />)
@@ -139,6 +161,19 @@ describe('VotePanel', () => {
       expect(screen.getByText('12 tchat')).toBeInTheDocument()
       expect(screen.getByText('0 tchat')).toBeInTheDocument()
       expect(screen.getByText(/12 vote\(s\) du tchat/i)).toBeInTheDocument()
+    })
+
+    it('shows the faces of the viewers who picked an answer', () => {
+      render(<VotePanel game={chatGame()} onChoose={vi.fn()} />)
+
+      expect(screen.getByAltText('Neo')).toHaveAttribute(
+        'src',
+        'https://static-cdn.jtvnw.net/neo.png',
+      )
+      // Nothing to draw for Trinity, so her initial stands in.
+      expect(screen.getByTitle('Trinity')).toHaveTextContent('T')
+      // Two faces out of twelve voices: the rest is a number.
+      expect(screen.getByText('+10 votes')).toBeInTheDocument()
     })
 
     it('says nothing about a chat when none is being read', () => {
