@@ -20,10 +20,17 @@ export function useSavedDecks() {
     [decks, setDecks],
   )
 
+  const update = useCallback(
+    (id: string, name: string, situations: string[], punchlines: string[]) => {
+      setDecks(decks.map((deck) => (deck.id === id ? { id, name, situations, punchlines } : deck)))
+    },
+    [decks, setDecks],
+  )
+
   const remove = useCallback(
     (id: string) => setDecks(decks.filter((deck) => deck.id !== id)),
     [decks, setDecks],
   )
 
-  return { decks, save, remove }
+  return { decks, save, update, remove }
 }

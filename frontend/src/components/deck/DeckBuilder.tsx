@@ -18,12 +18,13 @@ interface Props {
  * boxes after a short pause so a socket message is not sent on every keystroke.
  */
 export function DeckBuilder({ packs, disabled, onApply }: Props) {
-  const { decks, save, remove } = useSavedDecks()
+  const { decks, save, update, remove } = useSavedDecks()
   const [selectedPacks, setSelectedPacks] = useState<string[]>([])
   const [selectedDecks, setSelectedDecks] = useState<string[]>([])
   const [situations, setSituations] = useState('')
   const [punchlines, setPunchlines] = useState('')
   const [deckName, setDeckName] = useState('')
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   // A brand new table plays with everything the site offers, exactly like the server default.
   useEffect(() => setSelectedPacks(packs.map((pack) => pack.id)), [packs])
@@ -64,6 +65,21 @@ export function DeckBuilder({ packs, disabled, onApply }: Props) {
     const next = toggle(selectedDecks, id)
     setSelectedDecks(next)
     push(build(selectedPacks, next, situations, punchlines))
+  }
+
+  const editDeck = (id: string) => {
+    const deck = decks.find((it) => it.id === id)
+    if (!deck) return
+    setEditingId(deck.id)
+    setDeckName(deck.name)
+    setSituations(deck.situations.join('\n'))
+    setPunchlines(deck.punchlines.join('\n'))
+  }
+  const cancelEdit = () => {
+    setEditingId(null)
+    setDeckName('')
+    setSituations('')
+    setPunchlines('')
   }
 
   return (
@@ -139,17 +155,46 @@ export function DeckBuilder({ packs, disabled, onApply }: Props) {
           variant="ghost"
           disabled={!deckName.trim()}
           onClick={() => {
-            save(deckName.trim(), linesToCards(situations), linesToCards(punchlines))
+            if (editingId) {
+              update(editingId, deckName.trim(), linesToCards(situations), linesToCards(punchlines))
+            } else {
+              save(deckName.trim(), linesToCards(situations), linesToCards(punchlines))
+            }
+            setEditingId(null)
             setDeckName('')
           }}
         >
-          💾 Enregistrer
+          {editingId ? '💾 Mettre à jour' : '💾 Enregistrer'}
         </Button>
+        {editingId && (
+          <Button variant="ghost" onClick={cancelEdit}>
+            ✕ Annuler
+          </Button>
+        )}
+        {decks.length > 0 && (
+          <select
+            aria-label="Modifier un deck enregistré"
+            value=""
+            onChange={(event) => event.target.value && editDeck(event.target.value)}
+            className="sketch-input bg-paper px-3 py-2 text-sm outline-none"
+          >
+            <option value="">✏️ Modifier un deck…</option>
+            {decks.map((deck) => (
+              <option key={deck.id} value={deck.id} className="bg-paper">
+                {deck.name}
+              </option>
+            ))}
+          </select>
+        )}
         {decks.length > 0 && (
           <select
             aria-label="Supprimer un deck enregistré"
             value=""
-            onChange={(event) => event.target.value && remove(event.target.value)}
+            onChange={(event) => {
+              if (!event.target.value) return
+              if (event.target.value === editingId) cancelEdit()
+              remove(event.target.value)
+            }}
             className="sketch-input bg-paper px-3 py-2 text-sm outline-none"
           >
             <option value="">Supprimer un deck…</option>
