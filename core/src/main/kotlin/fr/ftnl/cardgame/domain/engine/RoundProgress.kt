@@ -17,10 +17,17 @@ object RoundProgress {
         return expected.isNotEmpty() && expected.all { round.hasSubmitted(it.id) }
     }
 
-    /** Every eligible voter has chosen, or there was simply nothing to choose from. */
+    /**
+     * Every eligible voter has chosen, or there was simply nothing to choose from.
+     *
+     * With a Twitch chat voting, the step never ends early: the players are a handful and
+     * would close the vote before the viewers had time to read the answers, so the timer
+     * alone decides when it is over.
+     */
     fun selectionComplete(state: GameState): Boolean {
         val round = state.round ?: return false
         if (round.revealOrder.isEmpty()) return true
+        if (state.chatChannels.isNotEmpty()) return false
         return voters(state).all(round::hasVoted)
     }
 

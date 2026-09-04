@@ -37,6 +37,24 @@ data class GameState(
     /** Players still online; a disconnected player keeps their score and their seat. */
     val connectedPlayers: List<Player> get() = players.filter { it.connected }
 
+    /**
+     * The Twitch channels whose chat weighs in on this table, in the order they sat down:
+     * the host first, then the other streamers when the host asked for their chats too.
+     * Empty as soon as the option is off, or in czar mode where a single player decides.
+     */
+    val chatChannels: List<String>
+        get() {
+            if (!settings.twitchChatVote || settings.selectionMode != SelectionMode.VOTE) {
+                return emptyList()
+            }
+            val guests = if (settings.twitchGuestChats) players.filter { it.id != hostId } else emptyList()
+            return (listOfNotNull(playerOf(hostId)?.twitchLogin) + guests.mapNotNull { it.twitchLogin })
+                .distinct()
+        }
+
+    /** True when the chat is voting right now, which is what puts the numbers on screen. */
+    val chatVoteOpen: Boolean get() = phase == GamePhase.SELECTING && chatChannels.isNotEmpty()
+
     /** True when the rotating czar also submits an answer, see [GameSettings.czarAnswers]. */
     val czarAnswers: Boolean
         get() = settings.selectionMode == SelectionMode.CZAR && settings.czarAnswers

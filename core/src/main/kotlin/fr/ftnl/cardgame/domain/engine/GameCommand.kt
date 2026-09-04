@@ -24,6 +24,16 @@ sealed interface GameCommand {
 
     data class Kick(val by: PlayerId, val playerId: PlayerId) : GameCommand
 
+    /**
+     * Attaches the Twitch account of a player who signed in, possibly long after taking
+     * their seat. A null [login] unlinks them, which is what a sign out amounts to.
+     */
+    data class LinkTwitch(
+        val playerId: PlayerId,
+        val login: String?,
+        val pictureUrl: String? = null,
+    ) : GameCommand
+
     data class UpdateSettings(val by: PlayerId, val settings: GameSettings) : GameCommand
 
     data class SetCardPool(val by: PlayerId, val pool: CardPool) : GameCommand
@@ -41,6 +51,13 @@ sealed interface GameCommand {
 
     /** A vote in [fr.ftnl.cardgame.domain.game.SelectionMode.VOTE], the czar pick otherwise. */
     data class Choose(val playerId: PlayerId, val submissionId: SubmissionId) : GameCommand
+
+    /**
+     * The live tally read from the Twitch chats, pushed by the server while the vote is
+     * open: channel name to the number of viewers who typed each answer. It replaces the
+     * previous snapshot, so a lost frame simply corrects itself on the next one.
+     */
+    data class SetChatVotes(val tallies: Map<String, Map<SubmissionId, Int>>) : GameCommand
 
     /** Issued by the scheduler when the submission timer runs out. */
     data object CloseSubmissions : GameCommand

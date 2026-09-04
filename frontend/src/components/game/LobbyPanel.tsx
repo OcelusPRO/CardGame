@@ -35,7 +35,13 @@ export function LobbyPanel({ game, onSettings, onDeck }: Props) {
 
       <div className="grid gap-5 xl:grid-cols-2 xl:items-start">
         <Panel title="Règles">
-          <SettingsForm settings={game.settings} disabled={notHost} onChange={onSettings} />
+          <SettingsForm
+            settings={game.settings}
+            disabled={notHost}
+            hostTwitchLogin={twitchLoginOf(game, game.hostId)}
+            guestTwitchLogins={guestTwitchLogins(game)}
+            onChange={onSettings}
+          />
         </Panel>
 
         <Panel title="Paquet de cartes">
@@ -44,4 +50,15 @@ export function LobbyPanel({ game, onSettings, onDeck }: Props) {
       </div>
     </div>
   )
+}
+
+function twitchLoginOf(game: GameView, playerId: string): string | undefined {
+  return game.players.find((player) => player.id === playerId)?.twitchLogin
+}
+
+/** Every streamer at the table but the host, whose chats the host may pull in too. */
+function guestTwitchLogins(game: GameView): string[] {
+  return game.players
+    .filter((player) => player.id !== game.hostId && player.twitchLogin)
+    .map((player) => player.twitchLogin as string)
 }

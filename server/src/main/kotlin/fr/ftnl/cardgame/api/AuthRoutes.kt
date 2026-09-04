@@ -6,6 +6,7 @@ import fr.ftnl.cardgame.auth.PlayerSession
 import fr.ftnl.cardgame.auth.adminSession
 import fr.ftnl.cardgame.auth.playerSession
 import fr.ftnl.cardgame.config.DiscordConfig
+import fr.ftnl.cardgame.config.TwitchConfig
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
@@ -15,7 +16,7 @@ import io.ktor.server.sessions.clear
 import io.ktor.server.sessions.sessions
 
 /** Who am I, and how do I stop being it. */
-fun Route.authRoutes(discord: DiscordConfig) {
+fun Route.authRoutes(discord: DiscordConfig, twitch: TwitchConfig) {
 
     get("/api/me") {
         val player = call.playerSession()
@@ -25,8 +26,13 @@ fun Route.authRoutes(discord: DiscordConfig) {
                 discordConnected = player.discordId != null,
                 discordUsername = player.discordUsername,
                 discordAvatarUrl = player.discordAvatarUrl,
+                twitchConnected = player.twitchId != null,
+                twitchUsername = player.twitchUsername,
+                twitchAvatarUrl = player.twitchAvatarUrl,
+                twitchLogin = player.twitchLogin,
                 isAdmin = call.adminSession() != null,
                 discordLoginAvailable = discord.enabled,
+                twitchLoginAvailable = twitch.enabled,
             )
         )
     }

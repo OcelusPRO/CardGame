@@ -18,4 +18,6 @@ data class GameView(
     val deck: DeckSummary,
     val deadlineMillis: Long? = null,
     val serverTimeMillis: Long,
+    /** The Twitch channels whose chat votes on this table; empty when nobody's does. */
+    val chatChannels: List<String> = emptyList(),
 )

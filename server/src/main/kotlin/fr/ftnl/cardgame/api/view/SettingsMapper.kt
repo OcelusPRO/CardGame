@@ -24,6 +24,8 @@ object SettingsMapper {
         maxPlayers = input.maxPlayers ?: current.maxPlayers,
         allowSelfVote = input.allowSelfVote ?: current.allowSelfVote,
         czarAnswers = input.czarAnswers ?: current.czarAnswers,
+        twitchChatVote = input.twitchChatVote ?: current.twitchChatVote,
+        twitchGuestChats = input.twitchGuestChats ?: current.twitchGuestChats,
     )
 
     fun toView(settings: GameSettings): GameSettingsView = GameSettingsView(
@@ -40,6 +42,8 @@ object SettingsMapper {
         czarAnswers = settings.czarAnswers,
         pointsPerVote = settings.scoring.pointsPerVote,
         unanimityBonus = settings.scoring.unanimityBonus,
+        twitchChatVote = settings.twitchChatVote,
+        twitchGuestChats = settings.twitchGuestChats,
     )
 
     private fun mergeScoring(current: ScoringSettings, input: GameSettingsInput) = current.copy(

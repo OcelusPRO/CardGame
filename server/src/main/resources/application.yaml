@@ -20,6 +20,10 @@ app:
     clientId: "$DISCORD_CLIENT_ID:"
     clientSecret: "$DISCORD_CLIENT_SECRET:"
     redirectUrl: "$DISCORD_REDIRECT_URL:http://localhost:8080/auth/discord/callback"
+  twitch:
+    clientId: "$TWITCH_CLIENT_ID:"
+    clientSecret: "$TWITCH_CLIENT_SECRET:"
+    redirectUrl: "$TWITCH_REDIRECT_URL:http://localhost:8080/auth/twitch/callback"
   admin:
     discordIds: "$ADMIN_DISCORD_IDS:"
   adultAccess:

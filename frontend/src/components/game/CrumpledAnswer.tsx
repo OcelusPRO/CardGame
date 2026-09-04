@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { useReducedMotion } from 'motion/react'
+import { useReducedMotionConfig } from 'motion/react'
 import { drawCardFace, type CardFace } from './crumple/cardTexture'
 import { crumpleCard } from './crumple/crumpleStage'
 
@@ -26,7 +26,10 @@ interface Props {
  * throw is over, and the surviving cards slide together then.
  */
 export function CrumpledAnswer({ children, face, delay }: Props) {
-  const reducedMotion = useReducedMotion()
+  // The config hook, not `useReducedMotion`: the latter only ever reads the OS switch,
+  // so a player whose system asks for less motion would never get the crumple back after
+  // turning animations on in the header — and one who turned them off would still get it.
+  const reducedMotion = useReducedMotionConfig()
   const [thrown, setThrown] = useState(false)
   const [gone, setGone] = useState(false)
   const holder = useRef<HTMLDivElement>(null)
@@ -61,9 +64,11 @@ export function CrumpledAnswer({ children, face, delay }: Props) {
     }
   }, [delay, face, reducedMotion])
 
-  // Somebody who asked for calm gets the plain card, kept on the table.
-  if (reducedMotion) return <>{children}</>
+  // Somebody who asked for calm gets the plain card, kept on the table. A sheet already
+  // in the air keeps its flight, though: silencing animations mid-throw must not drop a
+  // vanished card back onto the table.
   if (gone) return null
+  if (reducedMotion && !thrown) return <>{children}</>
 
   return (
     <div ref={holder} className="h-full" style={{ visibility: thrown ? 'hidden' : 'visible' }}>

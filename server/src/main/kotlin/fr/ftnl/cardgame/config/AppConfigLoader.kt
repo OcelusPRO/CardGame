@@ -9,6 +9,7 @@ object AppConfigLoader {
         database = database(config),
         redis = redis(config),
         discord = discord(config),
+        twitch = twitch(config),
         admin = AdminConfig(config.list("app.admin.discordIds")),
         adultAccess = AdultAccessConfig(
             minAccountAgeDays = config.number("app.adultAccess.minAccountAgeDays", default = 1095),
@@ -35,6 +36,12 @@ object AppConfigLoader {
         clientId = config.text("app.discord.clientId"),
         clientSecret = config.text("app.discord.clientSecret"),
         redirectUrl = config.text("app.discord.redirectUrl"),
+    )
+
+    private fun twitch(config: ApplicationConfig) = TwitchConfig(
+        clientId = config.text("app.twitch.clientId"),
+        clientSecret = config.text("app.twitch.clientSecret"),
+        redirectUrl = config.text("app.twitch.redirectUrl"),
     )
 
     private fun ApplicationConfig.text(path: String): String =

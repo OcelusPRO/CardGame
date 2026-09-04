@@ -108,6 +108,47 @@ describe('VotePanel', () => {
     expect(screen.getByText(/Vote enregistré/i)).toBeInTheDocument()
   })
 
+  describe('when a Twitch chat votes too', () => {
+    function chatGame(): GameView {
+      const game = votingGame()
+      return {
+        ...game,
+        chatChannels: ['kameto'],
+        settings: { ...game.settings, twitchChatVote: true },
+        round: { ...game.round!, chatVotes: { '1': 12 } },
+      }
+    }
+
+    it('tells the viewers what to type, and where', () => {
+      render(<VotePanel game={chatGame()} onChoose={vi.fn()} />)
+
+      expect(screen.getByText(/Tapez le numéro de la réponse/i)).toBeInTheDocument()
+      expect(screen.getByText('kameto')).toBeInTheDocument()
+    })
+
+    it('numbers every answer the way the chat must type it', () => {
+      render(<VotePanel game={chatGame()} onChoose={vi.fn()} />)
+
+      expect(screen.getByText('1')).toBeInTheDocument()
+      expect(screen.getByText('2')).toBeInTheDocument()
+    })
+
+    it('counts the chat live, on the answer and in the notice', () => {
+      render(<VotePanel game={chatGame()} onChoose={vi.fn()} />)
+
+      expect(screen.getByText('12 tchat')).toBeInTheDocument()
+      expect(screen.getByText('0 tchat')).toBeInTheDocument()
+      expect(screen.getByText(/12 vote\(s\) du tchat/i)).toBeInTheDocument()
+    })
+
+    it('says nothing about a chat when none is being read', () => {
+      render(<VotePanel game={votingGame()} onChoose={vi.fn()} />)
+
+      expect(screen.queryByText(/Tapez le numéro/i)).not.toBeInTheDocument()
+      expect(screen.queryByText(/tchat/i)).not.toBeInTheDocument()
+    })
+  })
+
   it('hands the decision to the czar in czar mode', () => {
     const game = votingGame()
     render(

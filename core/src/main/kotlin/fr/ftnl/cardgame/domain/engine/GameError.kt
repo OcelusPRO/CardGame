@@ -25,4 +25,5 @@ enum class GameError {
     UNKNOWN_SUBMISSION,
     CANNOT_VOTE_OWN_ANSWER,
     CANNOT_KICK_SELF,
+    CHAT_VOTE_CLOSED,
 }

@@ -15,7 +15,8 @@ export interface AvatarPartView {
 export interface AvatarView {
   top: AvatarPartView
   bottom: AvatarPartView
-  discordAvatarUrl?: string
+  /** The Discord or Twitch profile picture, drawn over the top half. */
+  pictureUrl?: string
 }
 
 export interface PlayerView {
@@ -28,6 +29,8 @@ export interface PlayerView {
   isCzar: boolean
   hasAnswered: boolean
   hasVoted: boolean
+  /** Their Twitch channel, when they signed in with it. */
+  twitchLogin?: string
 }
 
 export interface PunchlineCardView {
@@ -69,6 +72,8 @@ export interface RoundView {
   answers: AnswerView[]
   myVote?: number
   outcome?: RoundOutcomeView
+  /** Live count of viewers per answer id, all watched Twitch chats together. */
+  chatVotes?: Record<string, number>
 }
 
 export interface SelfView {
@@ -100,6 +105,10 @@ export interface GameSettingsView {
   pointsPerVote: number
   unanimityBonus: number
   czarWinPoints: number
+  /** The chat of the streaming host votes too, by typing an answer number. */
+  twitchChatVote: boolean
+  /** The chats of the other streamers at the table are read as well. */
+  twitchGuestChats: boolean
 }
 
 export interface GameView {
@@ -113,6 +122,8 @@ export interface GameView {
   deck: DeckSummary
   deadlineMillis?: number
   serverTimeMillis: number
+  /** The Twitch channels whose chat votes on this table; empty when nobody's does. */
+  chatChannels: string[]
 }
 
 export interface GameTicket {
@@ -138,8 +149,14 @@ export interface MeView {
   discordConnected: boolean
   discordUsername?: string
   discordAvatarUrl?: string
+  twitchConnected: boolean
+  twitchUsername?: string
+  twitchAvatarUrl?: string
+  /** The channel name, which is what the table reads a chat from. */
+  twitchLogin?: string
   isAdmin: boolean
   discordLoginAvailable: boolean
+  twitchLoginAvailable: boolean
 }
 
 export interface CardPackView {
@@ -174,6 +191,8 @@ export interface GameSettingsInput {
   pointsPerVote?: number
   unanimityBonus?: number
   czarWinPoints?: number
+  twitchChatVote?: boolean
+  twitchGuestChats?: boolean
 }
 
 export interface DeckInput {

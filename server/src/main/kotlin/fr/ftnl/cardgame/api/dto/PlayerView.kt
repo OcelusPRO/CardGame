@@ -14,4 +14,6 @@ data class PlayerView(
     val isCzar: Boolean,
     val hasAnswered: Boolean,
     val hasVoted: Boolean,
+    /** Their Twitch channel, when they signed in with it; the chat the table may read. */
+    val twitchLogin: String? = null,
 )

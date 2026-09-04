@@ -17,6 +17,7 @@ Tout se joue dans le navigateur, sans installation : l'hôte crée une table, pa
 - [Développement](#développement)
 - [Configuration](#configuration)
 - [Connexion Discord et administration](#connexion-discord-et-administration)
+- [Connexion Twitch et vote du tchat](#connexion-twitch-et-vote-du-tchat)
 - [Tests](#tests)
 - [Surface HTTP et WebSocket](#surface-http-et-websocket)
 
@@ -28,8 +29,8 @@ Tout se joue dans le navigateur, sans installation : l'hôte crée une table, pa
 | --- | --- |
 | Créer une partie | Code unique à 5 caractères (alphabet sans `O`, `0`, `I`, `1`, `L` ni `Q`), masqué par défaut, avec QR code à la demande |
 | Rejoindre | L'adresse de la partie `/game/CODE` est l'invitation : elle affiche la table pour un joueur assis, le formulaire pour les autres |
-| Identité | Pseudo et avatar gardés dans le navigateur ; la connexion Discord suggère le pseudo sans jamais l'imposer |
-| Avatar | Deux moitiés personnalisables séparément (tête et corps), la photo Discord venant se poser dans la tête |
+| Identité | Pseudo et avatar gardés dans le navigateur ; la connexion Discord ou Twitch suggère le pseudo sans jamais l'imposer |
+| Avatar | Deux moitiés personnalisables séparément (tête et corps), la photo du compte connecté (Discord ou Twitch) venant se poser dans la tête |
 | Mode cartes | Main de cartes réponses distribuée à chaque manche |
 | Mode « sans limites » | Aucune carte réponse : chacun écrit la sienne directement sur une carte vierge |
 | Mode personnalisé | Un sélecteur unique mêle les packs officiels (marqués d'une étoile) et les decks gardés dans le navigateur, plus des cartes écrites à la volée |
@@ -37,6 +38,7 @@ Tout se joue dans le navigateur, sans installation : l'hôte crée une table, pa
 | Reconnexion | Le siège, le score et la main survivent à un rafraîchissement ou à une coupure réseau |
 | Administration | Édition des packs et des cartes officielles, statistiques d'usage et compteurs en direct |
 | Fin de partie | Podium pour les trois premiers, classement simple pour la suite |
+| Vote du tchat Twitch | L'hôte connecté avec Twitch fait voter son tchat au numéro de la carte, et peut inclure les tchats des autres joueurs streamers |
 | Bruitages | Clics, sélection de carte, vote, révélation et derniers battements du chrono, coupables d'un seul bouton |
 
 Les deux modes se cumulent : un paquet de situations maison avec des réponses écrites à la volée
@@ -58,6 +60,9 @@ Chaque temps a un chronomètre, et se ferme tout seul dès que tout le monde a j
 **Mode maître du jeu** — un joueur différent tranche à chaque manche et ne joue pas :
 son choix vaut une voix, donc la réponse retenue rapporte le même **`pointsPerVote`**.
 
+Un **tchat Twitch** que l'hôte a invité compte lui aussi pour une voix, celle de sa majorité :
+voir [Connexion Twitch et vote du tchat](#connexion-twitch-et-vote-du-tchat).
+
 Personne ne saute un tour pour avoir hésité : à l'expiration du chronomètre, la réponse
 déjà sélectionnée part d'elle-même, et une main restée intacte joue une carte au hasard.
 
@@ -76,7 +81,7 @@ l'emporte. Une partie s'arrête aussi plus tôt si le paquet de situations est �
 ```
 CardGame
 ├── core/       Le jeu, en Kotlin pur : aucune dépendance à Ktor, à une base ou à un socket
-├── server/     Ktor : HTTP, WebSocket, PostgreSQL, Redis, OAuth Discord
+├── server/     Ktor : HTTP, WebSocket, PostgreSQL, Redis, OAuth Discord et Twitch
 ├── frontend/   React 19 + TypeScript + Tailwind CSS v4, servi par Ktor en production
 ├── Dockerfile
 └── docker-compose.yml
@@ -100,8 +105,9 @@ et les deux modes de sélection sont deux implémentations de `RoundScoring`.
   au code Kotlin : les tests appliquent exactement les mêmes fichiers.
 - **Redis** conserve les parties en cours, avec une expiration rafraîchie à chaque écriture :
   une table abandonnée disparaît d'elle-même, sans tâche de ménage.
-- **Rien d'autre n'est stocké** : ni le résultat des parties, ni les comptes Discord des joueurs.
-  L'identité d'un joueur tient dans un cookie signé, le temps de la session.
+- **Rien d'autre n'est stocké** : ni le résultat des parties, ni les comptes Discord ou Twitch
+  des joueurs, ni les votes venus d'un tchat. L'identité d'un joueur tient dans un cookie signé,
+  le temps de la session.
 - `GameService` sérialise les commandes d'une même partie derrière un verrou, puis prévient
   ses `GameListener` : diffusion WebSocket, statistiques, et minuteurs de phase.
 - `GameViewFactory` est le seul endroit qui décide **qui voit quoi**. Une main n'est jamais
@@ -209,17 +215,22 @@ Toutes les valeurs se pilotent par variables d'environnement (voir `.env.example
 | `SEED_DEV_DECK` | `false` | Charge le paquet de démonstration dans une base vide |
 | `DISCORD_CLIENT_ID` / `DISCORD_CLIENT_SECRET` | vide | Connexion Discord ; vide = bouton masqué |
 | `DISCORD_REDIRECT_URL` | `http://localhost:8080/auth/discord/callback` | URL de retour OAuth |
+| `TWITCH_CLIENT_ID` / `TWITCH_CLIENT_SECRET` | vide | Connexion Twitch ; vide = bouton masqué |
+| `TWITCH_REDIRECT_URL` | `http://localhost:8080/auth/twitch/callback` | URL de retour OAuth |
 | `ADMIN_DISCORD_IDS` | vide | Identifiants Discord admin, séparés par des virgules |
 
 ---
 
 ## Connexion Discord et administration
 
-La connexion Discord est **facultative** : sans identifiants configurés le bouton disparaît,
-et le jeu fonctionne normalement. Quand elle est active, elle sert à deux choses :
+La connexion est **facultative** : sans identifiants configurés, le bouton **« Se connecter »**
+de l'en-tête disparaît et le jeu fonctionne normalement. Ce bouton ouvre une fenêtre qui propose
+les comptes que le serveur sait gérer — Discord, Twitch — et on se connecte avec **l'un ou
+l'autre**. Quel que soit le compte, il sert à proposer le pseudo et à poser la photo de profil
+dans la tête de l'avatar.
 
-1. afficher la photo de profil Discord dans la tête de l'avatar ;
-2. ouvrir l'administration, réservée aux identifiants listés dans `ADMIN_DISCORD_IDS`.
+La connexion Discord sert en plus à ouvrir l'administration, réservée aux identifiants listés
+dans `ADMIN_DISCORD_IDS`.
 
 Sur le [portail développeur Discord](https://discord.com/developers/applications), créez une
 application, ajoutez `http://localhost:8080/auth/discord/callback` comme *redirect URI*, puis
@@ -229,6 +240,47 @@ L'administration (`/admin`) permet de créer et corriger les packs et les cartes
 affiche l'activité des 30 derniers jours, les cartes les plus jouées, les meilleurs duos
 situation × réponse classés par ratio de votes, ainsi que le nombre de parties et de joueurs
 connectés poussé en direct par un WebSocket.
+
+---
+
+## Connexion Twitch et vote du tchat
+
+La connexion Twitch est **facultative** elle aussi, et indépendante de Discord : un joueur peut
+n'avoir ni l'une ni l'autre, l'une des deux, ou les deux. Créez une application sur la
+[console développeur Twitch](https://dev.twitch.tv/console/apps), ajoutez
+`http://localhost:8080/auth/twitch/callback` comme *OAuth Redirect URL*, puis reportez
+l'identifiant et le secret dans `.env`. **Aucun scope n'est demandé** : lire le profil du compte
+connecté n'en réclame pas, et le tchat est lu anonymement.
+
+Une fois l'hôte connecté avec Twitch, la question **« Qui désigne la meilleure réponse ? »**
+gagne un troisième choix, à côté de « tout le monde vote » et du maître du jeu tournant :
+
+> **Le tchat de _votre chaîne_ vote aussi** — pendant le vote, chaque réponse porte un numéro,
+> et les spectateurs le tapent dans le tchat (`2`, `!2`, `#2`, `!vote 2`).
+
+Choisir ce mode fait apparaître, juste en dessous, **« Inclure les tchats des autres joueurs »**,
+qui lit aussi le tchat de chaque joueur connecté avec Twitch — une table de streamers joue alors
+devant toutes ses communautés à la fois. Rien de tout cela n'apparaît si l'hôte n'est pas
+connecté avec Twitch, et choisir le maître du jeu tournant remet le vote du tchat à zéro :
+un seul joueur tranche, il n'y a pas de voix à ajouter.
+
+Le salon suit la même règle partout : une option qui ne peut pas s'appliquer n'est pas grisée,
+elle **disparaît** (pas de « cartes en main » en mode sans limites, pas de bonus d'unanimité
+quand un maître du jeu décide seul).
+
+**Comment le tchat pèse.** Un tchat parle d'**une seule voix** : la réponse que sa majorité a
+choisie reçoit une voix, valant exactement le même `pointsPerVote` qu'un vote de la table. Une
+communauté de trois mille personnes n'écrase donc pas quatre joueurs — mais une table de trois
+streamers apporte trois voix. Une égalité dans un tchat vaut abstention. Un spectateur ne vote
+qu'une fois par manche, et son premier message est celui qui compte.
+
+Tant qu'un tchat vote, l'étape de vote **ne se ferme plus en avance** : elle va au bout de son
+chronomètre, pour laisser aux spectateurs le temps de lire les réponses. Le décompte des tchats
+s'affiche en direct sous chaque carte, et les consignes pour les spectateurs restent à l'écran.
+
+Le tchat est lu par IRC anonyme (`justinfan`), en lecture seule : le serveur ne peut écrire
+aucun message, et rien n'est conservé — les compteurs vivent le temps de la manche, et un
+spectateur n'est retenu que le temps de l'empêcher de voter deux fois.
 
 ---
 
@@ -285,6 +337,7 @@ c'est ce qui évite un serveur qui démarre puis échoue à la première requêt
 | `GET` | `/api/me` | Identité du navigateur |
 | `POST` | `/api/logout` | Oublier la session |
 | `GET` | `/auth/discord` | Démarrer la connexion Discord |
+| `GET` | `/auth/twitch` | Démarrer la connexion Twitch |
 | `WS` | `/ws/game/{code}` | La partie elle-même |
 
 ### Administration (Discord + allowlist)

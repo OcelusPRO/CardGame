@@ -4,21 +4,22 @@ import kotlinx.serialization.Serializable
 
 /**
  * A player avatar built from two independently customisable halves.
- * When the player signed in with Discord, [discordAvatarUrl] is drawn over the top half.
+ * When the player signed in — with Discord or with Twitch — [pictureUrl] is drawn over
+ * the top half.
  */
 @Serializable
 data class Avatar(
     val top: AvatarPart,
     val bottom: AvatarPart,
-    val discordAvatarUrl: String? = null,
+    val pictureUrl: String? = null,
 ) {
     init {
-        require(discordAvatarUrl == null || discordAvatarUrl.startsWith(DISCORD_CDN)) {
-            "A Discord avatar must be served by the Discord CDN"
+        require(pictureUrl == null || CDNS.any { pictureUrl.startsWith(it) }) {
+            "A profile picture must be served by the Discord or the Twitch CDN"
         }
     }
 
     private companion object {
-        const val DISCORD_CDN = "https://cdn.discordapp.com/"
+        val CDNS = listOf("https://cdn.discordapp.com/", "https://static-cdn.jtvnw.net/")
     }
 }

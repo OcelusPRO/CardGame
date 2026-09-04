@@ -15,10 +15,12 @@ import fr.ftnl.cardgame.support.awaitState
 import fr.ftnl.cardgame.support.browser
 import fr.ftnl.cardgame.support.emit
 import fr.ftnl.cardgame.support.seedTestDeck
+import fr.ftnl.cardgame.support.TWITCH_LOGIN_PATH
 import fr.ftnl.cardgame.support.startTestServer
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.websocket.webSocketSession
+import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
@@ -165,6 +167,27 @@ class GameSocketTest {
         // The 3 hidden situations join; the "sesame" line itself is not turned into a card.
         val unlocked = socket.awaitState { it.deck.situationsLeft == 8 }
         assertEquals(8, unlocked.deck.situationsLeft)
+        socket.cancel()
+    }
+
+    @Test
+    fun `a streaming host puts their chat on the table`() = testApplication {
+        val services = startTestServer()
+        runBlocking { services.seedTestDeck() }
+        val host = browser()
+        host.get("$TWITCH_LOGIN_PATH?login=kameto")
+        val code = host.createGame("Alice").code
+
+        val socket = host.webSocketSession("/ws/game/$code")
+        val seated = socket.awaitState()
+        assertEquals("kameto", seated.players.single().twitchLogin)
+        // Nothing is read until the host asks for it.
+        assertTrue(seated.chatChannels.isEmpty())
+
+        socket.emit(ClientMessage.UpdateSettings(GameSettingsInput(twitchChatVote = true)))
+        val watching = socket.awaitState { it.settings.twitchChatVote }
+
+        assertEquals(listOf("kameto"), watching.chatChannels)
         socket.cancel()
     }
 

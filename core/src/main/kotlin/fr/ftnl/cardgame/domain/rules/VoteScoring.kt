@@ -13,6 +13,9 @@ import fr.ftnl.cardgame.domain.player.PlayerId
  *
  * "Everyone who could" leaves the author out, since they are normally barred from voting
  * for themselves; with self voting allowed they count like anybody else.
+ *
+ * A Twitch chat reading the table is one more voice, see [Round.chatVoices]: it counts
+ * exactly like a player vote, both for the points and for the unanimity.
  */
 class VoteScoring : RoundScoring {
 
@@ -27,13 +30,17 @@ class VoteScoring : RoundScoring {
         )
     }
 
-    private fun countVotes(round: Round): Map<SubmissionId, Int> =
-        round.revealed.associate { (id, _) -> id to round.votes.values.count { it == id } }
+    /** Every voice of the round: one per player who voted, one per chat that spoke. */
+    private fun countVotes(round: Round): Map<SubmissionId, Int> {
+        val voices = round.votes.values + round.chatVoices
+        return round.revealed.associate { (id, _) -> id to voices.count { it == id } }
+    }
 
     private fun isUnanimous(round: Round, submission: SubmissionId, settings: GameSettings): Boolean {
         val author = round.authorOf(submission)
-        val eligible = round.votes.filterKeys { settings.allowSelfVote || it != author }
-        return eligible.isNotEmpty() && eligible.values.all { it == submission }
+        val eligible = round.votes.filterKeys { settings.allowSelfVote || it != author }.values +
+            round.chatVoices
+        return eligible.isNotEmpty() && eligible.all { it == submission }
     }
 
     private fun bestOf(counts: Map<SubmissionId, Int>): SubmissionId? =

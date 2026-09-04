@@ -12,4 +12,6 @@ data class RoundView(
     val answers: List<AnswerView> = emptyList(),
     val myVote: Int? = null,
     val outcome: RoundOutcomeView? = null,
+    /** Live count of viewers per answer number, all watched Twitch chats together. */
+    val chatVotes: Map<String, Int> = emptyMap(),
 )

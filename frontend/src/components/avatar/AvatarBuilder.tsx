@@ -7,11 +7,11 @@ import { BOTTOM_STYLES, PALETTE, TOP_STYLES, randomAvatar } from './avatarCatalo
 interface Props {
   value: AvatarInput
   onChange: (avatar: AvatarInput) => void
-  discordAvatarUrl?: string
+  pictureUrl?: string
 }
 
 /** Two rows of choices, one per half, plus a dice for the undecided. */
-export function AvatarBuilder({ value, onChange, discordAvatarUrl }: Props) {
+export function AvatarBuilder({ value, onChange, pictureUrl }: Props) {
   return (
     <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
       <motion.div
@@ -19,7 +19,7 @@ export function AvatarBuilder({ value, onChange, discordAvatarUrl }: Props) {
         animate={{ rotate: [-2, 2, -2] }}
         transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
       >
-        <Avatar avatar={avatarInputToView(value, discordAvatarUrl)} size={150} title="Votre avatar" />
+        <Avatar avatar={avatarInputToView(value, pictureUrl)} size={150} title="Votre avatar" />
       </motion.div>
 
       <div className="flex min-w-0 flex-1 flex-col gap-4">

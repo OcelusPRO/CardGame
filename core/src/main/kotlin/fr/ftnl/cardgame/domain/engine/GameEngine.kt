@@ -4,11 +4,13 @@ import fr.ftnl.cardgame.domain.deck.RandomShuffler
 import fr.ftnl.cardgame.domain.deck.Shuffler
 import fr.ftnl.cardgame.domain.engine.handler.AnswerHandler
 import fr.ftnl.cardgame.domain.engine.handler.CardPoolHandler
+import fr.ftnl.cardgame.domain.engine.handler.ChatVoteHandler
 import fr.ftnl.cardgame.domain.engine.handler.ChoiceHandler
 import fr.ftnl.cardgame.domain.engine.handler.ConnectionHandler
 import fr.ftnl.cardgame.domain.engine.handler.DropIfAwayHandler
 import fr.ftnl.cardgame.domain.engine.handler.JoinHandler
 import fr.ftnl.cardgame.domain.engine.handler.KickHandler
+import fr.ftnl.cardgame.domain.engine.handler.LinkTwitchHandler
 import fr.ftnl.cardgame.domain.engine.handler.LeaveHandler
 import fr.ftnl.cardgame.domain.engine.handler.ReturnToLobbyHandler
 import fr.ftnl.cardgame.domain.engine.handler.RoundFlowHandler
@@ -34,11 +36,13 @@ class GameEngine(
     private val connection = ConnectionHandler(roundFlow)
     private val dropIfAway = DropIfAwayHandler(roundFlow)
     private val kick = KickHandler()
+    private val linkTwitch = LinkTwitchHandler()
     private val settings = SettingsHandler()
     private val cardPool = CardPoolHandler(shuffler)
     private val start = StartHandler(roundStarter)
     private val answer = AnswerHandler(roundFlow)
     private val choice = ChoiceHandler(roundFlow)
+    private val chatVotes = ChatVoteHandler()
     private val flow = RoundFlowHandler(roundFlow, roundStarter)
     private val returnToLobby = ReturnToLobbyHandler(shuffler)
 
@@ -48,12 +52,14 @@ class GameEngine(
         is GameCommand.SetConnected -> connection.handle(state, command)
         is GameCommand.DropIfAway -> dropIfAway.handle(state, command)
         is GameCommand.Kick -> kick.handle(state, command)
+        is GameCommand.LinkTwitch -> linkTwitch.handle(state, command)
         is GameCommand.UpdateSettings -> settings.handle(state, command)
         is GameCommand.SetCardPool -> cardPool.handle(state, command)
         is GameCommand.Start -> start.handle(state, command)
         is GameCommand.PlayCards -> answer.playCards(state, command)
         is GameCommand.WriteAnswers -> answer.writeAnswers(state, command)
         is GameCommand.Choose -> choice.handle(state, command)
+        is GameCommand.SetChatVotes -> chatVotes.handle(state, command)
         GameCommand.CloseSubmissions -> flow.closeSubmissions(state)
         GameCommand.CloseSelection -> flow.closeSelection(state)
         is GameCommand.NextRound -> flow.nextRound(state, command)

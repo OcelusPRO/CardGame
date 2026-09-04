@@ -28,5 +28,6 @@ class GameViewFactory(
         deck = DeckSummary(state.situations.size, state.punchlines.size),
         deadlineMillis = state.phaseDeadlineMillis,
         serverTimeMillis = clock.nowMillis(),
+        chatChannels = state.chatChannels,
     )
 }

@@ -52,6 +52,19 @@ fun ApplicationTestBuilder.startTestServer(): ApplicationServices {
                 call.sessions.set(AdminSession(TestConfig.ADMIN_DISCORD_ID, "Root"))
                 call.respond(HttpStatusCode.NoContent)
             }
+            // Test-only Twitch sign in: `?login=kameto` picks the channel that would be
+            // read from the real callback.
+            get(TWITCH_LOGIN_PATH) {
+                val login = call.request.queryParameters["login"] ?: "kameto"
+                call.sessions.set(
+                    call.playerSession().copy(
+                        twitchId = "twitch-$login",
+                        twitchLogin = login,
+                        twitchUsername = login,
+                    )
+                )
+                call.respond(HttpStatusCode.NoContent)
+            }
             // Test-only Discord sign in for a non-admin account: `?id=123` picks the id.
             get(DISCORD_LOGIN_PATH) {
                 val id = call.request.queryParameters["id"] ?: "100000000000000001"
@@ -67,6 +80,7 @@ fun ApplicationTestBuilder.startTestServer(): ApplicationServices {
 
 const val ADMIN_LOGIN_PATH = "/test/sign-in-as-admin"
 const val DISCORD_LOGIN_PATH = "/test/sign-in-with-discord"
+const val TWITCH_LOGIN_PATH = "/test/sign-in-with-twitch"
 
 /** A browser that carries an administrator session from its very first call. */
 suspend fun ApplicationTestBuilder.adminBrowser(): HttpClient =

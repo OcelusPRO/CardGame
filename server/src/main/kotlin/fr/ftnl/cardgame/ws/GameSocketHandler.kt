@@ -2,6 +2,7 @@ package fr.ftnl.cardgame.ws
 
 import fr.ftnl.cardgame.api.view.GameViewFactory
 import fr.ftnl.cardgame.auth.AdultAccessGuard
+import fr.ftnl.cardgame.auth.PlayerSession
 import fr.ftnl.cardgame.domain.engine.GameCommand
 import fr.ftnl.cardgame.domain.game.GameCode
 import fr.ftnl.cardgame.domain.game.GameState
@@ -31,16 +32,18 @@ class GameSocketHandler(
     private val json: Json,
 ) {
 
-    suspend fun serve(
-        session: WebSocketSession,
-        code: GameCode,
-        playerId: PlayerId,
-        discordId: String?,
-    ) {
+    suspend fun serve(session: WebSocketSession, code: GameCode, identity: PlayerSession) {
+        val playerId = PlayerId(identity.playerId)
         val connection = GameConnection(code, playerId, session, json)
-        val allowAdult = adultAccess.allows(discordId)
+        val allowAdult = adultAccess.allows(identity.discordId)
         connections.add(connection)
         try {
+            // Signing in with Twitch is a full page redirect, so it usually happens once
+            // the player is already seated: their account is refreshed on every socket.
+            games.dispatch(
+                code,
+                GameCommand.LinkTwitch(playerId, identity.twitchLogin, identity.twitchAvatarUrl),
+            )
             games.dispatch(code, GameCommand.SetConnected(playerId, connected = true))
             sendCurrentState(connection)
             session.incoming.consumeEach { frame -> onFrame(connection, frame, allowAdult) }

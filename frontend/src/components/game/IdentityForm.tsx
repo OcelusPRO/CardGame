@@ -24,7 +24,7 @@ export function IdentityForm({ identity, onChange, me, autoFocus = false }: Prop
       />
       <AvatarBuilder
         value={identity.avatar}
-        discordAvatarUrl={me?.discordAvatarUrl}
+        pictureUrl={me?.discordAvatarUrl ?? me?.twitchAvatarUrl}
         onChange={(avatar) => onChange({ ...identity, avatar })}
       />
     </div>

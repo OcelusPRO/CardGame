@@ -5,6 +5,7 @@ data class AppConfig(
     val database: DatabaseConfig,
     val redis: RedisConfig,
     val discord: DiscordConfig,
+    val twitch: TwitchConfig,
     val admin: AdminConfig,
     val adultAccess: AdultAccessConfig,
     val session: SessionConfig,

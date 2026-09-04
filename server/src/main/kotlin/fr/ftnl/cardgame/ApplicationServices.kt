@@ -4,6 +4,7 @@ import fr.ftnl.cardgame.api.view.GameViewFactory
 import fr.ftnl.cardgame.auth.AdminGuard
 import fr.ftnl.cardgame.auth.AdultAccessGuard
 import fr.ftnl.cardgame.auth.DiscordClient
+import fr.ftnl.cardgame.auth.TwitchClient
 import fr.ftnl.cardgame.catalog.AdminCardService
 import fr.ftnl.cardgame.catalog.AdminPackService
 import fr.ftnl.cardgame.catalog.AdultAccessService
@@ -43,6 +44,9 @@ import fr.ftnl.cardgame.stats.StatsRecorder
 import fr.ftnl.cardgame.stats.StatsService
 import fr.ftnl.cardgame.stats.UsageStatsReader
 import fr.ftnl.cardgame.stats.UsageStatsWriter
+import fr.ftnl.cardgame.twitch.TwitchChatReader
+import fr.ftnl.cardgame.twitch.TwitchChatSocket
+import fr.ftnl.cardgame.twitch.TwitchChatVoting
 import fr.ftnl.cardgame.ws.GameBroadcaster
 import fr.ftnl.cardgame.ws.GameCommandTranslator
 import fr.ftnl.cardgame.ws.GameConnections
@@ -61,6 +65,7 @@ class ApplicationServices(
     val httpClient: HttpClient,
     sessionStore: GameSessionStore? = null,
     val clock: GameClock = SystemGameClock,
+    chatReader: TwitchChatReader = TwitchChatSocket(httpClient, config.twitch.chatUrl),
 ) {
     private val redis: JedisPooled? =
         if (sessionStore == null && config.redis.enabled) JedisPooled(config.redis.url) else null
@@ -98,6 +103,7 @@ class ApplicationServices(
     val entry = GameEntryService(games, deckResolver, appliedDecks, adultAccessGuard)
     val statsService = StatsService(statsReader, packRepository, situationRepository, punchlineRepository, connections, clock)
     val discordClient = DiscordClient(httpClient)
+    val twitchClient = TwitchClient(httpClient, config.twitch.clientId)
     val adminGuard = AdminGuard(config.admin)
 
     val socketHandler = GameSocketHandler(
@@ -115,11 +121,20 @@ class ApplicationServices(
     /** A table left completely untouched for half an hour is dropped. */
     private val idleReaper = IdleGameReaper(scope, IDLE_GAME_MILLIS) { code -> games.forget(code) }
 
+    /**
+     * Idle until a host actually asks for it: with nobody signed in with Twitch a game
+     * carries no channel, and the listener never opens a single connection.
+     */
+    private val chatVoting = TwitchChatVoting(chatReader, scope) { code, command ->
+        games.dispatch(code, command)
+    }
+
     init {
         games.addListener(GameBroadcaster(connections, views))
         games.addListener(StatsRecorder(statsWriter))
         games.addListener(scheduler)
         games.addListener(idleReaper)
+        games.addListener(chatVoting)
     }
 
     private companion object {

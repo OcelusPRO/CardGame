@@ -30,6 +30,7 @@ class RoundViewFactory {
             answers = answers(state, round, viewer),
             myVote = round.votes[viewer]?.index,
             outcome = round.outcome?.let(::outcomeView),
+            chatVotes = round.chatTally.mapKeys { it.key.index.toString() },
         )
     }
 

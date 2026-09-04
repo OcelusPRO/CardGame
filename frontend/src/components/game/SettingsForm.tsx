@@ -1,42 +1,82 @@
+import type { ReactNode } from 'react'
 import type { GameSettingsInput, GameSettingsView } from '../../api/types'
 
 interface Props {
   settings: GameSettingsView
   disabled: boolean
+  /** The host's Twitch channel, when they signed in with it; nothing to read without it. */
+  hostTwitchLogin?: string
+  /** The other players who signed in with Twitch, whose chats can join the vote. */
+  guestTwitchLogins?: string[]
   onChange: (patch: GameSettingsInput) => void
 }
 
 const NOT_HOST = "Seul l'hôte peut changer les règles."
-const NO_CARDS = 'En mode sans limites, personne ne reçoit de cartes.'
-const NO_VOTE = 'Le maître du jeu tranche seul : personne ne vote.'
-const VOTE_MODE = 'Réservé au mode maître du jeu tournant.'
 
-/** The host control panel of the lobby. Every change is pushed live to the table. */
-export function SettingsForm({ settings, disabled, onChange }: Props) {
+/** The third way of judging: everybody votes, and the streamer's chat votes along. */
+const CHAT = 'CHAT'
+
+/**
+ * The host control panel of the lobby. Every change is pushed live to the table.
+ *
+ * A rule that cannot apply is not greyed out, it is simply absent: no card count in the
+ * write-your-own mode, no unanimity bonus when a single czar decides, and nothing about
+ * Twitch until the host has actually signed in with it.
+ */
+export function SettingsForm({
+  settings,
+  disabled,
+  hostTwitchLogin,
+  guestTwitchLogins = [],
+  onChange,
+}: Props) {
   const freeText = settings.answerMode === 'FREE_TEXT'
   const czar = settings.selectionMode === 'CZAR'
+  // Without a channel to read there is nothing to show, even on a game that had it on.
+  const chatVotes = settings.twitchChatVote && !czar && Boolean(hostTwitchLogin)
+  const lockedBecause = disabled ? NOT_HOST : null
 
-  /** Why a field is greyed out, shown on hover. Null means the field is usable. */
-  const lockedBecause = (ownReason: string | null): string | null =>
-    disabled ? NOT_HOST : ownReason
+  const judging = [
+    { value: 'VOTE', label: 'Tout le monde vote' },
+    { value: 'CZAR', label: 'Maître du jeu tournant' },
+    ...(hostTwitchLogin
+      ? [{ value: CHAT, label: `Le tchat de ${hostTwitchLogin} vote aussi` }]
+      : []),
+  ]
 
   return (
     <div className="flex flex-col gap-4">
       <Choice
         label="Qui désigne la meilleure réponse ?"
-        value={settings.selectionMode}
-        lockedBecause={lockedBecause(null)}
-        options={[
-          { value: 'VOTE', label: 'Tout le monde vote' },
-          { value: 'CZAR', label: 'Maître du jeu tournant' },
-        ]}
-        onSelect={(selectionMode) => onChange({ selectionMode: selectionMode as 'VOTE' | 'CZAR' })}
+        value={chatVotes ? CHAT : settings.selectionMode}
+        lockedBecause={lockedBecause}
+        options={judging}
+        onSelect={(mode) =>
+          onChange(
+            mode === CHAT
+              ? { selectionMode: 'VOTE', twitchChatVote: true }
+              : { selectionMode: mode as 'VOTE' | 'CZAR', twitchChatVote: false },
+          )
+        }
       />
+
+      {chatVotes && (
+        <Toggle
+          label={
+            guestTwitchLogins.length > 0
+              ? `Inclure les tchats des autres joueurs (${guestTwitchLogins.join(', ')})`
+              : 'Inclure les tchats des autres joueurs connectés à Twitch'
+          }
+          checked={settings.twitchGuestChats}
+          lockedBecause={lockedBecause}
+          onChange={(twitchGuestChats) => onChange({ twitchGuestChats })}
+        />
+      )}
 
       <Choice
         label="D'où viennent les réponses ?"
         value={settings.answerMode}
-        lockedBecause={lockedBecause(null)}
+        lockedBecause={lockedBecause}
         options={[
           { value: 'CARDS', label: 'Cartes distribuées' },
           { value: 'FREE_TEXT', label: 'Sans limites (on écrit)' },
@@ -50,23 +90,25 @@ export function SettingsForm({ settings, disabled, onChange }: Props) {
           value={settings.rounds}
           min={1}
           max={50}
-          lockedBecause={lockedBecause(null)}
+          lockedBecause={lockedBecause}
           onChange={(rounds) => onChange({ rounds })}
         />
-        <NumberBox
-          label="Cartes en main"
-          value={settings.handSize}
-          min={4}
-          max={15}
-          lockedBecause={lockedBecause(freeText ? NO_CARDS : null)}
-          onChange={(handSize) => onChange({ handSize })}
-        />
+        {!freeText && (
+          <NumberBox
+            label="Cartes en main"
+            value={settings.handSize}
+            min={4}
+            max={15}
+            lockedBecause={lockedBecause}
+            onChange={(handSize) => onChange({ handSize })}
+          />
+        )}
         <NumberBox
           label="Temps de réponse"
           value={settings.submitSeconds}
           min={15}
           max={300}
-          lockedBecause={lockedBecause(null)}
+          lockedBecause={lockedBecause}
           onChange={(submitSeconds) => onChange({ submitSeconds })}
         />
         <NumberBox
@@ -74,7 +116,7 @@ export function SettingsForm({ settings, disabled, onChange }: Props) {
           value={settings.selectSeconds}
           min={15}
           max={300}
-          lockedBecause={lockedBecause(null)}
+          lockedBecause={lockedBecause}
           onChange={(selectSeconds) => onChange({ selectSeconds })}
         />
         <NumberBox
@@ -82,45 +124,53 @@ export function SettingsForm({ settings, disabled, onChange }: Props) {
           value={settings.pointsPerVote}
           min={1}
           max={20}
-          lockedBecause={lockedBecause(null)}
+          lockedBecause={lockedBecause}
           onChange={(pointsPerVote) => onChange({ pointsPerVote })}
         />
-        <NumberBox
-          label="Bonus unanimité"
-          value={settings.unanimityBonus}
-          min={0}
-          max={20}
-          lockedBecause={lockedBecause(czar ? NO_VOTE : null)}
-          onChange={(unanimityBonus) => onChange({ unanimityBonus })}
-        />
+        {!czar && (
+          <NumberBox
+            label="Bonus unanimité"
+            value={settings.unanimityBonus}
+            min={0}
+            max={20}
+            lockedBecause={lockedBecause}
+            onChange={(unanimityBonus) => onChange({ unanimityBonus })}
+          />
+        )}
         <NumberBox
           label="Joueurs maximum"
           value={settings.maxPlayers}
           min={2}
           max={24}
-          lockedBecause={lockedBecause(null)}
+          lockedBecause={lockedBecause}
           onChange={(maxPlayers) => onChange({ maxPlayers })}
         />
       </div>
 
-      <Toggle
-        label="Autoriser à voter pour sa propre carte"
-        checked={settings.allowSelfVote}
-        lockedBecause={lockedBecause(czar ? NO_VOTE : null)}
-        onChange={(allowSelfVote) => onChange({ allowSelfVote })}
-      />
+      {!czar && (
+        <Toggle
+          label="Autoriser à voter pour sa propre carte"
+          checked={settings.allowSelfVote}
+          lockedBecause={lockedBecause}
+          onChange={(allowSelfVote) => onChange({ allowSelfVote })}
+        />
+      )}
 
-      <Toggle
-        label="Le maître du jeu répond aussi"
-        checked={settings.czarAnswers}
-        lockedBecause={lockedBecause(czar ? null : VOTE_MODE)}
-        onChange={(czarAnswers) => onChange({ czarAnswers })}
-      />
+      {czar && (
+        <Toggle
+          label="Le maître du jeu répond aussi"
+          checked={settings.czarAnswers}
+          lockedBecause={lockedBecause}
+          onChange={(czarAnswers) => onChange({ czarAnswers })}
+        />
+      )}
 
       <p className="sketch bg-paper/70 px-4 py-3 text-xs leading-relaxed text-ink/65">
         {czar
           ? `Le maître du jeu choisit, et la réponse retenue rapporte ${settings.pointsPerVote} point(s). ${settings.rounds} manches, et le meilleur score l'emporte.`
           : `Chaque vote reçu rapporte ${settings.pointsPerVote} point(s). Une réponse choisie par tous ceux qui pouvaient la choisir gagne ${settings.unanimityBonus} point(s) de plus ; un seul vote ailleurs et le bonus tombe à zéro. ${settings.rounds} manches, et le meilleur score l'emporte.`}
+        {chatVotes &&
+          " Chaque tchat compte pour une voix, celle de sa majorité, et le vote va au bout de son chrono pour laisser aux spectateurs le temps de répondre."}
       </p>
     </div>
   )
@@ -159,7 +209,7 @@ function Choice({ label, value, lockedBecause, options, onSelect }: ChoiceProps)
 }
 
 interface ToggleProps {
-  label: string
+  label: ReactNode
   checked: boolean
   lockedBecause: string | null
   onChange: (checked: boolean) => void

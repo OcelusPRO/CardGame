@@ -13,7 +13,7 @@ interface Props {
 
 /**
  * The two halves stacked in one SVG, drawn through a wobble filter so the outlines look
- * traced by hand rather than plotted. The Discord picture stays out of the filter: a
+ * traced by hand rather than plotted. The profile picture stays out of the filter: a
  * displaced photo reads as a glitch, not as a drawing.
  */
 export function Avatar({ avatar, size = 64, className = '', title }: Props) {
@@ -47,13 +47,13 @@ export function Avatar({ avatar, size = 64, className = '', title }: Props) {
 
       <g filter={`url(#${roughId})`}>
         <AvatarBottom styleId={avatar.bottom.styleId} color={avatar.bottom.color} />
-        <AvatarTop styleId={avatar.top.styleId} color={avatar.top.color} faceless={Boolean(avatar.discordAvatarUrl)} />
+        <AvatarTop styleId={avatar.top.styleId} color={avatar.top.color} faceless={Boolean(avatar.pictureUrl)} />
       </g>
 
-      {avatar.discordAvatarUrl && (
+      {avatar.pictureUrl && (
         <g>
           <image
-            href={avatar.discordAvatarUrl}
+            href={avatar.pictureUrl}
             x="30"
             y="26"
             width="40"

@@ -3,6 +3,7 @@ import type { AnswerView, GameView } from '../../api/types'
 import { playSound } from '../../audio/engine'
 import { SituationCard } from '../cards/SituationCard'
 import { AnswerCard } from './AnswerCard'
+import { ChatVoteNotice } from './ChatVoteNotice'
 import { RoundStage } from './RoundStage'
 
 interface Props {
@@ -13,6 +14,9 @@ interface Props {
 /**
  * The judging step. Pointing at an answer writes it straight into the situation card, so
  * the joke is read the way it will be scored before anybody commits a vote.
+ *
+ * When a Twitch chat votes too, every answer wears the number the viewers type, and the
+ * count coming back from the chats is shown live under each one.
  */
 export function VotePanel({ game, onChoose }: Props) {
   const [previewId, setPreviewId] = useState<number | null>(null)
@@ -21,12 +25,15 @@ export function VotePanel({ game, onChoose }: Props) {
   const canChoose = game.you.mustVote
   // The host can allow voting for one's own answer, but only in the everybody-votes mode.
   const canVoteOwn = !czarMode && game.settings.allowSelfVote
+  // The server only fills the channels in once a chat is actually being read.
+  const chatVoting = game.chatChannels.length > 0
 
   useEffect(() => setPreviewId(null), [round?.number])
 
   if (!round) return null
 
   const shown = answerOf(round.answers, previewId ?? round.myVote ?? null)
+  const chatVotes = round.chatVotes ?? {}
 
   return (
     <RoundStage
@@ -49,6 +56,10 @@ export function VotePanel({ game, onChoose }: Props) {
               : 'Vote enregistré, on attend les autres.'}
         </p>
 
+        {chatVoting && (
+          <ChatVoteNotice channels={game.chatChannels} viewers={totalChatVotes(chatVotes)} />
+        )}
+
         <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(13rem,1fr))]">
           {round.answers.map((answer) => {
             const blocked = answer.isMine && !canVoteOwn
@@ -58,6 +69,8 @@ export function VotePanel({ game, onChoose }: Props) {
                 answer={answer}
                 voted={round.myVote === answer.id}
                 disabled={!canChoose || blocked}
+                number={chatVoting ? answer.id + 1 : undefined}
+                chatVotes={chatVoting ? (chatVotes[String(answer.id)] ?? 0) : undefined}
                 onPreview={() => setPreviewId(answer.id)}
                 onVote={
                   canChoose && !blocked
@@ -78,4 +91,8 @@ export function VotePanel({ game, onChoose }: Props) {
 
 function answerOf(answers: AnswerView[], id: number | null): AnswerView | undefined {
   return id === null ? undefined : answers.find((answer) => answer.id === id)
+}
+
+function totalChatVotes(votes: Record<string, number>): number {
+  return Object.values(votes).reduce((total, count) => total + count, 0)
 }

@@ -1,6 +1,6 @@
 import { Suspense, lazy, useEffect } from 'react'
 import { MotionConfig } from 'motion/react'
-import { Link, Route, Routes } from 'react-router-dom'
+import { Link, Route, Routes, useNavigate } from 'react-router-dom'
 import { CreatePage } from './pages/CreatePage'
 import { GamePage } from './pages/GamePage'
 import { HomePage } from './pages/HomePage'
@@ -8,10 +8,11 @@ import { JoinPage } from './pages/JoinPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { AnimationToggle } from './components/ui/AnimationToggle'
 import { SoundToggle } from './components/ui/SoundToggle'
-import { DiscordButton } from './components/ui/DiscordButton'
+import { AccountMenu } from './components/ui/AccountMenu'
 import { useAnimationPref } from './session/useAnimationPref'
 import { useSoundPref } from './audio/useSoundPref'
 import { useSession } from './session/useSession'
+import { takeReturnPath } from './session/authReturn'
 import logo from './assets/logo.png'
 
 // The dashboard pulls in the charting library; players never download it.
@@ -20,8 +21,17 @@ const AdminPage = lazy(() => import('./pages/AdminPage').then((module) => ({ def
 /** The shell: a thin header, then whichever screen the URL asks for. */
 export function App() {
   const { me } = useSession()
+  const navigate = useNavigate()
   const { enabled: animate, toggle: toggleAnimations } = useAnimationPref()
   const { enabled: sound, toggle: toggleSound } = useSoundPref()
+
+  // Both sign ins land back on the home page. Whoever started from a table is taken
+  // straight back to it, and the `?discord=`/`?twitch=` marker is wiped either way.
+  useEffect(() => {
+    const query = new URLSearchParams(window.location.search)
+    if (!query.has('discord') && !query.has('twitch')) return
+    navigate(takeReturnPath() ?? window.location.pathname, { replace: true })
+  }, [navigate])
 
   // Kill CSS-driven motion too (the hand-drawn borders re-tracing on hover, and the like)
   // when the switch is off, mirroring the `prefers-reduced-motion` rule in index.css.
@@ -40,7 +50,7 @@ export function App() {
           <div className="flex items-center gap-2">
             <SoundToggle enabled={sound} onToggle={toggleSound} />
             <AnimationToggle enabled={animate} onToggle={toggleAnimations} />
-            <DiscordButton me={me} />
+            <AccountMenu me={me} />
           </div>
         </header>
 

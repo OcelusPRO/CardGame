@@ -13,7 +13,14 @@ class AvatarTest {
     fun `accepts a Discord picture served by the Discord CDN`() {
         val avatar = Avatar(top, bottom, "https://cdn.discordapp.com/avatars/1/2.png")
 
-        assertEquals("https://cdn.discordapp.com/avatars/1/2.png", avatar.discordAvatarUrl)
+        assertEquals("https://cdn.discordapp.com/avatars/1/2.png", avatar.pictureUrl)
+    }
+
+    @Test
+    fun `accepts a Twitch picture served by the Twitch CDN`() {
+        val url = "https://static-cdn.jtvnw.net/jtv_user_pictures/1-profile_image-300x300.png"
+
+        assertEquals(url, Avatar(top, bottom, url).pictureUrl)
     }
 
     @Test

@@ -12,10 +12,24 @@ interface Props {
   voted?: boolean
   winner?: boolean
   disabled?: boolean
+  /** The number the Twitch chat types to pick this answer, shown only when a chat votes. */
+  number?: number
+  /** Viewers who picked it so far, counted live while the chat votes. */
+  chatVotes?: number
 }
 
 /** One answer on the table, revealed a little more at every step of the round. */
-export function AnswerCard({ answer, author, onVote, onPreview, voted, winner, disabled }: Props) {
+export function AnswerCard({
+  answer,
+  author,
+  onVote,
+  onPreview,
+  voted,
+  winner,
+  disabled,
+  number,
+  chatVotes,
+}: Props) {
   const label = answer.texts.join(' · ')
 
   return (
@@ -39,10 +53,20 @@ export function AnswerCard({ answer, author, onVote, onPreview, voted, winner, d
             {author && <Avatar avatar={author.avatar} size={30} title={author.nickname} />}
             {author?.nickname ?? (answer.isMine ? 'Votre réponse' : 'Anonyme')}
             {answer.votes !== undefined && <span className="ml-auto">{answer.votes} vote(s)</span>}
+            {chatVotes !== undefined && answer.votes === undefined && (
+              <span className="ml-auto text-[#772ce8]">{chatVotes} tchat</span>
+            )}
           </span>
         }
         className={winner ? 'ring-3 ring-zap' : ''}
       >
+        {number !== undefined && (
+          <span
+            className="mb-2 inline-flex size-7 items-center justify-center rounded-full bg-[#9146FF] font-display text-sm font-black text-white"
+          >
+            {number}
+          </span>
+        )}
         <p
           lang="fr"
           style={{ fontSize: punchlineFontSize(label) }}

@@ -9,16 +9,33 @@ function discordUser(username: string): MeView {
     playerId: 'p1',
     discordConnected: true,
     discordUsername: username,
+    twitchConnected: false,
     isAdmin: false,
     discordLoginAvailable: true,
+    twitchLoginAvailable: true,
+  }
+}
+
+function twitchUser(username: string): MeView {
+  return {
+    playerId: 'p1',
+    discordConnected: false,
+    twitchConnected: true,
+    twitchUsername: username,
+    twitchLogin: username.toLowerCase(),
+    isAdmin: false,
+    discordLoginAvailable: true,
+    twitchLoginAvailable: true,
   }
 }
 
 const anonymous: MeView = {
   playerId: 'p1',
   discordConnected: false,
+  twitchConnected: false,
   isAdmin: false,
   discordLoginAvailable: true,
+  twitchLoginAvailable: true,
 }
 
 describe('useIdentity', () => {
@@ -28,6 +45,12 @@ describe('useIdentity', () => {
     const { result } = renderHook(() => useIdentity(discordUser('Jean-Michel')))
 
     await waitFor(() => expect(result.current[0].nickname).toBe('Jean-Michel'))
+  })
+
+  it('suggests the Twitch name when there is no Discord one', async () => {
+    const { result } = renderHook(() => useIdentity(twitchUser('Kameto')))
+
+    await waitFor(() => expect(result.current[0].nickname).toBe('Kameto'))
   })
 
   it('never overwrites a name the player already chose', async () => {
