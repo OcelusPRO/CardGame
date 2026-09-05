@@ -52,6 +52,16 @@ export function GamePage() {
     return () => disconnect()
   }, [seated, code, connect, disconnect])
 
+  // The game can get reaped for inactivity while someone is still sitting at the table;
+  // their socket stays open until they act. When that action comes back GAME_NOT_FOUND,
+  // there is nothing left to show them here — send them home instead of a dead error toast.
+  useEffect(() => {
+    if (lastError !== 'GAME_NOT_FOUND') return
+    dismissError()
+    disconnect()
+    navigate('/', { replace: true })
+  }, [lastError, dismissError, disconnect, navigate])
+
   // A finished or forgotten game must not be a dead end: whoever followed the stale link
   // gets a fresh table of their own so the invitation still leads somewhere playable.
   // Without a remembered pseudo there is nothing to open a table with, so send them to
