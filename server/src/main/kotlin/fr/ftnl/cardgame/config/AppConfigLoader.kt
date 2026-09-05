@@ -39,6 +39,7 @@ object AppConfigLoader {
         clientId = config.text("app.discord.clientId"),
         clientSecret = config.text("app.discord.clientSecret"),
         redirectUrl = config.text("app.discord.redirectUrl"),
+        botToken = config.text("app.discord.botToken"),
     )
 
     private fun twitch(config: ApplicationConfig) = TwitchConfig(

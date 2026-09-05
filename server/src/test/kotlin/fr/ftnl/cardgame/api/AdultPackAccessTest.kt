@@ -188,13 +188,33 @@ class AdultPackAccessTest {
     }
 
     @Test
-    fun `a non numeric account id is refused`() = testApplication {
+    fun `a pseudo nobody can resolve is refused`() = testApplication {
         startTestServer()
 
         val response = adminBrowser().post("/api/admin/adult-access") {
             contentType(ContentType.Application.Json)
             setBody(AdultAccessInput(accountId = "not-an-id"))
         }
-        assertEquals(HttpStatusCode.BadRequest, response.status)
+        assertEquals(HttpStatusCode.NotFound, response.status)
     }
+
+    @Test
+    fun `looking an account up is reserved to administrators, and says so when unknown`() =
+        testApplication {
+            startTestServer()
+
+            assertEquals(
+                HttpStatusCode.Forbidden,
+                browser().get("/api/admin/accounts/TWITCH/kameto").status,
+            )
+            // Nothing is configured in a test, so the directory has no way to answer.
+            assertEquals(
+                HttpStatusCode.NotFound,
+                adminBrowser().get("/api/admin/accounts/TWITCH/kameto").status,
+            )
+            assertEquals(
+                HttpStatusCode.BadRequest,
+                adminBrowser().get("/api/admin/accounts/MYSPACE/kameto").status,
+            )
+        }
 }

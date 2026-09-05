@@ -15,9 +15,9 @@ import fr.ftnl.cardgame.domain.player.PlayerId
  * for themselves; with self voting allowed they count like anybody else.
  *
  * A viewer voting from a Twitch chat is a voice like any other: they weigh exactly what a
- * player at the table weighs, and they count for the unanimity just the same. In
- * [fr.ftnl.cardgame.domain.game.SelectionMode.CHAT] the table casts no vote at all, so
- * the very same counting leaves the viewers as the only voices.
+ * player at the table weighs, and they count for the unanimity just the same. The mode
+ * where the chat judges alone is scored by [ChatScoring] instead, which counts rounds won
+ * rather than voices.
  */
 class VoteScoring : RoundScoring {
 

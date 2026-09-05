@@ -1,6 +1,7 @@
 package fr.ftnl.cardgame.plugins
 
 import fr.ftnl.cardgame.api.dto.ErrorResponse
+import fr.ftnl.cardgame.auth.UnknownAccountException
 import fr.ftnl.cardgame.catalog.PackNotEmptyException
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
@@ -15,6 +16,9 @@ fun Application.configureStatusPages() {
     install(StatusPages) {
         exception<PackNotEmptyException> { call, _ ->
             call.respond(HttpStatusCode.Conflict, ErrorResponse("PACK_NOT_EMPTY"))
+        }
+        exception<UnknownAccountException> { call, cause ->
+            call.respond(HttpStatusCode.NotFound, ErrorResponse("ACCOUNT_NOT_FOUND", cause.message))
         }
         exception<BadRequestException> { call, cause ->
             call.respond(HttpStatusCode.BadRequest, ErrorResponse("MALFORMED_REQUEST", cause.message))

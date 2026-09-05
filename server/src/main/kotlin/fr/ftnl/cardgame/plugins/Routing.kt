@@ -1,6 +1,7 @@
 package fr.ftnl.cardgame.plugins
 
 import fr.ftnl.cardgame.ApplicationServices
+import fr.ftnl.cardgame.api.admin.adminAccountRoutes
 import fr.ftnl.cardgame.api.admin.adminAdultAccessRoutes
 import fr.ftnl.cardgame.api.admin.adminCardRoutes
 import fr.ftnl.cardgame.api.admin.adminPackRoutes
@@ -33,6 +34,7 @@ fun Application.configureRouting(services: ApplicationServices) {
         adminPackRoutes(services.adminPacks)
         adminCardRoutes(services.adminCards)
         adminAdultAccessRoutes(services.adminAdultAccess)
+        adminAccountRoutes(services.accounts)
         adminStatsRoutes(services.statsService)
         adminStatsSocket(services.statsService, ApiJson)
         gameSocketRoute(services.games, services.socketHandler)

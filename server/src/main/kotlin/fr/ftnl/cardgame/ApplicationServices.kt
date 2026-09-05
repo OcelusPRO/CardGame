@@ -1,6 +1,8 @@
 package fr.ftnl.cardgame
 
 import fr.ftnl.cardgame.api.view.GameViewFactory
+import fr.ftnl.cardgame.auth.AccountDirectory
+import fr.ftnl.cardgame.auth.AccountLookup
 import fr.ftnl.cardgame.auth.AdminGuard
 import fr.ftnl.cardgame.auth.AdultAccessGuard
 import fr.ftnl.cardgame.auth.DiscordClient
@@ -82,11 +84,18 @@ class ApplicationServices(
     private val statsWriter: UsageStatsWriter = ExposedUsageStatsWriter()
     private val statsReader: UsageStatsReader = ExposedUsageStatsReader()
 
+    val discordClient = DiscordClient(httpClient)
+    val twitchClient = TwitchClient(httpClient, config.twitch.clientId)
+    private val twitchTokens = TwitchAppTokens(httpClient, config.twitch)
+
+    /** Puts a name on an id, and turns a Twitch channel name into the id behind it. */
+    val accounts: AccountLookup = AccountDirectory(discordClient, config.discord, twitchClient, twitchTokens)
+
     val adultAccessGuard = AdultAccessGuard(adultAccessRepository, config.admin, clock, config.adultAccess)
     val catalog = CatalogService(packRepository, situationRepository, punchlineRepository)
     val adminPacks = AdminPackService(packRepository, situationRepository, punchlineRepository, clock)
     val adminCards = AdminCardService(situationRepository, punchlineRepository, clock)
-    val adminAdultAccess = AdultAccessService(adultAccessRepository, clock)
+    val adminAdultAccess = AdultAccessService(adultAccessRepository, clock, accounts)
     private val deckResolver = CardPoolResolver(packRepository, situationRepository, punchlineRepository)
     val appliedDecks = GameDecks()
 
@@ -105,8 +114,6 @@ class ApplicationServices(
     val views = GameViewFactory(clock)
     val entry = GameEntryService(games, deckResolver, appliedDecks, adultAccessGuard)
     val statsService = StatsService(statsReader, packRepository, situationRepository, punchlineRepository, connections, clock)
-    val discordClient = DiscordClient(httpClient)
-    val twitchClient = TwitchClient(httpClient, config.twitch.clientId)
     val adminGuard = AdminGuard(config.admin)
 
     val socketHandler = GameSocketHandler(
@@ -134,8 +141,7 @@ class ApplicationServices(
 
     /** The faces under the answers; without Twitch credentials, voters keep their names. */
     private fun viewerPictures(): ViewerPictures =
-        if (config.twitch.enabled) TwitchViewers(twitchClient, TwitchAppTokens(httpClient, config.twitch))
-        else ViewerPictures.NONE
+        if (config.twitch.enabled) TwitchViewers(twitchClient, twitchTokens) else ViewerPictures.NONE
 
     init {
         games.addListener(GameBroadcaster(connections, views))

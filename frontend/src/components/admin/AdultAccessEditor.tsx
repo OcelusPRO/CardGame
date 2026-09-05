@@ -1,28 +1,32 @@
 import { useEffect, useState } from 'react'
 import { adminApi } from '../../api/admin'
 import { ApiError } from '../../api/ApiError'
-import type { AccountProvider, AdultAccessView } from '../../api/adminTypes'
+import type { AccountProvider, AccountView, AdultAccessView } from '../../api/adminTypes'
 import { errorMessage } from '../../lib/errorMessages'
 import { Button } from '../ui/Button'
 
 const PROVIDERS: { value: AccountProvider; label: string; hint: string }[] = [
   { value: 'DISCORD', label: 'Discord', hint: '123456789012345678' },
-  { value: 'TWITCH', label: 'Twitch', hint: '44322889' },
+  { value: 'TWITCH', label: 'Twitch', hint: 'kameto — ou son identifiant' },
 ]
+
+/** Long enough not to query the server on the first keystroke. */
+const LOOKUP_DELAY_MS = 400
 
 /**
  * The allowlist of accounts cleared to see and pick the packs marked "interdit aux
  * mineurs". Administrators are always cleared and are not listed here, and so is any
  * account old enough for the age rule.
  *
- * An id is always stored next to its provider: both hand out plain numbers, and the same
- * number can belong to a Discord account and to a Twitch one.
+ * Nobody remembers an account id, so the pseudo is looked up while it is typed — and on
+ * Twitch a channel name is enough: the server turns it into the id it stores.
  */
 export function AdultAccessEditor() {
   const [entries, setEntries] = useState<AdultAccessView[]>([])
   const [provider, setProvider] = useState<AccountProvider>('DISCORD')
-  const [accountId, setAccountId] = useState('')
+  const [query, setQuery] = useState('')
   const [label, setLabel] = useState('')
+  const [found, setFound] = useState<AccountView | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const reload = () => {
@@ -36,17 +40,41 @@ export function AdultAccessEditor() {
     reload()
   }, [])
 
+  // Who is behind what is being typed. An unknown account is not an error here: the
+  // administrator may simply not have finished typing.
+  useEffect(() => {
+    const asked = query.trim()
+    if (asked.length < 2) {
+      setFound(null)
+      return
+    }
+    let cancelled = false
+    const timer = setTimeout(() => {
+      adminApi
+        .findAccount(provider, asked)
+        .then((account) => {
+          if (!cancelled) setFound(account)
+        })
+        .catch(() => {
+          if (!cancelled) setFound(null)
+        })
+    }, LOOKUP_DELAY_MS)
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [provider, query])
+
   const add = async () => {
     setError(null)
     try {
-      await adminApi.addAdultAccess({ provider, accountId: accountId.trim(), label: label.trim() })
-      setAccountId('')
+      await adminApi.addAdultAccess({ provider, accountId: query.trim(), label: label.trim() })
+      setQuery('')
       setLabel('')
+      setFound(null)
       reload()
     } catch (failure) {
-      setError(
-        failure instanceof ApiError ? errorMessage(failure.code) : "L'ajout a échoué.",
-      )
+      setError(failure instanceof ApiError ? errorMessage(failure.code) : "L'ajout a échoué.")
     }
   }
 
@@ -99,49 +127,62 @@ export function AdultAccessEditor() {
 
       {error && <p className="text-sm text-red-300">{error}</p>}
 
-      <div className="sketch flex flex-wrap items-end gap-2 bg-paper/70 p-3">
-        <fieldset className="flex flex-col gap-1">
-          <legend className="mb-1 text-xs font-semibold uppercase tracking-wider text-ink/60">
-            Compte
-          </legend>
-          <div className="flex gap-2">
-            {PROVIDERS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                aria-pressed={provider === option.value}
-                onClick={() => setProvider(option.value)}
-                className={`sketch-pill px-3 py-2 text-sm font-semibold transition ${
-                  provider === option.value ? 'bg-grape text-white' : 'bg-ink/5 hover:bg-ink/10'
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </fieldset>
-        <label className="flex flex-1 flex-col gap-1 text-xs font-semibold uppercase tracking-wider text-ink/60">
-          Identifiant numérique
-          <input
-            value={accountId}
-            onChange={(event) => setAccountId(event.target.value)}
-            placeholder={PROVIDERS.find((option) => option.value === provider)?.hint}
-            inputMode="numeric"
-            className="sketch-input bg-paper px-4 py-2 font-mono text-sm normal-case outline-none focus:border-punch"
-          />
-        </label>
-        <label className="flex flex-1 flex-col gap-1 text-xs font-semibold uppercase tracking-wider text-ink/60">
-          Nom (facultatif)
-          <input
-            value={label}
-            onChange={(event) => setLabel(event.target.value)}
-            placeholder="Alex"
-            className="sketch-input bg-paper px-4 py-2 text-sm normal-case outline-none focus:border-punch"
-          />
-        </label>
-        <Button variant="zap" disabled={!accountId.trim()} onClick={add}>
-          Ajouter
-        </Button>
+      <div className="sketch flex flex-col gap-3 bg-paper/70 p-3">
+        <div className="flex flex-wrap items-end gap-2">
+          <fieldset className="flex flex-col gap-1">
+            <legend className="mb-1 text-xs font-semibold uppercase tracking-wider text-ink/60">
+              Compte
+            </legend>
+            <div className="flex gap-2">
+              {PROVIDERS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  aria-pressed={provider === option.value}
+                  onClick={() => setProvider(option.value)}
+                  className={`sketch-pill px-3 py-2 text-sm font-semibold transition ${
+                    provider === option.value ? 'bg-grape text-white' : 'bg-ink/5 hover:bg-ink/10'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+          <label className="flex flex-1 flex-col gap-1 text-xs font-semibold uppercase tracking-wider text-ink/60">
+            {provider === 'TWITCH' ? 'Chaîne ou identifiant' : 'Identifiant numérique'}
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={PROVIDERS.find((option) => option.value === provider)?.hint}
+              className="sketch-input bg-paper px-4 py-2 font-mono text-sm normal-case outline-none focus:border-punch"
+            />
+          </label>
+          <label className="flex flex-1 flex-col gap-1 text-xs font-semibold uppercase tracking-wider text-ink/60">
+            Nom (facultatif)
+            <input
+              value={label}
+              onChange={(event) => setLabel(event.target.value)}
+              placeholder={found?.name ?? 'Alex'}
+              className="sketch-input bg-paper px-4 py-2 text-sm normal-case outline-none focus:border-punch"
+            />
+          </label>
+          <Button variant="zap" disabled={!query.trim()} onClick={add}>
+            Ajouter
+          </Button>
+        </div>
+
+        {found && (
+          <p className="flex items-center gap-2 text-sm text-ink/70">
+            {found.avatarUrl && (
+              <img src={found.avatarUrl} alt={found.name} className="size-6 rounded-full" />
+            )}
+            <span>
+              <span className="font-semibold">{found.name}</span>{' '}
+              <span className="font-mono text-xs text-ink/50">{found.accountId}</span>
+            </span>
+          </p>
+        )}
       </div>
     </div>
   )

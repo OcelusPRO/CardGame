@@ -33,6 +33,8 @@ const MESSAGES: Record<string, string> = {
   PACK_NOT_EMPTY: "Ce pack contient encore des cartes.",
   PACK_NOT_FOUND: "Ce pack n'existe pas.",
   ADULT_ACCESS_NOT_FOUND: "Cet identifiant n'est pas dans la liste.",
+  ACCOUNT_NOT_FOUND: "Aucun compte ne correspond à ce que vous avez saisi.",
+  UNKNOWN_PROVIDER: "Ce service n'existe pas.",
   CARD_NOT_FOUND: "Cette carte n'existe pas.",
   BAD_MESSAGE: "Cette action n'a pas été comprise.",
   INTERNAL_ERROR: "Panne de notre côté. Réessayez dans un instant.",

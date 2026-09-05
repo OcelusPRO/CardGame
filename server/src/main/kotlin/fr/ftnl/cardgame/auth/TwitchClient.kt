@@ -40,6 +40,18 @@ class TwitchClient(private val http: HttpClient, private val clientId: String) {
         return response.body<TwitchUsers>().data
     }
 
+    /** The same lookup, by channel name: what a streamer is actually known by. */
+    suspend fun byLogins(appToken: String, logins: List<String>): List<TwitchUser> {
+        if (logins.isEmpty()) return emptyList()
+        val response: HttpResponse = http.get(ME_URL) {
+            bearerAuth(appToken)
+            header("Client-Id", clientId)
+            logins.forEach { parameter("login", it) }
+        }
+        if (!response.status.isSuccess()) return emptyList()
+        return response.body<TwitchUsers>().data
+    }
+
     private companion object {
         const val ME_URL = "https://api.twitch.tv/helix/users"
     }

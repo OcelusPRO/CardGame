@@ -6,11 +6,11 @@ import fr.ftnl.cardgame.domain.game.SelectionMode
 object RoundScorings {
     private val vote = VoteScoring()
     private val czar = CzarScoring()
+    private val chat = ChatScoring()
 
     fun of(mode: SelectionMode): RoundScoring = when (mode) {
-        // Chat mode is the vote with an empty table: the round holds no player vote, so
-        // the very same counting leaves the chats as the only voices.
-        SelectionMode.VOTE, SelectionMode.CHAT -> vote
+        SelectionMode.VOTE -> vote
         SelectionMode.CZAR -> czar
+        SelectionMode.CHAT -> chat
     }
 }

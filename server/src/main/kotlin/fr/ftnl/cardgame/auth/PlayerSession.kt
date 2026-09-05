@@ -25,10 +25,24 @@ data class PlayerSession(
     /** The signed in accounts behind this browser, in the order they were linked. */
     fun accounts(): List<Account> = listOfNotNull(
         discordId?.let {
-            Account(AccountProvider.DISCORD, it, discordUsername.orEmpty(), DiscordSnowflake.createdAtMillis(it))
+            Account(
+                provider = AccountProvider.DISCORD,
+                id = it,
+                displayName = discordUsername.orEmpty(),
+                avatarUrl = discordAvatarUrl,
+                createdAtMillis = DiscordSnowflake.createdAtMillis(it),
+            )
         },
         twitchId?.let {
-            Account(AccountProvider.TWITCH, it, twitchUsername.orEmpty(), twitchCreatedAtMillis)
+            Account(
+                provider = AccountProvider.TWITCH,
+                id = it,
+                displayName = twitchUsername.orEmpty(),
+                // The channel name travels along: an administrator may be listed by it.
+                login = twitchLogin,
+                avatarUrl = twitchAvatarUrl,
+                createdAtMillis = twitchCreatedAtMillis,
+            )
         },
     )
 }

@@ -32,6 +32,14 @@ class AdminGuardTest {
     }
 
     @Test
+    fun `a Twitch account may be listed by channel name`() {
+        val byName = AdminGuard(AdminConfig(discordIds = emptySet(), twitchIds = setOf("Kameto")))
+        val user = TwitchUser(id = "44322889", login = "kameto", displayName = "Kameto")
+
+        assertTrue(byName.isAdmin(user.account()), "the channel name should have been enough")
+    }
+
+    @Test
     fun `an id listed for one provider grants nothing to the other`() {
         val twitchTwin = TwitchUser(id = "111", login = "sosie")
         val discordTwin = DiscordUser(id = "333", username = "sosie")

@@ -61,8 +61,10 @@ Chaque temps a un chronomètre, et se ferme tout seul dès que tout le monde a j
 son choix vaut une voix, donc la réponse retenue rapporte le même **`pointsPerVote`**.
 
 **Mode tchat** — les joueurs répondent et ne votent plus : **chaque spectateur compte pour une
-voix**, exactement comme un joueur dans le mode vote, et le décompte des points ne change pas.
-Voir [Connexion Twitch et vote du tchat](#connexion-twitch-et-vote-du-tchat).
+voix** sur la carte qu'il choisit, et la réponse qui en récolte le plus **remporte la manche,
+qui vaut 1 point**. Ni points par vote, ni bonus d'unanimité : sinon une communauté de trois
+mille personnes réglerait la partie en deux manches. Voir
+[Connexion Twitch et vote du tchat](#connexion-twitch-et-vote-du-tchat).
 
 Personne ne saute un tour pour avoir hésité : à l'expiration du chronomètre, la réponse
 déjà sélectionnée part d'elle-même, et une main restée intacte joue une carte au hasard.
@@ -219,7 +221,8 @@ Toutes les valeurs se pilotent par variables d'environnement (voir `.env.example
 | `TWITCH_CLIENT_ID` / `TWITCH_CLIENT_SECRET` | vide | Connexion Twitch ; vide = bouton masqué |
 | `TWITCH_REDIRECT_URL` | `http://localhost:8080/auth/twitch/callback` | URL de retour OAuth |
 | `ADMIN_DISCORD_IDS` | vide | Identifiants Discord admin, séparés par des virgules |
-| `ADMIN_TWITCH_IDS` | vide | Identifiants Twitch admin, séparés par des virgules |
+| `ADMIN_TWITCH_IDS` | vide | Comptes Twitch admin (identifiant **ou** nom de chaîne), séparés par des virgules |
+| `DISCORD_BOT_TOKEN` | vide | Facultatif : permet à l'administration de retrouver un pseudo Discord depuis un identifiant |
 | `ADULT_MIN_ACCOUNT_AGE_DAYS` | `1095` | Âge à partir duquel un compte est cru adulte ; `0` pour n'écouter que la liste |
 
 ---
@@ -241,7 +244,8 @@ reportez l'identifiant et le secret dans `.env`. Le scope demandé est `identify
 
 L'administration s'ouvre aux comptes listés dans `ADMIN_DISCORD_IDS` **ou** `ADMIN_TWITCH_IDS` :
 les deux services distribuent de simples nombres, alors les deux listes restent séparées et un
-identifiant n'a de sens qu'à côté du service qui l'a émis.
+identifiant n'a de sens qu'à côté du service qui l'a émis. Côté Twitch, le **nom de chaîne** est
+accepté aussi bien que le numéro : `ADMIN_TWITCH_IDS=kameto` suffit.
 
 L'administration (`/admin`) permet de créer et corriger les packs et les cartes officielles, et
 affiche l'activité des 30 derniers jours, les cartes les plus jouées, les meilleurs duos
@@ -275,10 +279,12 @@ Le salon suit la même règle partout : une option qui ne peut pas s'appliquer n
 elle **disparaît** (pas de « cartes en main » en mode sans limites, pas de bonus d'unanimité
 quand un maître du jeu décide seul).
 
-**Comment le tchat pèse.** Chaque spectateur vaut **une voix** sur la carte qu'il choisit, au
-même `pointsPerVote` qu'un vote de table dans les autres modes : une réponse plébiscitée par
-quatre cents personnes rapporte quatre cents fois ce point. Un spectateur ne vote qu'une fois
-par manche — son premier message compte, et taper dans deux tchats à la fois ne change rien.
+**Comment le tchat pèse.** Chaque spectateur vaut **une voix** sur la carte qu'il choisit, et
+la réponse la plus choisie gagne la manche — **1 point**, que le tchat compte trente personnes
+ou trois mille. Une partie est donc un compte de manches gagnées, pas un sondage d'audience ;
+une égalité au sommet donne le point à chacune des réponses concernées. Un spectateur ne vote
+qu'une fois par manche — son premier message compte, et taper dans deux tchats à la fois ne
+change rien.
 
 Sous chaque réponse, le jeu affiche les **avatars Twitch** des votants, au plus quinze, puis
 « +X votes ». Les photos viennent de l'API Twitch, lues avec un jeton applicatif : seules les
@@ -287,7 +293,10 @@ qu'une fois. Sans photo trouvée, l'initiale du pseudo tient lieu de portrait.
 
 **Accès aux packs 18+.** Un compte Twitch y a droit exactement comme un compte Discord : parce
 qu'il est administrateur, parce qu'il figure dans la liste d'accès de l'administration, ou parce
-qu'il a **plus de trois ans** (`ADULT_MIN_ACCOUNT_AGE_DAYS`). L'âge d'un compte Discord se lit
+qu'il a **plus de trois ans** (`ADULT_MIN_ACCOUNT_AGE_DAYS`). Dans l'administration, il suffit
+de taper un **nom de chaîne Twitch** : le serveur retrouve l'identifiant à stocker et remplit le
+pseudo tout seul. Sur Discord, le pseudo ne se retrouve qu'avec un `DISCORD_BOT_TOKEN` — sans
+lui, l'identifiant numérique reste obligatoire et le nom se saisit à la main. L'âge d'un compte Discord se lit
 dans son identifiant ; celui d'un compte Twitch vient de la date de création que Twitch renvoie
 à la connexion — dans les deux cas sans appel supplémentaire et sans rien demander au joueur.
 
@@ -365,6 +374,7 @@ c'est ce qui évite un serveur qui démarre puis échoue à la première requêt
 | `GET` `POST` `DELETE` | `/api/admin/packs` |
 | `GET` `POST` `DELETE` | `/api/admin/situations` |
 | `GET` `POST` `DELETE` | `/api/admin/punchlines` |
+| `GET` | `/api/admin/accounts/{provider}/{query}` (retrouve un compte par identifiant ou nom de chaîne) |
 | `GET` | `/api/admin/stats/overview`, `/activity`, `/cards`, `/combos` |
 | `WS` | `/ws/admin/stats` |
 

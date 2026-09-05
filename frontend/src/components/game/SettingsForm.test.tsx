@@ -139,7 +139,7 @@ describe('SettingsForm', () => {
       expect(screen.getByRole('checkbox', { name: /Le maître du jeu répond aussi/i })).toBeInTheDocument()
     })
 
-    it('drops the self-vote rule when the chat judges alone', () => {
+    it('drops every point rule when the chat judges alone', () => {
       render(
         <SettingsForm
           settings={settings({ selectionMode: 'CHAT' })}
@@ -150,7 +150,10 @@ describe('SettingsForm', () => {
       )
 
       expect(screen.queryByRole('checkbox', { name: /sa propre carte/i })).not.toBeInTheDocument()
-      expect(screen.getByLabelText('Bonus unanimité')).toBeInTheDocument()
+      // The most voted answer wins the round, and a round is worth one point.
+      expect(screen.queryByLabelText('Bonus unanimité')).not.toBeInTheDocument()
+      expect(screen.queryByLabelText('Points par vote')).not.toBeInTheDocument()
+      expect(screen.getByText(/une manche vaut 1 point/i)).toBeInTheDocument()
     })
 
     it("keeps the czar's own rule out of the everybody-votes mode", () => {

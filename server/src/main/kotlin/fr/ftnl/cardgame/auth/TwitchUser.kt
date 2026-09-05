@@ -29,6 +29,8 @@ data class TwitchUser(
         provider = AccountProvider.TWITCH,
         id = id,
         displayName = displayName,
+        login = login,
+        avatarUrl = profileImageUrl,
         createdAtMillis = createdAtMillis,
     )
 }

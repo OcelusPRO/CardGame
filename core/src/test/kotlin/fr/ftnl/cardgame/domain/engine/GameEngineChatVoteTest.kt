@@ -68,17 +68,20 @@ class GameEngineChatVoteTest {
     }
 
     @Test
-    fun `the chat alone hands out the points, one voice per viewer`() {
+    fun `the answer the chat picked wins the round, and the round is worth one point`() {
         val voting = everybodyAnswers(chatVote())
         val forAlice = voting.round?.handleOf(alice)!!
-        val counted = engine.perform(voting, GameCommand.SetChatVotes(mapOf(forAlice to tally(240))))
+        val forBob = voting.round?.handleOf(bob)!!
+        val counted = engine.perform(
+            voting,
+            GameCommand.SetChatVotes(mapOf(forAlice to tally(240), forBob to tally(12))),
+        )
 
         val scored = engine.perform(counted, GameCommand.CloseSelection)
 
         assertEquals(GamePhase.ROUND_RESULT, scored.phase)
-        // Every viewer went the same way, so the answer also takes the unanimity bonus.
-        val expected = 240 * scored.settings.scoring.pointsPerVote + scored.settings.scoring.unanimityBonus
-        assertEquals(expected, scored.scoreboard.pointsOf(alice))
+        // Two hundred and forty viewers, one point: a game counts rounds, not voices.
+        assertEquals(1, scored.scoreboard.pointsOf(alice))
         assertEquals(0, scored.scoreboard.pointsOf(bob))
     }
 

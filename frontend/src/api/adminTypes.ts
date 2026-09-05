@@ -43,6 +43,16 @@ export interface PackInput {
 /** Both providers hand out plain numbers, so an id only means something next to one. */
 export type AccountProvider = 'DISCORD' | 'TWITCH'
 
+/** An account the server looked up, so a bare id gets a name and a face. */
+export interface AccountView {
+  provider: AccountProvider
+  accountId: string
+  name: string
+  /** The Twitch channel name; absent on Discord. */
+  login?: string
+  avatarUrl?: string
+}
+
 export interface AdultAccessView {
   provider: AccountProvider
   accountId: string

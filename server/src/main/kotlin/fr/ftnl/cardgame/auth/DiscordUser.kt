@@ -25,6 +25,7 @@ data class DiscordUser(
         provider = AccountProvider.DISCORD,
         id = id,
         displayName = displayName,
+        avatarUrl = avatarUrl,
         createdAtMillis = DiscordSnowflake.createdAtMillis(id),
     )
 }

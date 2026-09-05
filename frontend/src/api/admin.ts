@@ -2,6 +2,7 @@ import { api } from './client'
 import type {
   AdminOverview,
   AccountProvider,
+  AccountView,
   AdultAccessInput,
   AdultAccessView,
   CardAdminView,
@@ -39,6 +40,10 @@ export const adminApi = {
   punchlines: () => api.get<CardAdminView[]>('/api/admin/punchlines'),
   savePunchline: (input: CardInput) => api.post<CardAdminView>('/api/admin/punchlines', input),
   deletePunchline: (id: string) => api.remove<void>(`/api/admin/punchlines/${id}`),
+
+  /** The account behind an id or, on Twitch, behind a channel name. */
+  findAccount: (provider: AccountProvider, query: string) =>
+    api.get<AccountView>(`/api/admin/accounts/${provider}/${encodeURIComponent(query)}`),
 
   adultAccess: () => api.get<AdultAccessView[]>('/api/admin/adult-access'),
   addAdultAccess: (input: AdultAccessInput) =>
