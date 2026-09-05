@@ -6,6 +6,9 @@ const KEY = 'sansfiltres:active-game'
  * has to land back at the same table, so the code is kept here for the life of the tab.
  */
 export function rememberActiveGame(code: string) {
+  // An empty code is not a table. Storing one reads back as "nothing remembered" anyway,
+  // so the only thing it can do is quietly overwrite a real seat with a blank.
+  if (!code) return
   try {
     sessionStorage.setItem(KEY, code)
   } catch {

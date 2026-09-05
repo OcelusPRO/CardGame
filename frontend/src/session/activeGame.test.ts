@@ -13,6 +13,12 @@ describe('activeGame', () => {
     expect(readActiveGame()).toBe('ABCDE')
   })
 
+  it('refuses to overwrite a real seat with an empty code', () => {
+    rememberActiveGame('ABCDE')
+    rememberActiveGame('')
+    expect(readActiveGame()).toBe('ABCDE')
+  })
+
   it('forgets the code when the player leaves the table', () => {
     rememberActiveGame('ABCDE')
     forgetActiveGame()

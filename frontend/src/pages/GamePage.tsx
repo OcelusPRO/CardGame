@@ -30,7 +30,14 @@ export function GamePage() {
   // The code sits in the URL only as an invitation link. Once a seat is taken it is
   // dropped from the address bar and kept on the tab instead, so a reload of the bare
   // `/game` address still finds its way back to the same table.
-  const [rememberedCode] = useState(readActiveGame)
+  //
+  // This has to be state that moves with the seat, not a snapshot taken at mount. React
+  // Router renders `/game/:code` and `/game` through the same element, so dropping the
+  // code from the address bar can leave this component mounted: a mount-time read would
+  // still hold the empty string it saw on arrival, `code` would fall to nothing the
+  // instant the URL changed, and the "no table remembered" guard below would throw the
+  // player who just sat down back to the home page.
+  const [rememberedCode, setRememberedCode] = useState(readActiveGame)
   const code = routeCode ?? rememberedCode
   const { me } = useSession()
   const [identity, setIdentity] = useIdentity(me)
@@ -58,10 +65,13 @@ export function GamePage() {
 
   const seated = typeof lookup === 'object' && lookup.youArePlaying
 
-  // A seated player no longer needs the invitation code in their address bar.
+  // A seated player no longer needs the invitation code in their address bar. The seat is
+  // recorded both on the tab and in state before the address changes, so the code survives
+  // the change whether React Router keeps this component or remounts it.
   useEffect(() => {
-    if (!seated) return
+    if (!seated || !code) return
     rememberActiveGame(code)
+    setRememberedCode(code)
     if (routeCode) navigate('/game', { replace: true })
   }, [seated, code, routeCode, navigate])
 
