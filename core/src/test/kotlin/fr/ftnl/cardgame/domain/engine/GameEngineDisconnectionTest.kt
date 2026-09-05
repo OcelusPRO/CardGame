@@ -11,7 +11,6 @@ import fr.ftnl.cardgame.domain.support.testEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class GameEngineDisconnectionTest {
@@ -121,7 +120,41 @@ class GameEngineDisconnectionTest {
     }
 
     @Test
-    fun `finishing the game frees the seats of players who never came back`() {
+    fun `the grace delay never unseats a player once the game is over either`() {
+        val lastRound = GameFixtures.lobby(players).copy(
+            phase = GamePhase.ROUND_RESULT,
+            round = Round(number = running.settings.rounds, situation = GameFixtures.situation("s")),
+        )
+        val ended = engine.perform(lastRound, GameCommand.NextRound(by = null))
+        val gone = engine.perform(ended, GameCommand.SetConnected(carl, connected = false))
+
+        val state = engine.perform(gone, GameCommand.DropIfAway(carl))
+
+        assertEquals(3, state.players.size)
+        assertFalse(state.players.single { it.id == carl }.connected)
+    }
+
+    @Test
+    fun `a host who drops mid-game keeps the crown`() {
+        // A page reload is exactly this: a drop, right in the middle of a round, where
+        // handing the table to somebody else would only strand whoever is mid-action.
+        val state = engine.perform(running, GameCommand.SetConnected(alice, connected = false))
+
+        assertEquals(alice, state.hostId)
+        assertFalse(state.players.single { it.id == alice }.connected)
+    }
+
+    @Test
+    fun `reconnecting mid-game never had to fight over the crown in the first place`() {
+        val gone = engine.perform(running, GameCommand.SetConnected(alice, connected = false))
+
+        val back = engine.perform(gone, GameCommand.SetConnected(alice, connected = true))
+
+        assertEquals(alice, back.hostId)
+    }
+
+    @Test
+    fun `finishing the game keeps every player and their score, connected or not`() {
         val lastRound = GameFixtures.lobby(players).copy(
             phase = GamePhase.ROUND_RESULT,
             players = players.map { if (it.id == carl) it.copy(connected = false) else it },
@@ -132,8 +165,29 @@ class GameEngineDisconnectionTest {
         val ended = engine.perform(lastRound, GameCommand.NextRound(alice))
 
         assertEquals(GamePhase.FINISHED, ended.phase)
-        assertEquals(listOf(alice, bob), ended.players.map { it.id })
-        assertNull(ended.scoreboard.points[carl])
+        assertEquals(listOf(alice, bob, carl), ended.players.map { it.id })
+        assertEquals(7, ended.scoreboard.points[carl])
+        // The host stayed connected throughout, so the crown never had to move.
+        assertEquals(alice, ended.hostId)
+    }
+
+    @Test
+    fun `the crown only passes on at the very end, and only if the host never came back`() {
+        val lastRound = GameFixtures.lobby(players).copy(
+            phase = GamePhase.ROUND_RESULT,
+            players = players.map { if (it.id == alice) it.copy(connected = false) else it },
+            round = Round(number = running.settings.rounds, situation = GameFixtures.situation("s")),
+            scoreboard = Scoreboard(mapOf(alice to 5, bob to 3, carl to 7)),
+        )
+
+        // Alice, the disconnected host, cannot be the one asking for the next round: this
+        // is the scheduler moving the game along on its own, exactly as it would in play.
+        val ended = engine.perform(lastRound, GameCommand.NextRound(by = null))
+
+        assertEquals(GamePhase.FINISHED, ended.phase)
+        assertEquals(bob, ended.hostId)
+        assertEquals(listOf(alice, bob, carl), ended.players.map { it.id })
+        assertEquals(5, ended.scoreboard.points[alice])
     }
 
     private fun startedGame(): GameState {

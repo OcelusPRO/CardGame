@@ -38,18 +38,22 @@ internal class RoundFlowHandler(
     }
 
     /**
-     * Ends the match and, at the same time, frees the seats of everyone who is no longer
-     * connected: their seat was only kept so they could reconnect while it was still being
-     * played. The ranking is drawn from the players who actually stayed to the end.
+     * Ends the match. Everyone who played keeps their seat and their score in the final
+     * ranking, connected or not — a player who stepped away for the last few rounds still
+     * earned the points they are shown with.
+     *
+     * The one thing that does change here is the crown: this is "the end" the connection
+     * handler defers to when a disconnected host never came back mid-match. If they are
+     * still offline, it passes to the next connected player so the table is not left
+     * waiting on somebody who is not there to run it.
      */
     private fun finish(state: GameState): CommandResult {
-        val absent = state.players.filterNot { it.connected }.map { it.id }.toSet()
-        val trimmed = state.withoutPlayers(absent)
-            .copy(phase = GamePhase.FINISHED, phaseDeadlineMillis = null)
-        val departures = absent.map { GameEvent.PlayerLeft(it) }
-        return CommandResult.Accepted(
-            trimmed,
-            departures + GameEvent.GameEnded(GameEndCondition.winners(trimmed)),
+        val hostGone = state.playerOf(state.hostId)?.connected == false
+        val finished = state.copy(
+            hostId = if (hostGone) state.successorTo(state.hostId) ?: state.hostId else state.hostId,
+            phase = GamePhase.FINISHED,
+            phaseDeadlineMillis = null,
         )
+        return CommandResult.accepted(finished, GameEvent.GameEnded(GameEndCondition.winners(finished)))
     }
 }

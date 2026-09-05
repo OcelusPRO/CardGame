@@ -60,7 +60,7 @@ export function VotePanel({ game, onChoose }: Props) {
         </p>
 
         {chatVoting && (
-          <ChatVoteNotice channels={game.chatChannels} viewers={totalChatVotes(round.answers)} />
+          <ChatVoteNotice active={chatVoting} viewers={totalChatVotes(round.answers)} />
         )}
 
         <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(13rem,1fr))]">

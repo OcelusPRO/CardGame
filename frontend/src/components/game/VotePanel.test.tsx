@@ -141,11 +141,12 @@ describe('VotePanel', () => {
       expect(screen.getByText(/Le tchat tranche/i)).toBeInTheDocument()
     })
 
-    it('tells the viewers what to type, and where', () => {
+    it('tells the viewers what to type, without naming the channel', () => {
       render(<VotePanel game={chatGame()} onChoose={vi.fn()} />)
 
       expect(screen.getByText(/Tapez le numéro de la réponse/i)).toBeInTheDocument()
-      expect(screen.getByText('kameto')).toBeInTheDocument()
+      expect(screen.getByText(/Le tchat décidera du sort de ces réponses/i)).toBeInTheDocument()
+      expect(screen.queryByText('kameto')).not.toBeInTheDocument()
     })
 
     it('numbers every answer the way the chat must type it', () => {
