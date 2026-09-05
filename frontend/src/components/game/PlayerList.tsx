@@ -5,10 +5,11 @@ import { PlayerRow } from './PlayerRow'
 interface Props {
   game: GameView
   onKick?: (playerId: string) => void
+  onLeave?: () => void
 }
 
 /** The scoreboard and the waiting list, which are the same thing in this game. */
-export function PlayerList({ game, onKick }: Props) {
+export function PlayerList({ game, onKick, onLeave }: Props) {
   const ordered = [...game.players].sort((a, b) => b.score - a.score)
   const canKick = game.you.isHost && game.phase === 'LOBBY'
 
@@ -22,6 +23,7 @@ export function PlayerList({ game, onKick }: Props) {
             phase={game.phase}
             isYou={player.id === game.you.id}
             onKick={canKick && player.id !== game.you.id && onKick ? () => onKick(player.id) : undefined}
+            onLeave={player.id === game.you.id ? onLeave : undefined}
           />
         ))}
       </ul>

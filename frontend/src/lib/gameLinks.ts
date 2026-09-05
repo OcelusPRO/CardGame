@@ -1,6 +1,7 @@
 /**
- * A game has one address and one only: `/game/CODE`. It is the page you play on, and the
- * page a newcomer lands on to take a seat, so the link in the address bar is the invitation.
+ * The invitation address of a game: `/game/CODE`. It is where a newcomer lands to take a
+ * seat, so the link is the whole invitation. Once seated, the player's address bar drops
+ * to the bare `/game` (see `activeGame`) — the code is an invite, not a badge to wear.
  */
 export function gamePath(code: string): string {
   return `/game/${code}`

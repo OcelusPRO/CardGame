@@ -14,6 +14,7 @@ import { useGameStore } from '../game/gameStore'
 import { messages } from '../game/messages'
 import { errorMessage } from '../lib/errorMessages'
 import { gamePath } from '../lib/gameLinks'
+import { forgetActiveGame, readActiveGame, rememberActiveGame } from '../session/activeGame'
 import { useIdentity } from '../session/useIdentity'
 import { useSession } from '../session/useSession'
 
@@ -24,8 +25,13 @@ type Lookup = 'loading' | 'missing' | GamePreview
  * else gets the form to take one — which is what makes the page URL the whole invitation.
  */
 export function GamePage() {
-  const { code = '' } = useParams()
+  const { code: routeCode } = useParams()
   const navigate = useNavigate()
+  // The code sits in the URL only as an invitation link. Once a seat is taken it is
+  // dropped from the address bar and kept on the tab instead, so a reload of the bare
+  // `/game` address still finds its way back to the same table.
+  const [rememberedCode] = useState(readActiveGame)
+  const code = routeCode ?? rememberedCode
   const { me } = useSession()
   const [identity, setIdentity] = useIdentity(me)
   const { game, status, lastError, connect, disconnect, send, dismissError } = useGameStore()
@@ -33,6 +39,7 @@ export function GamePage() {
   useGameSounds(game)
 
   const refresh = useCallback(() => {
+    if (!code) return
     gamesApi
       .preview(code)
       .then(setLookup)
@@ -44,7 +51,19 @@ export function GamePage() {
     refresh()
   }, [refresh])
 
+  // Landed on the bare `/game` with no table remembered: there is nothing to show.
+  useEffect(() => {
+    if (!code) navigate('/', { replace: true })
+  }, [code, navigate])
+
   const seated = typeof lookup === 'object' && lookup.youArePlaying
+
+  // A seated player no longer needs the invitation code in their address bar.
+  useEffect(() => {
+    if (!seated) return
+    rememberActiveGame(code)
+    if (routeCode) navigate('/game', { replace: true })
+  }, [seated, code, routeCode, navigate])
 
   useEffect(() => {
     if (!seated) return
@@ -59,8 +78,18 @@ export function GamePage() {
     if (lastError !== 'GAME_NOT_FOUND') return
     dismissError()
     disconnect()
+    forgetActiveGame()
     navigate('/', { replace: true })
   }, [lastError, dismissError, disconnect, navigate])
+
+  // Giving up your seat on purpose: tell the table, drop the socket and the remembered
+  // code so a reload does not walk straight back in, and head home.
+  const leaveGame = useCallback(() => {
+    send(messages.leave())
+    disconnect()
+    forgetActiveGame()
+    navigate('/', { replace: true })
+  }, [send, disconnect, navigate])
 
   // A finished or forgotten game must not be a dead end: whoever followed the stale link
   // gets a fresh table of their own so the invitation still leads somewhere playable.
@@ -70,6 +99,7 @@ export function GamePage() {
   useEffect(() => {
     if (lookup !== 'missing' || recovering.current) return
     recovering.current = true
+    forgetActiveGame()
     if (identity.nickname.trim().length < 2) {
       navigate('/create', { replace: true })
       return
@@ -138,7 +168,11 @@ export function GamePage() {
 
       <aside className="order-2 w-full lg:order-1 lg:w-72 lg:shrink-0 xl:w-80">
         <div className="flex flex-col gap-4 lg:sticky lg:top-6">
-          <PlayerList game={game} onKick={(playerId) => send(messages.kick(playerId))} />
+          <PlayerList
+            game={game}
+            onKick={(playerId) => send(messages.kick(playerId))}
+            onLeave={leaveGame}
+          />
           {inLobby && (
             <div className="fixed inset-x-4 bottom-4 z-40 lg:static">
               <StartGameBar game={game} onStart={() => send(messages.start())} />

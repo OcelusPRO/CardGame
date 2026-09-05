@@ -59,6 +59,7 @@ export function App() {
           <Route path="/create" element={<CreatePage />} />
           <Route path="/join" element={<JoinPage />} />
           <Route path="/game/:code" element={<GamePage />} />
+          <Route path="/game" element={<GamePage />} />
           <Route
             path="/admin"
             element={

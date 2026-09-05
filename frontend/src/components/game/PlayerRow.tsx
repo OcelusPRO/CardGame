@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { motion } from 'motion/react'
 import type { GamePhase, PlayerView } from '../../api/types'
 import { Avatar } from '../avatar/Avatar'
@@ -7,10 +8,11 @@ interface Props {
   phase: GamePhase
   isYou: boolean
   onKick?: () => void
+  onLeave?: () => void
 }
 
 /** One seat at the table: who they are, where they stand, and what we wait for. */
-export function PlayerRow({ player, phase, isYou, onKick }: Props) {
+export function PlayerRow({ player, phase, isYou, onKick, onLeave }: Props) {
   return (
     <motion.li
       layout
@@ -30,6 +32,7 @@ export function PlayerRow({ player, phase, isYou, onKick }: Props) {
         <p className="text-xs text-ink/60">{statusOf(player, phase)}</p>
       </div>
       <span className="font-display text-xl font-bold tabular-nums text-honey">{player.score}</span>
+      {onLeave && <LeaveSelfButton onLeave={onLeave} />}
       {onKick && (
         <button
           type="button"
@@ -41,6 +44,35 @@ export function PlayerRow({ player, phase, isYou, onKick }: Props) {
         </button>
       )}
     </motion.li>
+  )
+}
+
+/**
+ * Leaving your own seat, worn like the host's kick button but pointed at yourself. One tap
+ * arms it, a second within a few seconds confirms — a stray thumb never drops you mid-game.
+ */
+function LeaveSelfButton({ onLeave }: { onLeave: () => void }) {
+  const [armed, setArmed] = useState(false)
+
+  useEffect(() => {
+    if (!armed) return
+    const timer = setTimeout(() => setArmed(false), 3000)
+    return () => clearTimeout(timer)
+  }, [armed])
+
+  return (
+    <button
+      type="button"
+      onClick={() => (armed ? onLeave() : setArmed(true))}
+      aria-label={armed ? 'Confirmer et quitter la partie' : 'Quitter la partie'}
+      className={
+        armed
+          ? 'shrink-0 rounded-full bg-red-500/20 px-2 py-1 text-xs font-bold text-red-300'
+          : 'shrink-0 rounded-full px-2 py-1 text-sm text-ink/50 transition hover:bg-red-500/20 hover:text-red-300'
+      }
+    >
+      {armed ? 'Quitter ?' : '🚪'}
+    </button>
   )
 }
 
