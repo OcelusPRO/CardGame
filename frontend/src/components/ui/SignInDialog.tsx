@@ -38,7 +38,7 @@ export function SignInDialog({ providers, onClose }: Props) {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="absolute inset-0 bg-ink/55"
+        className="absolute inset-0 bg-scrim/55"
       />
       <motion.div
         role="dialog"

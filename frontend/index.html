@@ -3,7 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#150726" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f6efe3" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#15111e" />
     <meta name="description" content="Le jeu de cartes le plus grinçant de vos soirées, en ligne et sans installer quoi que ce soit." />
 
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
@@ -30,6 +31,25 @@
       rel="stylesheet"
     />
     <title>SansFiltres — le jeu de cartes qui dérape</title>
+
+    <!--
+      The theme is settled before the first paint. React sets the same attribute a moment
+      later, but "a moment" is long enough for a white page to flash at someone who asked
+      for a dark one, and that flash is the whole thing they would remember.
+    -->
+    <script>
+      (function () {
+        try {
+          var saved = JSON.parse(localStorage.getItem('sansfiltres:theme') || '"system"')
+          var dark = saved === 'system' || saved === null
+            ? matchMedia('(prefers-color-scheme: dark)').matches
+            : saved === 'dark'
+          document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+        } catch (e) {
+          /* Storage blocked, or a value we no longer understand: daylight it is. */
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

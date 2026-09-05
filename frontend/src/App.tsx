@@ -7,9 +7,11 @@ import { HomePage } from './pages/HomePage'
 import { JoinPage } from './pages/JoinPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { AnimationToggle } from './components/ui/AnimationToggle'
+import { ThemeToggle } from './components/ui/ThemeToggle'
 import { SoundToggle } from './components/ui/SoundToggle'
 import { AccountMenu } from './components/ui/AccountMenu'
 import { useAnimationPref } from './session/useAnimationPref'
+import { useThemePref } from './session/useThemePref'
 import { useSoundPref } from './audio/useSoundPref'
 import { useSession } from './session/useSession'
 import { takeReturnPath } from './session/authReturn'
@@ -24,6 +26,7 @@ export function App() {
   const navigate = useNavigate()
   const { enabled: animate, toggle: toggleAnimations } = useAnimationPref()
   const { enabled: sound, toggle: toggleSound } = useSoundPref()
+  const { dark, toggle: toggleTheme } = useThemePref()
 
   // Both sign ins land back on the home page. Whoever started from a table is taken
   // straight back to it, and the `?discord=`/`?twitch=` marker is wiped either way.
@@ -39,6 +42,14 @@ export function App() {
     document.documentElement.dataset.motion = animate ? 'on' : 'off'
   }, [animate])
 
+  // The whole palette hangs off this one attribute: index.css restates every colour
+  // token under `html[data-theme='dark']`, so no component has to know which way the
+  // page is running. The browser chrome — form controls, scrollbars — follows the
+  // `color-scheme` declared alongside them.
+  useEffect(() => {
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+  }, [dark])
+
   return (
     <MotionConfig reducedMotion={animate ? 'never' : 'always'}>
       <div className="min-h-dvh">
@@ -49,6 +60,7 @@ export function App() {
           </Link>
           <div className="flex items-center gap-2">
             <SoundToggle enabled={sound} onToggle={toggleSound} />
+            <ThemeToggle dark={dark} onToggle={toggleTheme} />
             <AnimationToggle enabled={animate} onToggle={toggleAnimations} />
             <AccountMenu me={me} />
           </div>

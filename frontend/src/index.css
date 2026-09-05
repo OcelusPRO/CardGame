@@ -21,6 +21,10 @@
   --color-sky: #2f9fd0;
   --color-grape: #7c4ddb;
 
+  /* A scrim is a darkened room, not an inked one: it stays dark in both themes, where
+     `--color-ink` flips. */
+  --color-scrim: #150726;
+
   --font-display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
   --font-body: "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-hand: "Caveat", "Segoe Script", cursive;
@@ -50,6 +54,54 @@
 
 :root {
   color-scheme: light;
+
+  /* The three glows behind everything, named so the dark theme can restate them without
+     restating the whole `background` shorthand. */
+  --glow-1: rgb(255 205 224 / 0.55);
+  --glow-2: rgb(255 233 176 / 0.5);
+  --glow-3: rgb(186 232 214 / 0.45);
+}
+
+/*
+ * Night.
+ *
+ * Nothing here is a second stylesheet: the whole app already speaks in `--color-ink`,
+ * `--color-paper` and the rest, so the dark theme is those same names pointing at
+ * different values. `ink` stays the foreground and `paper` the surface — they trade
+ * lightness, not meaning — which keeps the two decks opposite each other exactly as in
+ * daylight: the situation card is the inverse of the page, whichever way the page runs.
+ *
+ * `html[data-theme='dark']` outranks the `:root` that Tailwind emits `@theme` on, so no
+ * `!important` and no utility duplication is needed.
+ */
+html[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-ink: #f2ecf8;
+  --color-ink-soft: #ebe1f4;
+  --color-ink-line: #9b8ab6;
+  --color-paper: #221b30;
+  --color-paper-line: #3c3050;
+  --color-cream: #15111e;
+
+  /* The accents are lifted, not swapped: the same hues, at the lightness a dark ground
+     needs to keep them legible. `honey` moves furthest — it was picked to be readable
+     as text on paper, which makes it far too dark here. */
+  --color-punch: #f7457f;
+  --color-punch-soft: #ffb3cb;
+  --color-zap: #ffcc45;
+  --color-honey: #f2c14e;
+  --color-mint: #34d39e;
+  --color-sky: #56bce8;
+  --color-grape: #9d72ee;
+
+  --glow-1: rgb(229 50 110 / 0.16);
+  --glow-2: rgb(245 189 31 / 0.1);
+  --glow-3: rgb(18 169 124 / 0.12);
+
+  /* Ink-coloured shadows vanish on a dark ground; the drop has to be real black, and
+     the offset pass leans on the pale ink instead of the dark one. */
+  --shadow-card: 4px 6px 0 -1px rgb(242 236 248 / 0.1), 0 16px 30px -18px rgb(0 0 0 / 0.85);
 }
 
 html,
@@ -63,9 +115,9 @@ body {
   font-family: var(--font-body);
   color: var(--color-ink);
   background:
-    radial-gradient(90% 70% at 6% 0%, rgb(255 205 224 / 0.55) 0%, transparent 60%),
-    radial-gradient(90% 70% at 94% 8%, rgb(255 233 176 / 0.5) 0%, transparent 58%),
-    radial-gradient(80% 60% at 50% 100%, rgb(186 232 214 / 0.45) 0%, transparent 62%),
+    radial-gradient(90% 70% at 6% 0%, var(--glow-1) 0%, transparent 60%),
+    radial-gradient(90% 70% at 94% 8%, var(--glow-2) 0%, transparent 58%),
+    radial-gradient(80% 60% at 50% 100%, var(--glow-3) 0%, transparent 62%),
     var(--color-cream);
   background-attachment: fixed;
   -webkit-tap-highlight-color: transparent;
@@ -348,6 +400,19 @@ button.sketch-alt:focus-visible:not(:disabled)::after {
     linear-gradient(-58deg, rgb(43 30 63 / 0.18) 0 22%, transparent 22% 40%, rgb(43 30 63 / 0.14) 40% 52%, transparent 52%),
     linear-gradient(28deg, transparent 0 55%, rgb(43 30 63 / 0.16) 55% 70%, transparent 70%),
     radial-gradient(60% 60% at 42% 38%, rgb(255 255 255 / 0.55), transparent 70%);
+}
+
+/*
+ * A fold is a shadow, and a shadow needs something to darken. At night the card it balls
+ * up is already dark, so the creases are drawn the other way round — light where the
+ * paper catches, and the centre highlight dimmed so the ball does not glow.
+ */
+html[data-theme='dark'] .crumple-creases {
+  background:
+    linear-gradient(115deg, rgb(0 0 0 / 0.4) 0 28%, transparent 28% 34%, rgb(0 0 0 / 0.24) 34% 46%, transparent 46%),
+    linear-gradient(-58deg, rgb(0 0 0 / 0.34) 0 22%, transparent 22% 40%, rgb(0 0 0 / 0.26) 40% 52%, transparent 52%),
+    linear-gradient(28deg, transparent 0 55%, rgb(255 255 255 / 0.12) 55% 70%, transparent 70%),
+    radial-gradient(60% 60% at 42% 38%, rgb(255 255 255 / 0.16), transparent 70%);
 }
 
 /* Respect the people who do not want the room to move. */

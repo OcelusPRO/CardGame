@@ -33,13 +33,15 @@ export function QrCode({ value, size = 180 }: Props) {
     return <div style={{ width: size, height: size }} className="sketch animate-pulse bg-ink/5" />
   }
 
+  // The frame keeps the code's own light background rather than the page's: a phone
+  // camera wants a pale quiet zone around the pattern, dark theme or not.
   return (
     <img
       src={dataUrl}
       width={size}
       height={size}
       alt="QR code pour rejoindre la partie"
-      className="sketch bg-paper p-2 shadow-card"
+      className="sketch bg-[#fdf8f3] p-2 shadow-card [--stroke:var(--color-ink-line)]"
     />
   )
 }
