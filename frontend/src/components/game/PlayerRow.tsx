@@ -31,7 +31,11 @@ export function PlayerRow({ player, phase, isYou, onKick, onLeave }: Props) {
         </p>
         <p className="text-xs text-ink/60">{statusOf(player, phase)}</p>
       </div>
-      <span className="font-display text-xl font-bold tabular-nums text-honey">{player.score}</span>
+      {/* Nobody has scored yet in the salon, so a column of zeros says nothing and only
+          makes the row look like a leaderboard before there is anything to lead. */}
+      {phase !== 'LOBBY' && (
+        <span className="font-display text-xl font-bold tabular-nums text-honey">{player.score}</span>
+      )}
       {onLeave && <LeaveSelfButton onLeave={onLeave} />}
       {onKick && (
         <button
@@ -71,8 +75,32 @@ function LeaveSelfButton({ onLeave }: { onLeave: () => void }) {
           : 'shrink-0 rounded-full px-2 py-1 text-sm text-ink/50 transition hover:bg-red-500/20 hover:text-red-300'
       }
     >
-      {armed ? 'Quitter ?' : '🚪'}
+      {armed ? 'Quitter ?' : <ExitIcon />}
     </button>
+  )
+}
+
+/**
+ * Stepping out through the frame. An emoji door sat at whatever size and colour the
+ * platform felt like drawing it; this is a stroke like the rest of the interface, so it
+ * takes the row's ink and turns red on hover along with everything else in the button.
+ */
+function ExitIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="size-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M10.4 20.2H5.8A1.7 1.7 0 0 1 4.1 18.5V5.5A1.7 1.7 0 0 1 5.8 3.8h4.6" />
+      <path d="M15.4 16.3 19.9 12l-4.5-4.3" />
+      <path d="M19.9 12H9.3" />
+    </svg>
   )
 }
 

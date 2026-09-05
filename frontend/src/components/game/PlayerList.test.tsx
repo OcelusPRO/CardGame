@@ -14,6 +14,30 @@ function table() {
   }
 }
 
+describe('PlayerList — scores', () => {
+  it('keeps them out of the salon, where there is nothing to count yet', () => {
+    render(<PlayerList game={table()} />)
+
+    expect(screen.queryByText('0')).not.toBeInTheDocument()
+  })
+
+  it('shows them once the game is running', () => {
+    const base = table()
+    render(
+      <PlayerList
+        game={{
+          ...base,
+          phase: 'SUBMITTING',
+          players: [aPlayer('alice', 'Alice', { score: 7 }), aPlayer('bob', 'Bob', { score: 3 })],
+        }}
+      />,
+    )
+
+    expect(screen.getByText('7')).toBeInTheDocument()
+    expect(screen.getByText('3')).toBeInTheDocument()
+  })
+})
+
 describe('PlayerList — leaving your own seat', () => {
   it('shows the leave button on your row only', () => {
     render(<PlayerList game={table()} onLeave={vi.fn()} />)
