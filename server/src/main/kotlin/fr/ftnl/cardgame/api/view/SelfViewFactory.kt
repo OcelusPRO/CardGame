@@ -30,5 +30,5 @@ class SelfViewFactory {
     private fun mustVote(state: GameState, viewer: PlayerId): Boolean =
         state.phase == GamePhase.SELECTING &&
             viewer in RoundProgress.voters(state) &&
-            state.round?.hasVoted(viewer) == false
+            !state.hasVoted(viewer)
 }

@@ -71,6 +71,7 @@ class GameEntryService(
         nickname = Nickname.of(nickname),
         avatar = AvatarMapper.toDomain(avatar, session.discordAvatarUrl ?: session.twitchAvatarUrl),
         twitchLogin = session.twitchLogin,
+        twitchId = session.twitchId,
     )
 
     private fun ticket(code: GameCode, playerId: PlayerId, baseUrl: String, isHost: Boolean) = GameTicket(

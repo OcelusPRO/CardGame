@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import QRCode from 'qrcode'
 
 interface Props {
   value: string
@@ -9,17 +8,24 @@ interface Props {
 /**
  * The join link as a QR code, drawn in the browser so the server never has to render
  * an image. Friends point a phone at it and they are in.
+ *
+ * The encoder is fetched only when a code is actually asked for. It is a fair slice of
+ * script for something most tables never open — the code is hidden by default, and a link
+ * pasted into a chat gets people in just as well — so it stays out of the first load.
  */
 export function QrCode({ value, size = 180 }: Props) {
   const [dataUrl, setDataUrl] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
-    QRCode.toDataURL(value, {
-      width: size * 2,
-      margin: 1,
-      color: { dark: '#150726', light: '#fdf8f3' },
-    })
+    import('qrcode')
+      .then((module) =>
+        module.default.toDataURL(value, {
+          width: size * 2,
+          margin: 1,
+          color: { dark: '#150726', light: '#fdf8f3' },
+        }),
+      )
       .then((url) => {
         if (!cancelled) setDataUrl(url)
       })

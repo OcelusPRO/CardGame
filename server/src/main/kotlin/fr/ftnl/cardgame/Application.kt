@@ -2,7 +2,10 @@ package fr.ftnl.cardgame
 
 import fr.ftnl.cardgame.config.AppConfigLoader
 import fr.ftnl.cardgame.db.DatabaseFactory
+import fr.ftnl.cardgame.plugins.configureExtensionCors
 import fr.ftnl.cardgame.plugins.configureHttp
+import fr.ftnl.cardgame.plugins.configureMetrics
+import fr.ftnl.cardgame.plugins.configureRateLimiting
 import fr.ftnl.cardgame.plugins.configureRouting
 import fr.ftnl.cardgame.plugins.configureSecurity
 import fr.ftnl.cardgame.plugins.configureSerialization
@@ -27,6 +30,9 @@ fun Application.module() {
 fun Application.configure(services: ApplicationServices) {
     configureSerialization()
     configureHttp()
+    configureMetrics(services.metrics)
+    configureRateLimiting(services.config.http)
+    configureExtensionCors(services.config.twitchExtension)
     configureStatusPages()
     configureSockets()
     configureSecurity(services.config, services.httpClient)

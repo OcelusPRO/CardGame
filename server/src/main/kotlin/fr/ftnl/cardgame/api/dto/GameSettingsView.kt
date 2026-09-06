@@ -8,12 +8,17 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class GameSettingsView(
+    /** Who judges: `VOTE`, `CZAR` or `CHAT`. */
     val selectionMode: String,
+    /** How they judge: `ALL_AT_ONCE` or `DUELS`. Independent of [selectionMode]. */
+    val selectionFormat: String = "ALL_AT_ONCE",
     val answerMode: String,
     val rounds: Int,
     val handSize: Int,
     val submitSeconds: Int,
     val selectSeconds: Int,
+    /** How long one duel lasts, in the duel mode; ignored everywhere else. */
+    val duelSeconds: Int,
     val resultSeconds: Int,
     val minPlayers: Int,
     val maxPlayers: Int,
@@ -22,4 +27,16 @@ data class GameSettingsView(
     val pointsPerVote: Int,
     val unanimityBonus: Int,
     val twitchGuestChats: Boolean = false,
+    val chatCards: ChatCardsView = ChatCardsView(),
+)
+
+/** Whether — and at what price — the viewers may write cards into this game. */
+@Serializable
+data class ChatCardsView(
+    /** `OFF`, `EVERYONE`, `CHANNEL_POINTS` or `BITS`. */
+    val access: String = "OFF",
+    val situations: Boolean = true,
+    val punchlines: Boolean = true,
+    val minBits: Int = 100,
+    val rewardId: String = "",
 )

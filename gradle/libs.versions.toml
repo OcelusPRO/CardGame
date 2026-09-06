@@ -7,6 +7,7 @@ koin = "4.2.2"
 kotlin = "2.4.0"
 kotlinxSerialization = "1.9.0"
 logback = "1.5.37"
+micrometer = "1.15.0"
 postgresql = "42.7.13"
 
 [libraries]
@@ -21,6 +22,7 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 koin-ktor = { module = "io.insert-koin:koin-ktor", version.ref = "koin" }
 koin-loggerSlf4j = { module = "io.insert-koin:koin-logger-slf4j", version.ref = "koin" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus", version.ref = "micrometer" }
 postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
 
 [plugins]

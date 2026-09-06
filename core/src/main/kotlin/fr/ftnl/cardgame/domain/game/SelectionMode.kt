@@ -1,6 +1,11 @@
 package fr.ftnl.cardgame.domain.game
 
-/** How the best answer of a round gets designated. */
+/**
+ * **Who** designates the best answer of a round.
+ *
+ * How they do it — everything at once, or two answers at a time — is [SelectionFormat],
+ * and the two are chosen independently.
+ */
 enum class SelectionMode {
     /** Every player votes; a vote is worth points and a majority earns a bonus. */
     VOTE,

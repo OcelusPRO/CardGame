@@ -8,6 +8,10 @@ import fr.ftnl.cardgame.domain.game.GameState
 /**
  * Locks the answers in and shuffles them, so the reveal order carries no hint
  * about who played what.
+ *
+ * In [fr.ftnl.cardgame.domain.game.SelectionFormat.DUELS] that same shuffled order is the
+ * seeding of the ladder, which is why the pairing gives nothing away either — and the step
+ * that opens is one duel, not the whole judging.
  */
 internal class SubmissionCloser(
     private val shuffler: Shuffler,
@@ -16,10 +20,11 @@ internal class SubmissionCloser(
 
     fun close(state: GameState): GameState {
         val round = state.round ?: return state
+        val revealed = round.revealedInOrder(shuffler.shuffle(round.submissions.keys.toList()))
         return state.copy(
-            round = round.revealedInOrder(shuffler.shuffle(round.submissions.keys.toList())),
+            round = if (state.settings.runsBracket) revealed.withBracket() else revealed,
             phase = GamePhase.SELECTING,
-            phaseDeadlineMillis = clock.nowMillis() + state.settings.selectSeconds * MILLIS_PER_SECOND,
+            phaseDeadlineMillis = clock.nowMillis() + state.settings.judgingSeconds * MILLIS_PER_SECOND,
         )
     }
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { AnswerView, ChatVotesView, GameView } from '../../api/types'
+import type { LiveChatVotes } from '../../game/gameStore'
 import { playSound } from '../../audio/engine'
 import { SituationCard } from '../cards/SituationCard'
 import { AnswerCard } from './AnswerCard'
@@ -9,6 +10,12 @@ import { RoundStage } from './RoundStage'
 interface Props {
   game: GameView
   onChoose: (answerId: number) => void
+  /**
+   * The tally as it stands right now, pushed on its own frame rather than folded into the
+   * snapshot. Empty until the first viewer types, and superseded by the numbers the
+   * snapshot carries once the round is scored.
+   */
+  liveChatVotes?: LiveChatVotes
 }
 
 /**
@@ -18,7 +25,7 @@ interface Props {
  * When the chat is the judge, nobody at the table votes: every answer wears the number
  * the viewers type, and the count coming back from the chats is shown live under each one.
  */
-export function VotePanel({ game, onChoose }: Props) {
+export function VotePanel({ game, onChoose, liveChatVotes = {} }: Props) {
   const [previewId, setPreviewId] = useState<number | null>(null)
   const round = game.round
   const czarMode = game.settings.selectionMode === 'CZAR'
@@ -60,7 +67,10 @@ export function VotePanel({ game, onChoose }: Props) {
         </p>
 
         {chatVoting && (
-          <ChatVoteNotice active={chatVoting} viewers={totalChatVotes(round.answers)} />
+          <ChatVoteNotice
+            active={chatVoting}
+            viewers={totalChatVotes(round.answers, liveChatVotes)}
+          />
         )}
 
         <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(13rem,1fr))]">
@@ -73,7 +83,11 @@ export function VotePanel({ game, onChoose }: Props) {
                 voted={round.myVote === answer.id}
                 disabled={!canChoose || blocked}
                 number={chatVoting ? answer.id + 1 : undefined}
-                chatVotes={chatVoting ? (answer.chatVotes ?? EMPTY_CHAT_VOTES) : undefined}
+                chatVotes={
+                  chatVoting
+                    ? (liveChatVotes[answer.id] ?? answer.chatVotes ?? EMPTY_CHAT_VOTES)
+                    : undefined
+                }
                 onPreview={() => setPreviewId(answer.id)}
                 onVote={
                   canChoose && !blocked
@@ -98,6 +112,9 @@ function answerOf(answers: AnswerView[], id: number | null): AnswerView | undefi
 
 const EMPTY_CHAT_VOTES: ChatVotesView = { count: 0, voters: [] }
 
-function totalChatVotes(answers: AnswerView[]): number {
-  return answers.reduce((total, answer) => total + (answer.chatVotes?.count ?? 0), 0)
+function totalChatVotes(answers: AnswerView[], live: LiveChatVotes): number {
+  return answers.reduce(
+    (total, answer) => total + (live[answer.id]?.count ?? answer.chatVotes?.count ?? 0),
+    0,
+  )
 }

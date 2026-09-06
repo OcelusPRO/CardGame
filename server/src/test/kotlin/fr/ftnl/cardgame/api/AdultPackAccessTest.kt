@@ -162,14 +162,14 @@ class AdultPackAccessTest {
             setBody(
                 CreateGameRequest(
                     "Alice",
-                    AvatarInput("head-1", "#fff", "body-1", "#000"),
+                    AvatarInput("head-1", "#ffffff", "body-1", "#000000"),
                     GameSettingsInput(minPlayers = 2),
                 ),
             )
         }.body<GameTicket>().code
         guest.post("/api/games/$code/players") {
             contentType(ContentType.Application.Json)
-            setBody(JoinGameRequest("Bob", AvatarInput("head-1", "#fff", "body-1", "#000")))
+            setBody(JoinGameRequest("Bob", AvatarInput("head-1", "#ffffff", "body-1", "#000000")))
         }
 
         val seenByGuest = guest.get("/api/packs?code=$code").body<List<CardPackView>>()

@@ -4,6 +4,7 @@ import fr.ftnl.cardgame.domain.card.CardId
 import fr.ftnl.cardgame.domain.card.SituationCard
 import fr.ftnl.cardgame.domain.card.SituationText
 import fr.ftnl.cardgame.domain.engine.GameCommand
+import fr.ftnl.cardgame.domain.game.ChatVoteTally
 import fr.ftnl.cardgame.domain.game.GameCode
 import fr.ftnl.cardgame.domain.game.GamePhase
 import fr.ftnl.cardgame.domain.game.GameSettings
@@ -35,6 +36,10 @@ import kotlin.test.assertTrue
  * The bridge between a Twitch chat and a round. The reader is faked: what is under test
  * is the counting, the one-voice-per-viewer rule, the faces kept for the table, and when
  * the listener bothers to watch at all.
+ *
+ * A running tally leaves on its own frame and lands on the [ChatVoteBoard], never in the
+ * game snapshot — so that is where these assertions look. What banks it into a round is
+ * the scheduler, one command per round, and that is [ChatVoteBoard.commitFor]'s business.
  */
 class TwitchChatVotingTest {
 
@@ -48,7 +53,7 @@ class TwitchChatVotingTest {
 
     @Test
     fun `one viewer, one voice, and the tally reaches the game`() = runBlocking {
-        val pushed = Channel<GameCommand.SetChatVotes>(Channel.UNLIMITED)
+        val pushed = tallyChannel()
         val voting = voting(
             reader(
                 line("1", id = "1"),
@@ -62,13 +67,13 @@ class TwitchChatVotingTest {
 
         voting.onGameChanged(selecting(), emptyList())
 
-        val tallies = withTimeout(TIMEOUT) { pushed.receive() }.tallies
+        val tallies = withTimeout(TIMEOUT) { pushed.receive() }
         assertEquals(mapOf(SubmissionId(0) to 1, SubmissionId(1) to 1), tallies.mapValues { it.value.count })
     }
 
     @Test
     fun `a viewer only votes once, whichever chat they type it in`() = runBlocking {
-        val pushed = Channel<GameCommand.SetChatVotes>(Channel.UNLIMITED)
+        val pushed = tallyChannel()
         val voting = voting(
             reader(line("1", id = "7", channel = "kameto"), line("2", id = "7", channel = "ponce")),
             pushed,
@@ -76,19 +81,19 @@ class TwitchChatVotingTest {
 
         voting.onGameChanged(selecting(guests = true), emptyList())
 
-        val tallies = withTimeout(TIMEOUT) { pushed.receive() }.tallies
+        val tallies = withTimeout(TIMEOUT) { pushed.receive() }
         assertEquals(mapOf(SubmissionId(0) to 1), tallies.mapValues { it.value.count })
     }
 
     @Test
     fun `the first faces are carried, the crowd behind them is a number`() = runBlocking {
-        val pushed = Channel<GameCommand.SetChatVotes>(Channel.UNLIMITED)
+        val pushed = tallyChannel()
         val crowd = (1..40).map { line("1", id = "$it", name = "Viewer $it") }
         val voting = voting(reader(*crowd.toTypedArray()), pushed)
 
         voting.onGameChanged(selecting(), emptyList())
 
-        val tally = withTimeout(TIMEOUT) { pushed.receive() }.tallies.getValue(SubmissionId(0))
+        val tally = withTimeout(TIMEOUT) { pushed.receive() }.getValue(SubmissionId(0))
         assertEquals(40, tally.count)
         assertEquals(15, tally.voters.size)
         assertEquals("Viewer 1", tally.voters.first().name)
@@ -96,19 +101,19 @@ class TwitchChatVotingTest {
 
     @Test
     fun `the faces shown carry the pictures their chat shows`() = runBlocking {
-        val pushed = Channel<GameCommand.SetChatVotes>(Channel.UNLIMITED)
+        val pushed = tallyChannel()
         val pictures = ViewerPictures { ids -> ids.associateWith { "https://pictures.example/$it.png" } }
         val voting = voting(reader(line("1", id = "9")), pushed, pictures)
 
         voting.onGameChanged(selecting(), emptyList())
 
-        val tally = withTimeout(TIMEOUT) { pushed.receive() }.tallies.getValue(SubmissionId(0))
+        val tally = withTimeout(TIMEOUT) { pushed.receive() }.getValue(SubmissionId(0))
         assertEquals("https://pictures.example/9.png", tally.voters.single().avatarUrl)
     }
 
     @Test
     fun `nothing is read while nobody is judging`() = runBlocking {
-        val pushed = Channel<GameCommand.SetChatVotes>(Channel.UNLIMITED)
+        val pushed = tallyChannel()
         val voting = voting(reader(line("1")), pushed)
 
         voting.onGameChanged(selecting().copy(phase = GamePhase.SUBMITTING), emptyList())
@@ -118,8 +123,26 @@ class TwitchChatVotingTest {
     }
 
     @Test
+    fun `the tally reaches the board, ready to be banked when the round is scored`() = runBlocking {
+        val pushed = tallyChannel()
+        val board = ChatVoteBoard()
+        val voting = voting(reader(line("1", id = "1"), line("2", id = "2")), pushed, board = board)
+        val state = selecting()
+
+        voting.onGameChanged(state, emptyList())
+        withTimeout(TIMEOUT) { pushed.receive() }
+
+        val commit = board.commitFor(state)
+        assertTrue(commit is GameCommand.SetChatVotes, "the board had nothing to bank")
+        assertEquals(
+            mapOf(SubmissionId(0) to 1, SubmissionId(1) to 1),
+            commit.tallies.mapValues { it.value.count },
+        )
+    }
+
+    @Test
     fun `nothing is read on a table no streamer sits at`() = runBlocking {
-        val pushed = Channel<GameCommand.SetChatVotes>(Channel.UNLIMITED)
+        val pushed = tallyChannel()
         val voting = voting(reader(line("1")), pushed)
 
         val plain = selecting().let { it.copy(players = it.players.map { p -> p.copy(twitchLogin = null) }) }
@@ -129,13 +152,21 @@ class TwitchChatVotingTest {
         assertTrue(pushed.tryReceive().isFailure, "a chat was read for nobody")
     }
 
+    private fun tallyChannel() = Channel<Map<SubmissionId, ChatVoteTally>>(Channel.UNLIMITED)
+
     private fun voting(
         reader: TwitchChatReader,
-        pushed: Channel<GameCommand.SetChatVotes>,
+        pushed: Channel<Map<SubmissionId, ChatVoteTally>>,
         pictures: ViewerPictures = ViewerPictures.NONE,
-    ) = TwitchChatVoting(reader, scope, pictures, flushMillis = 20) { _, command ->
-        if (command is GameCommand.SetChatVotes) pushed.send(command)
-    }
+        board: ChatVoteBoard = ChatVoteBoard(),
+    ) = TwitchChatVoting(
+        reader = reader,
+        scope = scope,
+        pictures = pictures,
+        flushMillis = 20,
+        board = board,
+        live = { _, tallies -> pushed.send(tallies) },
+    )
 
     private fun line(text: String, id: String = "1", name: String = "Viewer", channel: String = "kameto") =
         ChatLine(channel = channel, viewerId = id, viewerName = name, text = text)

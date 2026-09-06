@@ -1,5 +1,11 @@
 import type { ReactNode } from 'react'
-import type { GameSettingsInput, GameSettingsView, SelectionMode } from '../../api/types'
+import type {
+  GameSettingsInput,
+  GameSettingsView,
+  SelectionFormat,
+  SelectionMode,
+} from '../../api/types'
+import { ChatCardsForm } from './ChatCardsForm'
 
 interface Props {
   settings: GameSettingsView
@@ -30,6 +36,7 @@ export function SettingsForm({
   const freeText = settings.answerMode === 'FREE_TEXT'
   const czar = settings.selectionMode === 'CZAR'
   const chatVotes = settings.selectionMode === 'CHAT'
+  const duels = settings.selectionFormat === 'DUELS'
   const lockedBecause = disabled ? NOT_HOST : null
 
   // The chat only shows up as a choice once the host has a channel to be read — but a
@@ -50,6 +57,27 @@ export function SettingsForm({
         lockedBecause={lockedBecause}
         options={judging}
         onSelect={(mode) => onChange({ selectionMode: mode as SelectionMode })}
+      />
+
+      {hostTwitchLogin && (
+        <ChatCardsForm
+          settings={settings.chatCards}
+          disabled={disabled}
+          lockedBecause={lockedBecause}
+          hostTwitchLogin={hostTwitchLogin}
+          onChange={(chatCards) => onChange({ chatCards })}
+        />
+      )}
+
+      <Choice
+        label="Comment ?"
+        value={settings.selectionFormat}
+        lockedBecause={lockedBecause}
+        options={[
+          { value: 'ALL_AT_ONCE', label: 'Toutes les réponses en même temps' },
+          { value: 'DUELS', label: 'Deux par deux, en duels' },
+        ]}
+        onSelect={(format) => onChange({ selectionFormat: format as SelectionFormat })}
       />
 
       {chatVotes && (
@@ -103,17 +131,28 @@ export function SettingsForm({
           lockedBecause={lockedBecause}
           onChange={(submitSeconds) => onChange({ submitSeconds })}
         />
-        <NumberBox
-          label="Temps de vote"
-          value={settings.selectSeconds}
-          min={15}
-          max={300}
-          lockedBecause={lockedBecause}
-          onChange={(selectSeconds) => onChange({ selectSeconds })}
-        />
+        {duels ? (
+          <NumberBox
+            label="Temps par duel"
+            value={settings.duelSeconds}
+            min={5}
+            max={120}
+            lockedBecause={lockedBecause}
+            onChange={(duelSeconds) => onChange({ duelSeconds })}
+          />
+        ) : (
+          <NumberBox
+            label="Temps de vote"
+            value={settings.selectSeconds}
+            min={15}
+            max={300}
+            lockedBecause={lockedBecause}
+            onChange={(selectSeconds) => onChange({ selectSeconds })}
+          />
+        )}
         {!chatVotes && (
           <NumberBox
-            label="Points par vote"
+            label={duels ? 'Points par duel' : 'Points par vote'}
             value={settings.pointsPerVote}
             min={1}
             max={20}
@@ -121,7 +160,7 @@ export function SettingsForm({
             onChange={(pointsPerVote) => onChange({ pointsPerVote })}
           />
         )}
-        {!czar && !chatVotes && (
+        {!czar && !chatVotes && !duels && (
           <NumberBox
             label="Bonus unanimité"
             value={settings.unanimityBonus}
@@ -160,7 +199,9 @@ export function SettingsForm({
       )}
 
       <p className="sketch bg-paper/70 px-4 py-3 text-xs leading-relaxed text-ink/65">
-        {chatVotes
+        {duels
+          ? `${judge(settings)} départage les réponses deux par deux, jusqu'à ce qu'il n'en reste qu'une. Chaque duel remporté rapporte ${settings.pointsPerVote} point(s) — ni un passage sans adversaire ni une égalité ne comptent, personne n'y a été battu. Fait pour les grandes tables et les gros tchats, où lire douze réponses d'un coup n'amuse plus personne. ${settings.rounds} manches, et le meilleur score l'emporte.`
+          : chatVotes
           ? `Personne à la table ne vote : la réponse que les spectateurs ont le plus choisie remporte la manche, et une manche vaut 1 point — une communauté de trois mille personnes ne rapporte pas plus qu'une de trente. La manche va au bout de son chrono pour laisser aux tchats le temps de répondre. ${settings.rounds} manches, et le meilleur score l'emporte.`
           : czar
             ? `Le maître du jeu choisit, et la réponse retenue rapporte ${settings.pointsPerVote} point(s). ${settings.rounds} manches, et le meilleur score l'emporte.`
@@ -168,6 +209,13 @@ export function SettingsForm({
       </p>
     </div>
   )
+}
+
+/** Who is doing the judging, said in a way that can open a sentence. */
+function judge(settings: GameSettingsView): string {
+  if (settings.selectionMode === 'CHAT') return 'Le tchat'
+  if (settings.selectionMode === 'CZAR') return 'Le maître du jeu'
+  return 'La table'
 }
 
 interface ChoiceProps {

@@ -2,15 +2,22 @@ import { parseServerMessage, type ServerMessage } from './serverMessages'
 import type { ClientMessage } from './messages'
 import { gameSocketUrl } from './socketUrl'
 
-export type SocketStatus = 'connecting' | 'open' | 'closed'
+export type SocketStatus = 'connecting' | 'open' | 'closed' | 'rejected'
 
 interface Handlers {
   onMessage: (message: ServerMessage) => void
-  onStatus: (status: SocketStatus) => void
+  onStatus: (status: SocketStatus, reason?: string) => void
 }
 
 const RECONNECT_STEPS_MS = [500, 1000, 2000, 4000, 8000]
 const PING_INTERVAL_MS = 20000
+
+/**
+ * `1008 Policy Violation` is what the server answers when the seat itself is the problem:
+ * no session, unknown code, or a table this browser is not sitting at. Retrying cannot
+ * fix any of those, so the link is dropped for good and the screen says why.
+ */
+const POLICY_VIOLATION = 1008
 
 /**
  * The link to a game. It reconnects on its own with a growing delay, and pings so a
@@ -35,7 +42,7 @@ export class GameSocket {
     this.socket = socket
     socket.onopen = () => this.onOpen()
     socket.onmessage = (event) => this.onMessage(event)
-    socket.onclose = () => this.onClose()
+    socket.onclose = (event) => this.onClose(event)
     socket.onerror = () => socket.close()
   }
 
@@ -61,10 +68,17 @@ export class GameSocket {
     if (message) this.handlers.onMessage(message)
   }
 
-  private onClose(): void {
+  private onClose(event: CloseEvent): void {
     this.stopTimers()
+    if (this.closedByUs) return this.handlers.onStatus('closed')
+    // A refusal is final: reconnecting would only get refused again, once every eight
+    // seconds, on a table that will never open.
+    if (event.code === POLICY_VIOLATION) {
+      this.closedByUs = true
+      this.socket = null
+      return this.handlers.onStatus('rejected', event.reason || undefined)
+    }
     this.handlers.onStatus('closed')
-    if (this.closedByUs) return
     const delay = RECONNECT_STEPS_MS[Math.min(this.attempt, RECONNECT_STEPS_MS.length - 1)]
     this.attempt += 1
     this.retryTimer = setTimeout(() => this.open(), delay)

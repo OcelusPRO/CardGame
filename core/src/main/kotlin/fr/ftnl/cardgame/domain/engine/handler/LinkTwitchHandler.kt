@@ -28,6 +28,7 @@ internal class LinkTwitchHandler {
 
     private fun Player.linkedTo(command: GameCommand.LinkTwitch): Player = copy(
         twitchLogin = command.login,
+        twitchId = command.accountId,
         avatar = if (avatar.pictureUrl == null && command.pictureUrl != null) {
             avatar.copy(pictureUrl = command.pictureUrl)
         } else {

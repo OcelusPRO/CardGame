@@ -42,4 +42,7 @@ sealed interface GameEvent {
 
     /** The host reopened the lobby after a finished game, scores wiped for a rematch. */
     data object ReturnedToLobby : GameEvent
+
+    /** A Twitch chat wrote its way into the piles; the table gets told, briefly. */
+    data class ChatCardsAdded(val situations: Int, val punchlines: Int) : GameEvent
 }

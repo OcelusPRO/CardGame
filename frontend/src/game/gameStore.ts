@@ -1,12 +1,18 @@
 import { create } from 'zustand'
-import type { GameView } from '../api/types'
+import type { ChatVotesView, GameView } from '../api/types'
 import { GameSocket, type SocketStatus } from './GameSocket'
 import type { ClientMessage } from './messages'
 
+/** Live chat tallies by answer id, refreshed on their own frame while the viewers vote. */
+export type LiveChatVotes = Record<number, ChatVotesView>
+
 interface GameStore {
   game: GameView | null
+  chatVotes: LiveChatVotes
   status: SocketStatus
   lastError: string | null
+  /** Why the server shut the door, when it did. Set with the `rejected` status. */
+  rejection: string | null
   connect: (code: string) => void
   disconnect: () => void
   send: (message: ClientMessage) => void
@@ -20,17 +26,35 @@ export const useGameStore = create<GameStore>((set, get) => {
 
   return {
     game: null,
+    chatVotes: {},
     status: 'closed',
     lastError: null,
+    rejection: null,
 
     connect: (code) => {
       if (connectedCode === code && socket) return
       get().disconnect()
       connectedCode = code
       socket = new GameSocket(code, {
-        onStatus: (status) => set({ status }),
+        onStatus: (status, reason) =>
+          set({ status, rejection: status === 'rejected' ? (reason ?? '') : null }),
         onMessage: (message) => {
-          if (message.type === 'state') set({ game: message.game })
+          // A tally belongs to the round it was counted in. Any change of round — or of
+          // step — makes it stale, and the snapshot carries the final numbers by then.
+          if (message.type === 'state') {
+            const previous = get().game
+            const sameRound =
+              previous?.round?.number === message.game.round?.number &&
+              previous?.phase === message.game.phase
+            set({ game: message.game, chatVotes: sameRound ? get().chatVotes : {} })
+          }
+          if (message.type === 'chat_votes') {
+            set({
+              chatVotes: Object.fromEntries(
+                message.answers.map(({ id, count, voters }) => [id, { count, voters }]),
+              ),
+            })
+          }
           if (message.type === 'error') set({ lastError: message.code })
         },
       })
@@ -41,7 +65,7 @@ export const useGameStore = create<GameStore>((set, get) => {
       socket?.close()
       socket = null
       connectedCode = null
-      set({ game: null, status: 'closed', lastError: null })
+      set({ game: null, chatVotes: {}, status: 'closed', lastError: null, rejection: null })
     },
 
     send: (message) => socket?.send(message),

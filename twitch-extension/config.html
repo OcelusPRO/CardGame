@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sans Filtre — configuration</title>
+    <link rel="stylesheet" href="app.css" />
+  </head>
+  <!--
+    The broadcaster page. There is deliberately nothing to configure here: what the chat
+    may write, and at what price, is decided in the game lobby by whoever is hosting the
+    table — which is the only place that knows whether a table is even running.
+  -->
+  <body class="panel">
+    <main>
+      <div class="card">
+        <h1>Sans Filtre</h1>
+        <p>
+          Rien à régler ici : tout se passe dans le <strong>salon de la partie</strong>, sur le site
+          du jeu. Connectez-vous avec Twitch, créez une table, et ouvrez « Le tchat écrit des
+          cartes ».
+        </p>
+        <p class="pay">
+          C'est là que vous choisissez si une carte est gratuite, coûte des
+          <strong>points de chaîne</strong> ou des <strong>bits</strong>, et si le tchat peut écrire
+          des situations, des réponses, ou les deux.
+        </p>
+        <h1>Ce que voient vos spectateurs</h1>
+        <p class="muted">
+          Dans le panneau sous le stream, ou l'encart sur l'image : un champ pour écrire leur carte,
+          et le bouton correspondant au tarif que vous avez choisi. Ceux qui préfèrent le tchat
+          tapent&nbsp;:
+        </p>
+        <p class="pay">
+          <code>!situation Le pire cadeau de Noël, c'est ____.</code><br />
+          <code>!réponse un chat mouillé</code>
+        </p>
+        <p class="muted small">
+          Les raccourcis <code>!situ</code> et <code>!rep</code> font la même chose, la casse est
+          libre et les accents sont facultatifs.
+        </p>
+        <p class="muted small">
+          Les cartes écrites par le tchat ne vivent que le temps de la partie : elles ne rejoignent
+          jamais le catalogue officiel, et rien n'est conservé.
+        </p>
+      </div>
+    </main>
+    <script src="https://extension-files.twitch.tv/helper/v1/twitch-ext.min.js"></script>
+  </body>
+</html>

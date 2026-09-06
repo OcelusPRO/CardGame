@@ -10,6 +10,7 @@ object AppConfigLoader {
         redis = redis(config),
         discord = discord(config),
         twitch = twitch(config),
+        twitchExtension = twitchExtension(config),
         admin = AdminConfig(
             discordIds = config.list("app.admin.discordIds"),
             twitchIds = config.list("app.admin.twitchIds"),
@@ -19,6 +20,8 @@ object AppConfigLoader {
         ),
         session = SessionConfig(config.text("app.session.signKey")),
         seed = SeedConfig(config.flag("app.seed.enabled")),
+        http = HttpConfig(trustProxyHeaders = config.flag("app.http.trustProxyHeaders")),
+        metrics = MetricsConfig(token = config.text("app.metrics.token")),
     )
 
     private fun database(config: ApplicationConfig) = DatabaseConfig(
@@ -40,6 +43,12 @@ object AppConfigLoader {
         clientSecret = config.text("app.discord.clientSecret"),
         redirectUrl = config.text("app.discord.redirectUrl"),
         botToken = config.text("app.discord.botToken"),
+    )
+
+    private fun twitchExtension(config: ApplicationConfig) = TwitchExtensionConfig(
+        clientId = config.text("app.twitchExtension.clientId"),
+        secret = config.text("app.twitchExtension.secret"),
+        products = TwitchExtensionConfig.productsOf(config.text("app.twitchExtension.products")),
     )
 
     private fun twitch(config: ApplicationConfig) = TwitchConfig(

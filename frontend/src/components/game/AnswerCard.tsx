@@ -17,6 +17,8 @@ interface Props {
   number?: number
   /** Viewers who picked it so far, counted live while the chat votes. */
   chatVotes?: ChatVotesView
+  /** What the number under the card counts. A ladder counts duels, not voices. */
+  voteLabel?: string
 }
 
 /** One answer on the table, revealed a little more at every step of the round. */
@@ -30,6 +32,7 @@ export function AnswerCard({
   disabled,
   number,
   chatVotes,
+  voteLabel = 'vote(s)',
 }: Props) {
   const label = answer.texts.join(' · ')
 
@@ -53,7 +56,11 @@ export function AnswerCard({
           <span className="flex items-center gap-2">
             {author && <Avatar avatar={author.avatar} size={30} title={author.nickname} />}
             {author?.nickname ?? (answer.isMine ? 'Votre réponse' : 'Anonyme')}
-            {answer.votes !== undefined && <span className="ml-auto">{answer.votes} vote(s)</span>}
+            {answer.votes !== undefined && (
+              <span className="ml-auto">
+                {answer.votes} {voteLabel}
+              </span>
+            )}
             {chatVotes !== undefined && answer.votes === undefined && (
               <span className="ml-auto text-[#772ce8]">{chatVotes.count} tchat</span>
             )}

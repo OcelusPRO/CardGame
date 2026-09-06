@@ -13,6 +13,9 @@ data class DrawPile<T>(
 ) {
     val size: Int get() = available.size + discarded.size
 
+    /** Every card the pile holds, wherever it currently sits. */
+    val all: List<T> get() = available + discarded
+
     /** Takes up to [count] cards, recycling the discard stack when the pile runs dry. */
     fun draw(count: Int, shuffler: Shuffler): Draw<T> {
         require(count >= 0) { "Cannot draw a negative amount of cards" }
@@ -24,6 +27,13 @@ data class DrawPile<T>(
 
     /** Puts [cards] aside; they come back into play at the next recycle. */
     fun discard(cards: List<T>): DrawPile<T> = copy(discarded = discarded + cards)
+
+    /**
+     * Slips [cards] into the face down stack, at a random depth each, so a card thrown in
+     * mid-game does not announce itself by being the very next one drawn.
+     */
+    fun addShuffled(cards: List<T>, shuffler: Shuffler): DrawPile<T> =
+        if (cards.isEmpty()) this else copy(available = shuffler.shuffle(available + cards))
 
     private fun recycle(shuffler: Shuffler): DrawPile<T> =
         DrawPile(available = shuffler.shuffle(discarded), discarded = emptyList())

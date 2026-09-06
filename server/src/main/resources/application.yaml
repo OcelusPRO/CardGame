@@ -26,6 +26,14 @@ app:
     clientId: "$TWITCH_CLIENT_ID:"
     clientSecret: "$TWITCH_CLIENT_SECRET:"
     redirectUrl: "$TWITCH_REDIRECT_URL:http://localhost:8080/auth/twitch/callback"
+  twitchExtension:
+    # The Twitch extension has its own client id and secret, issued on the extension page
+    # of the developer console — not the ones the sign in button uses. Empty = no panel.
+    clientId: "$TWITCH_EXTENSION_CLIENT_ID:"
+    secret: "$TWITCH_EXTENSION_SECRET:"
+    # The bits products declared on the extension, as `sku:amount` pairs. A receipt is
+    # priced from this list, never from what the panel claims it paid.
+    products: "$TWITCH_EXTENSION_PRODUCTS:carte_100:100,carte_500:500"
   admin:
     discordIds: "$ADMIN_DISCORD_IDS:"
     twitchIds: "$ADMIN_TWITCH_IDS:"
@@ -33,6 +41,13 @@ app:
     # A Discord account at least this many days old is trusted as an adult for the 18+
     # packs, on top of the allowlist. Set to 0 to rely on the allowlist alone.
     minAccountAgeDays: "$ADULT_MIN_ACCOUNT_AGE_DAYS:1095"
+  http:
+    # Only turn this on when a proxy you control is the single way in and rewrites the
+    # header: otherwise a caller names their own address and walks past every rate limit.
+    trustProxyHeaders: "$TRUST_PROXY_HEADERS:false"
+  metrics:
+    # Blank leaves /metrics open, which is fine for counters; set it to demand a bearer.
+    token: "$METRICS_TOKEN:"
   session:
     signKey: "$SESSION_SIGN_KEY:dev-secret-change-me-please-32chars"
   seed:

@@ -18,6 +18,8 @@ export function ResultPanel({ game, onNext }: Props) {
   const outcome = round.outcome
   const ranked = [...round.answers].sort((a, b) => (b.votes ?? 0) - (a.votes ?? 0))
   const winning = winningAnswer(ranked, outcome)
+  // In the ladder the tally under a card counts duels won, not voices.
+  const voteLabel = game.settings.selectionFormat === 'DUELS' ? 'duel(s)' : 'vote(s)'
 
   return (
     <RoundStage
@@ -55,6 +57,7 @@ export function ResultPanel({ game, onNext }: Props) {
                 answer={answer}
                 author={game.players.find((player) => player.id === answer.authorId)}
                 winner={won}
+                voteLabel={voteLabel}
               />
             )
             // Everything that fell short of the win is balled up and thrown away, last

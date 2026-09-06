@@ -1,13 +1,16 @@
 package fr.ftnl.cardgame.api.view
 
 import fr.ftnl.cardgame.api.dto.AnswerView
+import fr.ftnl.cardgame.api.dto.BracketView
 import fr.ftnl.cardgame.api.dto.ChatVotesView
 import fr.ftnl.cardgame.api.dto.ChatVoterView
+import fr.ftnl.cardgame.api.dto.DuelWinsView
 import fr.ftnl.cardgame.api.dto.RoundOutcomeView
 import fr.ftnl.cardgame.api.dto.RoundView
 import fr.ftnl.cardgame.api.dto.SituationCardView
 import fr.ftnl.cardgame.domain.card.CardOrigin
 import fr.ftnl.cardgame.domain.card.SituationCard
+import fr.ftnl.cardgame.domain.game.Bracket
 import fr.ftnl.cardgame.domain.game.ChatVoteTally
 import fr.ftnl.cardgame.domain.game.GamePhase
 import fr.ftnl.cardgame.domain.game.GameState
@@ -31,7 +34,8 @@ class RoundViewFactory {
             expectedAnswers = state.expectedAnswers,
             czarId = round.czarId?.value,
             answers = answers(state, round, viewer),
-            myVote = round.votes[viewer]?.index,
+            myVote = state.voteOf(viewer)?.index,
+            bracket = round.bracket?.let(::bracketView),
             outcome = round.outcome?.let(::outcomeView),
         )
     }
@@ -58,6 +62,16 @@ class RoundViewFactory {
         votes = round.outcome?.voteCounts?.get(id).takeIf { revealAuthors },
         isMine = submission.playerId == viewer,
         chatVotes = round.chatVotes[id]?.let(::chatVotesView),
+    )
+
+    private fun bracketView(bracket: Bracket) = BracketView(
+        tier = bracket.tier,
+        duelNumber = bracket.currentNumber,
+        duelCount = bracket.duels.size,
+        left = bracket.current?.left?.index,
+        right = bracket.current?.right?.index,
+        wins = bracket.wins.map { (id, won) -> DuelWinsView(id.index, won) }.sortedBy { it.answerId },
+        championId = bracket.champion?.index,
     )
 
     private fun chatVotesView(tally: ChatVoteTally) = ChatVotesView(

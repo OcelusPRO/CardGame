@@ -29,11 +29,18 @@ internal class RoundFlow(
             CommandResult.Accepted(submissionCloser.close(state), events + GameEvent.SubmissionsClosed)
         )
 
-    /** Ends the selection step and reveals the score of the round. */
+    /**
+     * Ends the selection step and reveals the score of the round — or, when a ladder is
+     * running, calls the duel on the table and puts up the next one. Only the close that
+     * actually ends the judging announces the round.
+     */
     fun closeSelection(state: GameState, events: List<GameEvent>): CommandResult.Accepted {
-        val scored = selectionCloser.close(state)
-        val round = scored.round ?: return CommandResult.Accepted(scored, events)
-        return CommandResult.Accepted(scored, events + GameEvent.RoundEnded(round))
+        val next = selectionCloser.close(state)
+        val round = next.round
+        if (next.phase != GamePhase.ROUND_RESULT || round == null) {
+            return CommandResult.Accepted(next, events)
+        }
+        return CommandResult.Accepted(next, events + GameEvent.RoundEnded(round))
     }
 
     private fun closeSelectionWhenDone(current: CommandResult.Accepted): CommandResult.Accepted =

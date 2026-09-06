@@ -1,7 +1,7 @@
 package fr.ftnl.cardgame.twitch
 
-import fr.ftnl.cardgame.domain.engine.GameCommand
 import fr.ftnl.cardgame.domain.engine.GameEvent
+import fr.ftnl.cardgame.domain.game.ChatVoteScope
 import fr.ftnl.cardgame.domain.game.ChatVoteTally
 import fr.ftnl.cardgame.domain.game.ChatVoter
 import fr.ftnl.cardgame.domain.game.GameCode
@@ -21,9 +21,17 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * Lets the Twitch chats judge the round. While a round is being voted on it reads the
- * watched channels, counts one voice per viewer, and pushes the running tally into the
- * game so every screen shows the same numbers and the same faces.
+ * Lets the Twitch chats judge. While a vote is open it reads the watched channels, counts
+ * one voice per viewer, and publishes the running tally so every screen shows the same
+ * numbers and the same faces.
+ *
+ * The viewers type a **position** on screen, so a chat judging a ladder picks between `1`
+ * and `2` rather than hunting for a card among twelve — which is the pairing of a big chat
+ * with the duel format, and the reason the two are separate settings.
+ *
+ * The tally goes to a [ChatVoteBoard] and out on its own frame, never through the game
+ * snapshot: a number that moves once a second has no business re-encoding a deck of cards
+ * and travelling to Redis. It is banked into the round once, when it becomes a score.
  *
  * Nothing is kept: the counts live for the round, and a viewer is only ever remembered
  * long enough to stop them voting twice.
@@ -33,7 +41,8 @@ class TwitchChatVoting(
     private val scope: CoroutineScope,
     private val pictures: ViewerPictures = ViewerPictures.NONE,
     private val flushMillis: Long = FLUSH_MILLIS,
-    private val dispatch: suspend (GameCode, GameCommand) -> Unit,
+    private val board: ChatVoteBoard,
+    private val live: ChatVoteLive = ChatVoteLive.NONE,
 ) : GameListener {
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -43,17 +52,20 @@ class TwitchChatVoting(
         if (state.chatVoteOpen) open(state) else close(state.code)
     }
 
-    override suspend fun onGameForgotten(code: GameCode) = close(code)
-
-    /** One reading session per round: a new round means new numbers and a clean slate. */
+    /**
+     * One reading session per stretch of the game the chat is judging: a round when the
+     * answers are shown all at once, a **duel** when they are shown two at a time. Either
+     * way, a new stretch means new numbers and a clean slate — a viewer who typed `2` on
+     * the last duel has not voted on this one.
+     */
     private fun open(state: GameState) {
-        val round = state.round ?: return
-        val answers = round.revealed.size.takeIf { it > 0 } ?: return
+        val scopeOf = state.chatVoteScope ?: return
+        val choices = state.chatChoices.takeIf { it.isNotEmpty() } ?: return
         synchronized(watched) {
-            if (watched[state.code.value]?.round == round.number) return
+            if (watched[state.code.value]?.scope == scopeOf) return
             watched.remove(state.code.value)?.job?.cancel()
-            val job = scope.launch { count(state.code, state.chatChannels, answers) }
-            watched[state.code.value] = Watch(round.number, job)
+            val job = scope.launch { count(state.code, scopeOf, state.chatChannels, choices) }
+            watched[state.code.value] = Watch(scopeOf, job)
         }
     }
 
@@ -61,7 +73,14 @@ class TwitchChatVoting(
         synchronized(watched) { watched.remove(code.value)?.job?.cancel() }
     }
 
-    private suspend fun count(code: GameCode, channels: List<String>, answers: Int) = coroutineScope {
+    override suspend fun onGameForgotten(code: GameCode) = close(code)
+
+    private suspend fun count(
+        code: GameCode,
+        scopeOf: ChatVoteScope,
+        channels: List<String>,
+        choices: List<SubmissionId>,
+    ) = coroutineScope {
         val tally = Tally()
         val flusher = launch {
             while (isActive) {
@@ -69,12 +88,17 @@ class TwitchChatVoting(
                 if (!tally.takeChanged()) continue
                 // Only the faces the table will show are ever looked up.
                 tally.withPictures(pictures.of(tally.facesWithoutPicture()))
-                dispatch(code, GameCommand.SetChatVotes(tally.snapshot()))
+                // The board is memory and the push is one small frame: a running count
+                // never re-encodes the deck, and never reaches Redis. It is banked into
+                // the snapshot once, by the scheduler, at the moment it becomes a score.
+                val snapshot = tally.snapshot()
+                board.publish(code, scopeOf, snapshot)
+                live.push(code, snapshot)
             }
         }
         try {
             keepReading(channels) { line ->
-                ChatVote.parse(line.text, answers)?.let { choice ->
+                ChatVote.parse(line.text, choices)?.let { choice ->
                     tally.record(ChatVoter(line.viewerId, line.viewerName), choice)
                 }
             }
@@ -97,7 +121,7 @@ class TwitchChatVoting(
         }
     }
 
-    private class Watch(val round: Int, val job: Job)
+    private class Watch(val scope: ChatVoteScope, val job: Job)
 
     /**
      * The counts being built. One viewer, one voice, wherever they typed it: their first

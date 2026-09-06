@@ -1,6 +1,8 @@
 import type { GameView } from '../../api/types'
+import type { LiveChatVotes } from '../../game/gameStore'
 import type { ClientMessage } from '../../game/messages'
 import { messages } from '../../game/messages'
+import { DuelPanel } from './DuelPanel'
 import { FinishedPanel } from './FinishedPanel'
 import { LobbyPanel } from './LobbyPanel'
 import { ResultPanel } from './ResultPanel'
@@ -10,10 +12,12 @@ import { VotePanel } from './VotePanel'
 interface Props {
   game: GameView
   send: (message: ClientMessage) => void
+  /** The running Twitch tally, which arrives apart from the snapshot. */
+  liveChatVotes?: LiveChatVotes
 }
 
 /** Picks the screen matching the current step. The server decides, the client obeys. */
-export function GameBoard({ game, send }: Props) {
+export function GameBoard({ game, send, liveChatVotes }: Props) {
   switch (game.phase) {
     case 'LOBBY':
       return (
@@ -32,7 +36,24 @@ export function GameBoard({ game, send }: Props) {
         />
       )
     case 'SELECTING':
-      return <VotePanel game={game} onChoose={(answerId) => send(messages.choose(answerId))} />
+      // A ladder is judged two answers at a time, which is a different screen — whoever
+      // is doing the judging, since that is a setting of its own.
+      if (game.settings.selectionFormat === 'DUELS') {
+        return (
+          <DuelPanel
+            game={game}
+            onChoose={(answerId) => send(messages.choose(answerId))}
+            liveChatVotes={liveChatVotes}
+          />
+        )
+      }
+      return (
+        <VotePanel
+          game={game}
+          onChoose={(answerId) => send(messages.choose(answerId))}
+          liveChatVotes={liveChatVotes}
+        />
+      )
     case 'ROUND_RESULT':
       return <ResultPanel game={game} onNext={() => send(messages.next())} />
     case 'FINISHED':

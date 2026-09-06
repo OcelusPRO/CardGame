@@ -1,0 +1,107 @@
+/*
+ * The panel borrows the game's own look — paper, ink, a hand drawn border — so a viewer
+ * recognises where their card is going. It is a separate stylesheet on purpose: an
+ * extension is served by Twitch, from its own zip, and shares nothing with the site.
+ *
+ * Twitch draws the panel over the viewer's theme, and the overlay over a moving picture,
+ * so both grounds are opaque and both texts carry their own contrast.
+ */
+:root {
+  --paper: #fdf6e8;
+  --ink: #241f1c;
+  --grape: #6d3bd6;
+  --punch: #e5484d;
+  --mint: #1a9d6b;
+  --stroke: #241f1c;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 10px;
+  background: transparent;
+  color: var(--ink);
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* The overlay floats over the stream, so it stays small and out of the way. */
+body.overlay { padding: 8px; }
+body.overlay .card { max-width: 320px; }
+
+.card {
+  background: var(--paper);
+  border: 2px solid var(--stroke);
+  border-radius: 14px 10px 16px 8px;
+  box-shadow: 3px 3px 0 rgba(36, 31, 28, 0.9);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+textarea {
+  width: 100%;
+  resize: vertical;
+  padding: 9px 10px;
+  border: 2px solid var(--stroke);
+  border-radius: 10px 8px 12px 6px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+}
+textarea:focus { outline: none; border-color: var(--punch); }
+
+.picker { display: flex; flex-wrap: wrap; gap: 8px; }
+
+button {
+  border: 2px solid var(--stroke);
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: rgba(36, 31, 28, 0.06);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+button:hover:not(:disabled) { background: rgba(36, 31, 28, 0.12); }
+button.on { background: var(--grape); color: #fff; border-color: var(--grape); }
+button:disabled { opacity: 0.45; cursor: default; }
+
+button.send {
+  background: var(--punch);
+  border-color: var(--punch);
+  color: #fff;
+  border-radius: 12px 8px 14px 8px;
+  padding: 10px 16px;
+}
+
+.hint, .muted { margin: 0; color: rgba(36, 31, 28, 0.65); font-size: 12px; }
+.small { font-size: 11px; }
+
+.pay {
+  margin: 0;
+  padding: 9px 11px;
+  border-radius: 10px;
+  background: rgba(109, 59, 214, 0.12);
+  font-size: 13px;
+}
+
+.notice {
+  margin: 0;
+  padding: 8px 11px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.notice.good { background: rgba(26, 157, 107, 0.15); color: #10603f; }
+.notice.warn { background: rgba(229, 72, 77, 0.15); color: #8c1f22; }
+.notice.info { background: rgba(36, 31, 28, 0.08); }

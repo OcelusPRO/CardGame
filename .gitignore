@@ -17,3 +17,5 @@ server/src/main/resources/static/
 # OS / editors
 .DS_Store
 *.log
+.idea/
+*.tsbuildinfo

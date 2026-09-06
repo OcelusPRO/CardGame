@@ -4,6 +4,7 @@ import fr.ftnl.cardgame.domain.deck.RandomShuffler
 import fr.ftnl.cardgame.domain.deck.Shuffler
 import fr.ftnl.cardgame.domain.engine.handler.AnswerHandler
 import fr.ftnl.cardgame.domain.engine.handler.CardPoolHandler
+import fr.ftnl.cardgame.domain.engine.handler.ChatCardHandler
 import fr.ftnl.cardgame.domain.engine.handler.ChatVoteHandler
 import fr.ftnl.cardgame.domain.engine.handler.ChoiceHandler
 import fr.ftnl.cardgame.domain.engine.handler.ConnectionHandler
@@ -43,6 +44,7 @@ class GameEngine(
     private val answer = AnswerHandler(roundFlow)
     private val choice = ChoiceHandler(roundFlow)
     private val chatVotes = ChatVoteHandler()
+    private val chatCards = ChatCardHandler(shuffler)
     private val flow = RoundFlowHandler(roundFlow, roundStarter)
     private val returnToLobby = ReturnToLobbyHandler(shuffler)
 
@@ -60,6 +62,7 @@ class GameEngine(
         is GameCommand.WriteAnswers -> answer.writeAnswers(state, command)
         is GameCommand.Choose -> choice.handle(state, command)
         is GameCommand.SetChatVotes -> chatVotes.handle(state, command)
+        is GameCommand.AddChatCards -> chatCards.handle(state, command)
         GameCommand.CloseSubmissions -> flow.closeSubmissions(state)
         GameCommand.CloseSelection -> flow.closeSelection(state)
         is GameCommand.NextRound -> flow.nextRound(state, command)

@@ -6,11 +6,13 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class GameSettingsInput(
     val selectionMode: String? = null,
+    val selectionFormat: String? = null,
     val answerMode: String? = null,
     val rounds: Int? = null,
     val handSize: Int? = null,
     val submitSeconds: Int? = null,
     val selectSeconds: Int? = null,
+    val duelSeconds: Int? = null,
     val resultSeconds: Int? = null,
     val minPlayers: Int? = null,
     val maxPlayers: Int? = null,
@@ -19,4 +21,15 @@ data class GameSettingsInput(
     val pointsPerVote: Int? = null,
     val unanimityBonus: Int? = null,
     val twitchGuestChats: Boolean? = null,
+    val chatCards: ChatCardsInput? = null,
+)
+
+/** Chat card rules sent by the host; an absent field keeps whatever the game has. */
+@Serializable
+data class ChatCardsInput(
+    val access: String? = null,
+    val situations: Boolean? = null,
+    val punchlines: Boolean? = null,
+    val minBits: Int? = null,
+    val rewardId: String? = null,
 )

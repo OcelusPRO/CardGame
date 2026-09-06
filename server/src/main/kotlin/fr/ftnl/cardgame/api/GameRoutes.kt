@@ -8,7 +8,10 @@ import fr.ftnl.cardgame.domain.game.GameCode
 import fr.ftnl.cardgame.domain.player.PlayerId
 import fr.ftnl.cardgame.game.GameEntryService
 import fr.ftnl.cardgame.game.JoinOutcome
+import fr.ftnl.cardgame.plugins.CREATE_GAMES
+import fr.ftnl.cardgame.plugins.JOIN_GAMES
 import io.ktor.http.HttpStatusCode
+import io.ktor.server.plugins.ratelimit.rateLimit
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
@@ -20,9 +23,13 @@ import io.ktor.server.routing.route
 fun Route.gameRoutes(entry: GameEntryService) {
     route("/api/games") {
 
-        post {
-            val request = call.receive<CreateGameRequest>()
-            call.respond(entry.create(request, call.playerSession(), call.baseUrl()))
+        // Both of these are open to anyone holding a link, and both cost the server a
+        // catalogue read and a snapshot write. They are the only capped routes.
+        rateLimit(CREATE_GAMES) {
+            post {
+                val request = call.receive<CreateGameRequest>()
+                call.respond(entry.create(request, call.playerSession(), call.baseUrl()))
+            }
         }
 
         get("{code}") {
@@ -32,16 +39,18 @@ fun Route.gameRoutes(entry: GameEntryService) {
             call.respond(preview)
         }
 
-        post("{code}/players") {
-            val code = call.gameCode() ?: return@post call.respondUnknownCode()
-            val request = call.receive<JoinGameRequest>()
-            when (val outcome = entry.join(code, request, call.playerSession(), call.baseUrl())) {
-                is JoinOutcome.Joined -> call.respond(outcome.ticket)
-                is JoinOutcome.Refused ->
-                    call.respond(HttpStatusCode.Conflict, ErrorResponse(outcome.error.name))
+        rateLimit(JOIN_GAMES) {
+            post("{code}/players") {
+                val code = call.gameCode() ?: return@post call.respondUnknownCode()
+                val request = call.receive<JoinGameRequest>()
+                when (val outcome = entry.join(code, request, call.playerSession(), call.baseUrl())) {
+                    is JoinOutcome.Joined -> call.respond(outcome.ticket)
+                    is JoinOutcome.Refused ->
+                        call.respond(HttpStatusCode.Conflict, ErrorResponse(outcome.error.name))
 
-                JoinOutcome.NotFound ->
-                    call.respond(HttpStatusCode.NotFound, ErrorResponse("GAME_NOT_FOUND"))
+                    JoinOutcome.NotFound ->
+                        call.respond(HttpStatusCode.NotFound, ErrorResponse("GAME_NOT_FOUND"))
+                }
             }
         }
     }

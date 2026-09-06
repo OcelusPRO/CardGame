@@ -16,7 +16,7 @@ class PlayerViewFactory {
         isHost = state.isHost(player.id),
         isCzar = state.round?.czarId == player.id,
         hasAnswered = state.round?.hasSubmitted(player.id) == true,
-        hasVoted = state.round?.hasVoted(player.id) == true,
+        hasVoted = state.round != null && state.hasVoted(player.id),
         twitchLogin = player.twitchLogin,
     )
 }

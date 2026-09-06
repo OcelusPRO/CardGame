@@ -32,3 +32,11 @@ data class ChatVoterView(
     val name: String,
     val avatarUrl: String? = null,
 )
+
+/** One answer's live chat tally, as pushed on its own frame while the viewers vote. */
+@Serializable
+data class ChatAnswerVotesView(
+    val id: Int,
+    val count: Int,
+    val voters: List<ChatVoterView> = emptyList(),
+)

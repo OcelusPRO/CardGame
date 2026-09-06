@@ -11,7 +11,19 @@ internal class SelectionCloser(private val clock: GameClock) {
 
     fun close(state: GameState): GameState {
         val round = state.round ?: return state
-        val outcome = RoundScorings.of(state.settings.selectionMode).score(round, state.settings)
+        // A ladder closes a duel at a time. Only the one that crowns a champion ends the
+        // judging; the others simply put the next pair on the table with a fresh timer.
+        if (state.settings.runsBracket) {
+            val advanced = round.settleDuel()
+            if (!advanced.bracketSettled) return state.copy(round = advanced, phaseDeadlineMillis = nextDuel(state))
+            return score(state.copy(round = advanced))
+        }
+        return score(state)
+    }
+
+    private fun score(state: GameState): GameState {
+        val round = state.round ?: return state
+        val outcome = RoundScorings.of(state.settings).score(round, state.settings)
         return state.copy(
             round = round.copy(outcome = outcome),
             scoreboard = state.scoreboard + outcome.points,
@@ -20,6 +32,9 @@ internal class SelectionCloser(private val clock: GameClock) {
             phaseDeadlineMillis = clock.nowMillis() + state.settings.resultSeconds * MILLIS_PER_SECOND,
         )
     }
+
+    private fun nextDuel(state: GameState): Long =
+        clock.nowMillis() + state.settings.duelSeconds * MILLIS_PER_SECOND
 
     private fun playedCards(round: Round) = round.submissions.values.flatMap { it.cards }
 

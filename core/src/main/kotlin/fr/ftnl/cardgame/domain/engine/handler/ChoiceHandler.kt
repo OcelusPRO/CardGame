@@ -9,11 +9,16 @@ import fr.ftnl.cardgame.domain.game.GamePhase
 import fr.ftnl.cardgame.domain.game.GameState
 import fr.ftnl.cardgame.domain.game.Round
 import fr.ftnl.cardgame.domain.game.SelectionMode
+import fr.ftnl.cardgame.domain.game.SubmissionId
 import fr.ftnl.cardgame.domain.player.PlayerId
 
 /**
- * Records a vote, or the pick of the card czar depending on the selected mode. In
- * [SelectionMode.CHAT] the table has no say at all: the viewers judge alone.
+ * Records a vote, or the pick of the card czar depending on who is judging.
+ *
+ * Two questions are asked, in that order and independently, because they are independent
+ * settings: **may this player vote at all** — the chat judging alone rules the table out,
+ * a czar rules everybody but themselves out — and then **may they cast this particular
+ * vote right now**, which is where the ladder narrows the choice down to two answers.
  */
 internal class ChoiceHandler(private val roundFlow: RoundFlow) {
 
@@ -23,26 +28,63 @@ internal class ChoiceHandler(private val roundFlow: RoundFlow) {
         if (!state.contains(command.playerId)) return CommandResult.rejected(GameError.UNKNOWN_PLAYER)
         val author = round.authorOf(command.submissionId)
             ?: return CommandResult.rejected(GameError.UNKNOWN_SUBMISSION)
-        eligibility(state, round, command.playerId, author)?.let { return CommandResult.rejected(it) }
+        refusal(state, round, command.playerId, author, command.submissionId)
+            ?.let { return CommandResult.rejected(it) }
+        val voted = if (state.settings.runsBracket) {
+            round.withDuelVote(command.playerId, command.submissionId)
+        } else {
+            round.withVote(command.playerId, command.submissionId)
+        }
         return roundFlow.advance(
-            state.copy(round = round.withVote(command.playerId, command.submissionId)),
+            state.copy(round = voted),
             listOf(GameEvent.ChoiceMade(command.playerId)),
         )
     }
 
-    private fun eligibility(
+    private fun refusal(
         state: GameState,
         round: Round,
         voter: PlayerId,
         author: PlayerId,
-    ): GameError? = when {
+        choice: SubmissionId,
+    ): GameError? = whoMayVote(state, round, voter)
+        ?: whatMayBeVotedOn(state, round, voter, author, choice)
+
+    /** Settled by [SelectionMode] alone: it is the same answer whatever the format. */
+    private fun whoMayVote(state: GameState, round: Round, voter: PlayerId): GameError? = when {
         state.settings.selectionMode == SelectionMode.CHAT -> GameError.ONLY_THE_CHAT_VOTES
-        round.hasVoted(voter) -> GameError.ALREADY_VOTED
-        state.settings.selectionMode == SelectionMode.CZAR && round.czarId != voter -> GameError.NOT_THE_CZAR
-        state.settings.selectionMode == SelectionMode.CZAR && author == voter -> GameError.CANNOT_VOTE_OWN_ANSWER
-        state.settings.selectionMode == SelectionMode.VOTE &&
-            author == voter &&
-            !state.settings.allowSelfVote -> GameError.CANNOT_VOTE_OWN_ANSWER
+        state.settings.selectionMode == SelectionMode.CZAR && round.czarId != voter ->
+            GameError.NOT_THE_CZAR
         else -> null
+    }
+
+    /**
+     * Settled by the format, plus the one rule both formats share: your own card is never
+     * yours to pick. A ladder adds that only the two answers currently facing off are on
+     * the table at all, and that a vote is spent per duel rather than per round — so the
+     * same player votes again, on the next pair, a few seconds later.
+     */
+    private fun whatMayBeVotedOn(
+        state: GameState,
+        round: Round,
+        voter: PlayerId,
+        author: PlayerId,
+        choice: SubmissionId,
+    ): GameError? {
+        if (state.hasVoted(voter)) return GameError.ALREADY_VOTED
+        val duel = if (state.settings.runsBracket) {
+            round.bracket?.current ?: return GameError.WRONG_PHASE
+        } else {
+            null
+        }
+        if (duel != null && !duel.holds(choice)) return GameError.NOT_IN_THIS_DUEL
+        // A czar picking their own answer is refused even on a table that allows self
+        // voting: the whole point of a single judge is that they are not a candidate.
+        val selfVoteAllowed =
+            state.settings.allowSelfVote && state.settings.selectionMode != SelectionMode.CZAR
+        if (selfVoteAllowed) return null
+        if (author == voter) return GameError.CANNOT_VOTE_OWN_ANSWER
+        if (duel != null && voter in round.authorsOf(duel)) return GameError.CANNOT_JUDGE_OWN_DUEL
+        return null
     }
 }

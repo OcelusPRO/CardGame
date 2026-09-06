@@ -12,7 +12,17 @@ data class ChatLine(
     val viewerId: String,
     val viewerName: String,
     val text: String,
-)
+    /** Bits cheered on this very message, straight off the IRC tag. Zero for a plain line. */
+    val bits: Int = 0,
+    /**
+     * The channel point reward this message paid for, when it is a redemption asking the
+     * viewer to type something. Null on an ordinary message.
+     */
+    val rewardId: String? = null,
+) {
+    /** True when Twitch charged the viewer for this line, one way or the other. */
+    val paid: Boolean get() = bits > 0 || rewardId != null
+}
 
 /**
  * Reads the chats of a set of channels until it is cancelled. Kept as an interface so a

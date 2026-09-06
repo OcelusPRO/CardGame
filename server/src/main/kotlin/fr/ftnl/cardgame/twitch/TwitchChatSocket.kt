@@ -16,7 +16,8 @@ import kotlin.random.Random
  *
  * The `tags` capability is asked for because a bare IRC line only carries a nickname:
  * the tags add the account id, which is what makes one voice one viewer, and the display
- * name the chat itself shows.
+ * name the chat itself shows. They also carry `bits` and `custom-reward-id`, which is how
+ * a proposal can be made to cost something without asking anybody for a token.
  */
 class TwitchChatSocket(
     private val http: HttpClient,
@@ -63,6 +64,10 @@ class TwitchChatSocket(
             viewerId = tags["user-id"]?.takeIf { it.isNotBlank() } ?: nick,
             viewerName = tags["display-name"]?.takeIf { it.isNotBlank() } ?: nick,
             text = message,
+            // Both of these ride on the message itself, which is why a chat can be asked
+            // to pay for what it writes without a token, a webhook or an EventSub feed.
+            bits = tags["bits"]?.toIntOrNull() ?: 0,
+            rewardId = tags["custom-reward-id"]?.takeIf { it.isNotBlank() },
         )
     }
 

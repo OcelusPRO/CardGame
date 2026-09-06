@@ -19,6 +19,12 @@ import java.util.concurrent.ConcurrentHashMap
 class PhaseScheduler(
     private val scope: CoroutineScope,
     private val clock: GameClock,
+    /**
+     * Commands to run just before the phase closes, in order and under the same lock.
+     * This is where state that was deliberately kept out of the snapshot — the running
+     * Twitch chat tally — is banked, at the one moment it stops being a display.
+     */
+    private val beforeDeadline: suspend (GameState) -> List<GameCommand> = { emptyList() },
     private val dispatch: suspend (GameCode, GameCommand) -> Unit,
 ) : GameListener {
 
@@ -26,12 +32,17 @@ class PhaseScheduler(
 
     override suspend fun onGameChanged(state: GameState, events: List<GameEvent>) = reschedule(state)
 
+    override suspend fun onGameForgotten(code: GameCode) {
+        jobs.remove(code.value)?.cancel()
+    }
+
     private fun reschedule(state: GameState) {
         jobs.remove(state.code.value)?.cancel()
         val command = commandFor(state.phase) ?: return
         val deadline = state.phaseDeadlineMillis ?: return
         jobs[state.code.value] = scope.launch {
             delay((deadline - clock.nowMillis()).coerceAtLeast(0))
+            beforeDeadline(state).forEach { dispatch(state.code, it) }
             dispatch(state.code, command)
         }
     }
@@ -42,4 +53,7 @@ class PhaseScheduler(
         GamePhase.ROUND_RESULT -> GameCommand.NextRound(by = null)
         GamePhase.LOBBY, GamePhase.FINISHED -> null
     }
+
+    /** How many timers are pending; it should track the number of live games, not exceed it. */
+    val size: Int get() = jobs.size
 }

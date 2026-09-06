@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { gamesApi } from '../api/games'
 import { useGameSounds } from '../audio/useGameSounds'
-import type { GamePreview } from '../api/types'
+import type { GamePreview, GameSettingsView } from '../api/types'
 import { ConnectionBadge } from '../components/game/ConnectionBadge'
 import { GameBoard } from '../components/game/GameBoard'
 import { GameJoinCard } from '../components/game/GameJoinCard'
@@ -41,7 +41,8 @@ export function GamePage() {
   const code = routeCode ?? rememberedCode
   const { me } = useSession()
   const [identity, setIdentity] = useIdentity(me)
-  const { game, status, lastError, connect, disconnect, send, dismissError } = useGameStore()
+  const { game, chatVotes, status, rejection, lastError, connect, disconnect, send, dismissError } =
+    useGameStore()
   const [lookup, setLookup] = useState<Lookup>('loading')
   useGameSounds(game)
 
@@ -138,6 +139,19 @@ export function GamePage() {
     )
   }
 
+  // The server refused the seat for good — no session, wrong table, game gone. Retrying
+  // is pointless, so the reason it gave is what the player gets to read.
+  if (status === 'rejected') {
+    return (
+      <Centered>
+        {rejection || 'Cette table vous est fermée.'}
+        <span className="mt-3 block">
+          <ConnectionBadge status={status} />
+        </span>
+      </Centered>
+    )
+  }
+
   if (!game) {
     return (
       <Centered>
@@ -173,7 +187,7 @@ export function GamePage() {
           chime={game.phase === 'SUBMITTING' || game.phase === 'SELECTING'}
         />
 
-        <GameBoard game={game} send={send} />
+        <GameBoard game={game} send={send} liveChatVotes={chatVotes} />
       </main>
 
       <aside className="order-2 w-full lg:order-1 lg:w-72 lg:shrink-0 xl:w-80">
@@ -207,11 +221,11 @@ function Centered({ children }: { children: React.ReactNode }) {
   )
 }
 
-function timerLength(
-  phase: string,
-  settings: { submitSeconds: number; selectSeconds: number; resultSeconds: number },
-): number {
+function timerLength(phase: string, settings: GameSettingsView): number {
   if (phase === 'SUBMITTING') return settings.submitSeconds
-  if (phase === 'SELECTING') return settings.selectSeconds
+  // A ladder runs one clock per duel, so the bar has to measure a duel.
+  if (phase === 'SELECTING') {
+    return settings.selectionFormat === 'DUELS' ? settings.duelSeconds : settings.selectSeconds
+  }
   return settings.resultSeconds
 }

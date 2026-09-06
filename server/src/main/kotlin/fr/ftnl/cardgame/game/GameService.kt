@@ -49,7 +49,13 @@ class GameService(
 
     private suspend fun runCommand(code: GameCode, command: GameCommand): DispatchResult =
         locks.withLock(code) {
-            val state = store.find(code) ?: return@withLock DispatchResult.GameNotFound
+            // A mutex is minted by the lookup itself, so a command aimed at a game that
+            // expired — or at a code that never existed — would leave one behind forever.
+            // There is nothing left to serialise here, so it goes right back out.
+            val state = store.find(code) ?: run {
+                locks.release(code)
+                return@withLock DispatchResult.GameNotFound
+            }
             when (val result = engine.execute(state, command)) {
                 is CommandResult.Rejected -> DispatchResult.Refused(result.error)
                 is CommandResult.Accepted -> save(result)

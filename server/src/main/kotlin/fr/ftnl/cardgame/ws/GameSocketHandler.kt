@@ -42,7 +42,12 @@ class GameSocketHandler(
             // the player is already seated: their account is refreshed on every socket.
             games.dispatch(
                 code,
-                GameCommand.LinkTwitch(playerId, identity.twitchLogin, identity.twitchAvatarUrl),
+                GameCommand.LinkTwitch(
+                    playerId,
+                    identity.twitchLogin,
+                    identity.twitchAvatarUrl,
+                    identity.twitchId,
+                ),
             )
             games.dispatch(code, GameCommand.SetConnected(playerId, connected = true))
             sendCurrentState(connection)
@@ -71,10 +76,7 @@ class GameSocketHandler(
     private suspend fun forgetIfDeserted(code: GameCode) {
         if (connections.of(code).isNotEmpty()) return
         val state = games.find(code) ?: return
-        if (games.isAbandoned(state)) {
-            games.forget(code)
-            translator.forget(code)
-        }
+        if (games.isAbandoned(state)) games.forget(code)
     }
 
     private suspend fun sendCurrentState(connection: GameConnection) {
@@ -93,7 +95,12 @@ class GameSocketHandler(
         val state = games.find(connection.code)
             ?: return connection.send(ServerMessage.Failure(GAME_NOT_FOUND))
         val command = translator.toCommand(
-            message, connection.playerId, state.settings, connection.code, allowAdult,
+            message,
+            connection.playerId,
+            state.settings,
+            connection.code,
+            allowAdult,
+            isHost = state.isHost(connection.playerId),
         ) ?: return
         when (val result = games.dispatch(connection.code, command)) {
             is DispatchResult.Refused -> connection.send(ServerMessage.Failure(result.error.name))

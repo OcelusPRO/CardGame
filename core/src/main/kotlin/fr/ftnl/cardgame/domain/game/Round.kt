@@ -22,6 +22,8 @@ data class Round(
     val revealOrder: List<PlayerId> = emptyList(),
     val votes: Map<PlayerId, SubmissionId> = emptyMap(),
     val chatVotes: Map<SubmissionId, ChatVoteTally> = emptyMap(),
+    /** The knockout ladder, in [SelectionFormat.DUELS] only; null when answers are judged at once. */
+    val bracket: Bracket? = null,
     val outcome: RoundOutcome? = null,
 ) {
     init {
@@ -48,6 +50,29 @@ data class Round(
 
     fun withVote(voter: PlayerId, choice: SubmissionId): Round =
         copy(votes = votes + (voter to choice))
+
+    /** Opens the knockout ladder over the answers, once they have been revealed. */
+    fun withBracket(): Round = copy(bracket = Bracket.of(revealed.map { (id, _) -> id }))
+
+    fun withDuelVote(voter: PlayerId, choice: SubmissionId): Round =
+        copy(bracket = bracket?.withVote(voter, choice))
+
+    /**
+     * Calls the open duel and opens the next one, or crowns the ladder.
+     *
+     * The chat tally is spent here: it was counted for the two answers that just faced
+     * off, and the next pair starts from zero — otherwise the voices of a duel already
+     * settled would decide the following one.
+     */
+    fun settleDuel(): Round =
+        copy(bracket = bracket?.settleCurrent(chatTally), chatVotes = emptyMap())
+
+    /** True once the ladder has a champion, or when there was never a ladder to run. */
+    val bracketSettled: Boolean get() = bracket?.isComplete ?: true
+
+    /** Who wrote the two answers facing off, which is who sits that duel out. */
+    fun authorsOf(duel: Duel): Set<PlayerId> =
+        setOfNotNull(authorOf(duel.left), duel.right?.let(::authorOf))
 
     fun revealedInOrder(order: List<PlayerId>): Round = copy(revealOrder = order)
 

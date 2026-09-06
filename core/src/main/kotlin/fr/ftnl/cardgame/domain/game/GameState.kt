@@ -1,5 +1,6 @@
 package fr.ftnl.cardgame.domain.game
 
+import fr.ftnl.cardgame.domain.card.CardOrigin
 import fr.ftnl.cardgame.domain.card.PunchlineCard
 import fr.ftnl.cardgame.domain.card.SituationCard
 import fr.ftnl.cardgame.domain.deck.DrawPile
@@ -34,6 +35,24 @@ data class GameState(
 
     fun handOf(playerId: PlayerId): List<PunchlineCard> = hands[playerId].orEmpty()
 
+    /**
+     * Whether this player has already cast the vote the step in front of them expects.
+     * A ladder scopes that to the duel on the table, so the same player votes again a
+     * duel later; judged all at once, the question is asked once per round.
+     */
+    fun hasVoted(playerId: PlayerId): Boolean {
+        val round = round ?: return false
+        if (!settings.runsBracket) return round.hasVoted(playerId)
+        return round.bracket?.current?.hasVoted(playerId) ?: true
+    }
+
+    /** The answer this player picked in the step in front of them, if they picked one. */
+    fun voteOf(playerId: PlayerId): SubmissionId? {
+        val round = round ?: return null
+        return if (settings.runsBracket) round.bracket?.current?.votes?.get(playerId)
+        else round.votes[playerId]
+    }
+
     /** Players still online; a disconnected player keeps their score and their seat. */
     val connectedPlayers: List<Player> get() = players.filter { it.connected }
 
@@ -43,15 +62,64 @@ data class GameState(
      * mode but [SelectionMode.CHAT], where the players decide among themselves.
      */
     val chatChannels: List<String>
+        get() = if (settings.selectionMode == SelectionMode.CHAT) twitchChannels else emptyList()
+
+    /**
+     * Every Twitch channel attached to this table, whatever the table uses them for: the
+     * host first, then the other streamers when the host asked for their chats too.
+     *
+     * [chatChannels] is the subset that judges; the viewers writing cards read from this
+     * one instead, since a chat can be given a pen without being given a vote.
+     */
+    val twitchChannels: List<String>
         get() {
-            if (settings.selectionMode != SelectionMode.CHAT) return emptyList()
             val guests = if (settings.twitchGuestChats) players.filter { it.id != hostId } else emptyList()
             return (listOfNotNull(playerOf(hostId)?.twitchLogin) + guests.mapNotNull { it.twitchLogin })
                 .distinct()
         }
 
+    /** The channels allowed to write cards right now; empty unless the host opened it. */
+    val cardChannels: List<String>
+        get() = if (settings.chatCards.enabled) twitchChannels else emptyList()
+
+    /** How many cards this chat has already pushed into the game, both piles together. */
+    val chatCardCount: Int
+        get() = situations.all.count { it.origin == CardOrigin.CHAT } +
+            punchlines.all.count { it.origin == CardOrigin.CHAT }
+
     /** True when the chat is voting right now, which is what puts the numbers on screen. */
     val chatVoteOpen: Boolean get() = phase == GamePhase.SELECTING && chatChannels.isNotEmpty()
+
+    /**
+     * The answers the viewers are choosing between, in the order they appear on screen.
+     *
+     * A chat types a **position**, not an answer id — `2` is the second card in front of
+     * them. Judging a whole round that is every answer; judging a duel it is exactly two,
+     * which is the entire appeal of running a big chat on a ladder: `1` or `2`, and no
+     * viewer has to scan twelve cards to find the number they meant.
+     */
+    val chatChoices: List<SubmissionId>
+        get() {
+            val round = round ?: return emptyList()
+            if (!settings.runsBracket) return round.revealed.map { (id, _) -> id }
+            val duel = round.bracket?.current ?: return emptyList()
+            return listOfNotNull(duel.left, duel.right)
+        }
+
+    /**
+     * Which count a chat tally belongs to. A ladder restarts the count at every duel, so
+     * the round number alone would let the voices of a settled duel decide the next one.
+     */
+    val chatVoteScope: ChatVoteScope?
+        get() {
+            val round = round ?: return null
+            val bracket = round.bracket
+            return ChatVoteScope(
+                round = round.number,
+                tier = bracket?.tier ?: 0,
+                duel = bracket?.currentNumber ?: 0,
+            )
+        }
 
     /** True when the rotating czar also submits an answer, see [GameSettings.czarAnswers]. */
     val czarAnswers: Boolean

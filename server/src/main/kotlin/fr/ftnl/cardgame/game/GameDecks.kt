@@ -11,8 +11,11 @@ import java.util.concurrent.ConcurrentHashMap
  * this is what lets the server rebuild the pile when the rules change under it — e.g. the
  * host switches the answer mode and a pack that was reserved to the other mode has to go.
  * In memory only: a lost entry just means no automatic pruning until the deck is re-applied.
+ *
+ * It listens to the games it follows so an entry never outlives its table, whichever way
+ * that table died — the last player leaving, or the idle reaper sweeping it away.
  */
-class GameDecks {
+class GameDecks : GameListener {
 
     private val applied = ConcurrentHashMap<String, DeckRequest>()
 
@@ -22,7 +25,12 @@ class GameDecks {
 
     fun of(code: GameCode): DeckRequest? = applied[code.value]
 
+    override suspend fun onGameForgotten(code: GameCode) = forget(code)
+
     fun forget(code: GameCode) {
         applied.remove(code.value)
     }
+
+    /** How many decks are held; a long running server should see this come back down. */
+    val size: Int get() = applied.size
 }

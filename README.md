@@ -18,6 +18,8 @@ Tout se joue dans le navigateur, sans installation : l'hôte crée une table, pa
 - [Configuration](#configuration)
 - [Connexion Discord et administration](#connexion-discord-et-administration)
 - [Connexion Twitch et vote du tchat](#connexion-twitch-et-vote-du-tchat)
+- [Le tchat écrit des cartes](#le-tchat-écrit-des-cartes)
+- [Exploitation](#exploitation)
 - [Tests](#tests)
 - [Surface HTTP et WebSocket](#surface-http-et-websocket)
 
@@ -34,11 +36,13 @@ Tout se joue dans le navigateur, sans installation : l'hôte crée une table, pa
 | Mode cartes | Main de cartes réponses distribuée à chaque manche |
 | Mode « sans limites » | Aucune carte réponse : chacun écrit la sienne directement sur une carte vierge |
 | Mode personnalisé | Un sélecteur unique mêle les packs officiels (marqués d'une étoile) et les decks gardés dans le navigateur, plus des cartes écrites à la volée |
-| Vote ou maître du jeu | Choisi par l'hôte dans le salon, les deux modes cohabitent dans le moteur |
+| Qui juge | Tout le monde, un maître du jeu tournant, ou le tchat Twitch — choisi par l'hôte dans le salon |
+| Comment on juge | Toutes les réponses d'un coup, ou deux par deux en duels. Réglage séparé, qui se combine avec chacun des trois précédents |
 | Reconnexion | Le siège, le score et la main survivent à un rafraîchissement ou à une coupure réseau |
 | Administration | Édition des packs et des cartes officielles, statistiques d'usage et compteurs en direct |
 | Fin de partie | Podium pour les trois premiers, classement simple pour la suite |
-| Vote du tchat Twitch | Un troisième mode de jeu : les joueurs répondent, et c'est le tchat de l'hôte — plus, s'il le veut, celui des autres joueurs streamers — qui désigne la meilleure réponse au numéro de la carte |
+| Vote du tchat Twitch | Un mode de plus : les joueurs répondent, et c'est le tchat de l'hôte — plus, s'il le veut, celui des autres joueurs streamers — qui désigne la meilleure réponse au numéro de la carte |
+| Le tchat écrit des cartes | Les spectateurs proposent situations et réponses, gratuitement, contre des points de chaîne ou contre des bits, depuis le tchat ou depuis l'extension Twitch |
 | Bruitages | Clics, sélection de carte, vote, révélation et derniers battements du chrono, coupables d'un seul bouton |
 
 Les deux modes se cumulent : un paquet de situations maison avec des réponses écrites à la volée
@@ -77,18 +81,50 @@ l'emporte. Une partie s'arrête aussi plus tôt si le paquet de situations est �
 > pas le droit de voter pour lui-même. Le réglage **« autoriser à voter pour sa propre
 > carte »** le remet dans le lot : le bonus exige alors que l'auteur vote pour sa carte aussi.
 
+### Qui juge, et comment : deux questions séparées
+
+Les trois modes ci-dessus répondent à **qui** désigne la meilleure réponse. Une seconde
+question, indépendante, demande **comment** : toutes les réponses d'un coup, ou deux par
+deux. Les deux réglages se combinent librement — le maître du jeu peut trancher des duels,
+et un tchat de quatre mille personnes peut choisir entre deux cartes au lieu de douze.
+
+**En duels**, les réponses s'affrontent deux par deux, en élimination directe :
+
+- celui qui juge lit **deux** réponses, en choisit une, et la gagnante monte d'un cran ;
+- chaque duel remporté vaut **`pointsPerVote`** points, 1 par défaut. C'est un compte de
+  duels gagnés, pas de voix reçues : que le tchat compte trente personnes ou quatre mille,
+  un duel vaut un point ;
+- ni un passage sans adversaire (une table impaire laisse passer sa réponse en trop) ni une
+  égalité ne comptent : personne n'y a été battu. En cas d'égalité, c'est la réponse révélée
+  la première qui monte, sans point ;
+- les deux auteurs du duel ne le jugent pas. Celui qui tient la carte ne vote jamais pour
+  lui-même, et l'autre n'aurait à choisir que la carte qui le bat — ce n'est pas un vote,
+  c'est une formalité ;
+- chaque duel a son propre chronomètre, **`duelSeconds`**, 20 secondes par défaut ;
+- quand c'est le tchat qui juge, les spectateurs tapent **`1` ou `2`** : ce sont des
+  positions à l'écran, pas des numéros de carte, et le compte repart de zéro à chaque duel.
+
+C'est le format des grandes tables et des gros tchats : à douze réponses, en lire douze pour
+en choisir une n'amuse plus personne, et la moitié de la salle ne lit plus rien. Deux à la
+fois est un réflexe.
+
 ---
 
 ## Architecture
 
 ```
 CardGame
-├── core/       Le jeu, en Kotlin pur : aucune dépendance à Ktor, à une base ou à un socket
-├── server/     Ktor : HTTP, WebSocket, PostgreSQL, Redis, OAuth Discord et Twitch
-├── frontend/   React 19 + TypeScript + Tailwind CSS v4, servi par Ktor en production
+├── core/              Le jeu, en Kotlin pur : aucune dépendance à Ktor, à une base ou à un socket
+├── server/            Ktor : HTTP, WebSocket, PostgreSQL, Redis, OAuth Discord et Twitch
+├── frontend/          React 19 + TypeScript + Tailwind CSS v4, servi par Ktor en production
+├── twitch-extension/  Le panneau Twitch depuis lequel un spectateur écrit une carte
 ├── Dockerfile
 └── docker-compose.yml
 ```
+
+La racine ne contient aucun code : elle déclare le plugin Kotlin une fois pour tous les
+modules. C'est volontaire — deux modules appliquant le plugin chacun avec sa propre
+`jvmToolchain` est exactement ce qui faisait diverger un `./gradlew` à froid du build Docker.
 
 ### `core` — le moteur
 
@@ -98,7 +134,10 @@ Il ne connaît ni le réseau, ni l'horloge système (une `GameClock` est inject�
 en quelques lignes, sans démarrer quoi que ce soit.
 
 Chaque commande a son propre gestionnaire (`JoinHandler`, `AnswerHandler`, `ChoiceHandler`…),
-et les deux modes de sélection sont deux implémentations de `RoundScoring`.
+et chaque façon de compter les points est une implémentation de `RoundScoring`. `SelectionMode`
+et `SelectionFormat` sont deux axes indépendants : le premier décide qui vote, le second
+combien de réponses sont sur la table à la fois, et `ChoiceHandler` pose les deux questions
+séparément plutôt que d'énumérer leurs combinaisons.
 
 ### `server` — la plomberie
 
@@ -224,6 +263,10 @@ Toutes les valeurs se pilotent par variables d'environnement (voir `.env.example
 | `ADMIN_TWITCH_IDS` | vide | Comptes Twitch admin (identifiant **ou** nom de chaîne), séparés par des virgules |
 | `DISCORD_BOT_TOKEN` | vide | Facultatif : permet à l'administration de retrouver un pseudo Discord depuis un identifiant |
 | `ADULT_MIN_ACCOUNT_AGE_DAYS` | `1095` | Âge à partir duquel un compte est cru adulte ; `0` pour n'écouter que la liste |
+| `TWITCH_EXTENSION_CLIENT_ID` / `TWITCH_EXTENSION_SECRET` | vide | L'extension Twitch ; vide = panneau désactivé. Ce sont ceux de l'**extension**, pas ceux du bouton de connexion |
+| `TWITCH_EXTENSION_PRODUCTS` | `carte_100:100,carte_500:500` | Les produits bits, en paires `sku:montant`. Un reçu est tarifé depuis cette liste |
+| `TRUST_PROXY_HEADERS` | `false` | À `true` derrière un proxy que vous maîtrisez : sinon un appelant écrit son adresse lui-même |
+| `METRICS_TOKEN` | vide | Vide, `/metrics` est ouvert ; renseigné, il exige `Authorization: Bearer` |
 
 ---
 
@@ -311,6 +354,68 @@ spectateur n'est retenu que le temps de l'empêcher de voter deux fois.
 
 ---
 
+## Le tchat écrit des cartes
+
+Les spectateurs ne font pas que juger : ils peuvent écrire les cartes. Une situation tapée
+dans le tchat rejoint le paquet où la table pioche, et une réponse celui d'où les mains sont
+distribuées — l'idée d'un spectateur revient donc quelques minutes plus tard dans la main de
+quelqu'un, ce qui est tout l'intérêt.
+
+C'est **fermé par défaut**, et cela s'ouvre dans le salon, sous « Le tchat de *votre chaîne*
+écrit des cartes ». L'hôte choisit ce qui est ouvert — situations, réponses, ou les deux —
+et à quel prix :
+
+| Accès | Ce que le spectateur doit faire |
+| --- | --- |
+| **Ouvert à tous** | Rien : `!situation …` ou `!réponse …` dans le tchat |
+| **Points de chaîne** | Échanger une récompense qui demande un message, et y taper sa carte |
+| **Bits** | Payer depuis le panneau de l'extension, à partir du minimum fixé par l'hôte |
+
+La syntaxe ne cherche pas la petite bête : la casse est libre, les accents sont facultatifs,
+et les raccourcis `!situ` et `!rep` valent les formes longues — `!RÉPONSE`, `!Reponse` et
+`!rep` sont la même commande. Seul le premier mot compte, si bien qu'une phrase où traîne un
+`!reponse` reste une phrase.
+
+Le prix lui-même est fixé sur Twitch, par le streamer : le jeu vérifie seulement qu'il a été
+payé. Les deux étiquettes qui le disent — `bits` et `custom-reward-id` — voyagent sur le
+message IRC lui-même, si bien qu'aucun jeton, aucun webhook et aucune autorisation
+supplémentaire ne sont demandés à qui que ce soit.
+
+Les garde-fous sont volontairement simples : une carte par spectateur et par lot de quelques
+secondes, **200 cartes au maximum pour toute la partie**, et une insertion mélangée à une
+profondeur aléatoire — personne ne peut chronométrer une proposition pour tomber sur une
+manche précise. Rien n'est conservé : ces cartes ne rejoignent jamais le catalogue officiel
+et disparaissent avec la partie.
+
+### L'extension Twitch
+
+`twitch-extension/` est un panneau — sous le stream, et en encart sur l'image — depuis lequel
+un spectateur écrit sa carte et la paie en bits en un clic. Il ne sait qu'une chose sur
+l'endroit où il tourne : l'identifiant de chaîne que Twitch signe dans le jeton du
+spectateur. Le serveur retrouve la table à partir de cet identifiant seul, jamais à partir de
+ce que la page raconte, et un reçu de bits n'est cru que parce que Twitch l'a signé — puis
+il est **consommé**, une fois pour toutes.
+
+Le montage complet (console développeur, produits bits, CORS, envoi de l'archive) est dans
+[`twitch-extension/README.md`](twitch-extension/README.md).
+
+---
+
+## Exploitation
+
+`GET /metrics` sert des compteurs Prometheus : la JVM, les requêtes HTTP, et surtout les
+cartes que le serveur garde en mémoire — parties actives, sockets ouverts, minuteurs en
+attente, paquets retenus, tchats suivis. Ce sont exactement les tables qui n'avaient jusque
+là aucun témoin : une fuite dans l'une d'elles s'y voit comme un nombre qui monte sans jamais
+redescendre.
+
+Les deux routes ouvertes à quiconque tient un lien — créer une table, s'y asseoir — sont
+plafonnées par appelant, parce que chacune coûte au serveur une lecture de catalogue et une
+écriture de snapshot. Derrière un proxy, `TRUST_PROXY_HEADERS=true` fait compter le vrai
+appelant ; sans proxy, laissez à `false`, sinon l'appelant écrit son adresse lui-même.
+
+---
+
 ## Tests
 
 Les tests du serveur parlent au **vrai PostgreSQL**, celui de `docker compose`, sur une base
@@ -366,6 +471,18 @@ c'est ce qui évite un serveur qui démarre puis échoue à la première requêt
 | `GET` | `/auth/discord` | Démarrer la connexion Discord |
 | `GET` | `/auth/twitch` | Démarrer la connexion Twitch |
 | `WS` | `/ws/game/{code}` | La partie elle-même |
+| `GET` | `/metrics` | Compteurs Prometheus ; ouvert, sauf si `METRICS_TOKEN` est renseigné |
+
+### Extension Twitch (jeton signé par Twitch)
+
+| Méthode | Chemin | Rôle |
+| --- | --- | --- |
+| `GET` | `/api/twitch/extension/state` | Ce que le panneau doit dessiner : table ouverte ? à quel prix ? |
+| `POST` | `/api/twitch/extension/cards` | Un spectateur envoie une carte, avec son reçu de bits le cas échéant |
+
+La chaîne est lue dans le jeton, jamais dans la requête : un spectateur ne peut pas viser la
+table de quelqu'un d'autre. C'est la seule exception CORS du serveur, et elle est limitée à
+l'origine de l'extension.
 
 ### Administration (Discord + allowlist)
 

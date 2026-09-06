@@ -32,3 +32,10 @@ data class ChatVoteTally(
         const val MAX_FACES = 15
     }
 }
+
+/**
+ * The stretch of a game one chat tally covers: a round when the answers are judged all at
+ * once, and a single duel when they are judged on a ladder.
+ */
+@Serializable
+data class ChatVoteScope(val round: Int, val tier: Int, val duel: Int)

@@ -2,6 +2,8 @@ package fr.ftnl.cardgame.domain.engine
 
 import fr.ftnl.cardgame.domain.card.CardId
 import fr.ftnl.cardgame.domain.card.CardPool
+import fr.ftnl.cardgame.domain.card.PunchlineCard
+import fr.ftnl.cardgame.domain.card.SituationCard
 import fr.ftnl.cardgame.domain.game.ChatVoteTally
 import fr.ftnl.cardgame.domain.game.GameSettings
 import fr.ftnl.cardgame.domain.game.SubmissionId
@@ -33,6 +35,8 @@ sealed interface GameCommand {
         val playerId: PlayerId,
         val login: String?,
         val pictureUrl: String? = null,
+        /** The numeric account, which is what the Twitch extension identifies a channel by. */
+        val accountId: String? = null,
     ) : GameCommand
 
     data class UpdateSettings(val by: PlayerId, val settings: GameSettings) : GameCommand
@@ -59,6 +63,15 @@ sealed interface GameCommand {
      * replaces the previous snapshot, so a lost frame corrects itself on the next one.
      */
     data class SetChatVotes(val tallies: Map<SubmissionId, ChatVoteTally>) : GameCommand
+
+    /**
+     * Cards a Twitch chat wrote, ready to join the piles. The reader that saw them has
+     * already checked the viewer paid whatever the host asked for.
+     */
+    data class AddChatCards(
+        val situations: List<SituationCard> = emptyList(),
+        val punchlines: List<PunchlineCard> = emptyList(),
+    ) : GameCommand
 
     /** Issued by the scheduler when the submission timer runs out. */
     data object CloseSubmissions : GameCommand

@@ -4,8 +4,30 @@
  */
 
 export type GamePhase = 'LOBBY' | 'SUBMITTING' | 'SELECTING' | 'ROUND_RESULT' | 'FINISHED'
+/** Who designates the best answer. */
 export type SelectionMode = 'VOTE' | 'CZAR' | 'CHAT'
+/** How they do it — every answer at once, or two at a time. Free of the mode. */
+export type SelectionFormat = 'ALL_AT_ONCE' | 'DUELS'
 export type AnswerMode = 'CARDS' | 'FREE_TEXT'
+/** What a viewer has to do before their idea is allowed onto the table. */
+export type ChatCardAccess = 'OFF' | 'EVERYONE' | 'CHANNEL_POINTS' | 'BITS'
+
+/** Whether — and at what price — the viewers may write cards into the game. */
+export interface ChatCardsView {
+  access: ChatCardAccess
+  situations: boolean
+  punchlines: boolean
+  minBits: number
+  rewardId: string
+}
+
+export interface ChatCardsInput {
+  access?: ChatCardAccess
+  situations?: boolean
+  punchlines?: boolean
+  minBits?: number
+  rewardId?: string
+}
 
 export interface AvatarPartView {
   styleId: string
@@ -79,6 +101,26 @@ export interface RoundOutcomeView {
   topAnswerId?: number
 }
 
+/** How many duels an answer has won so far in the knockout ladder. */
+export interface DuelWinsView {
+  answerId: number
+  wins: number
+}
+
+/**
+ * The knockout ladder of a round, in the `DUELS` format: which two answers are facing off
+ * right now, how far along the tier is, and what each answer has already won.
+ */
+export interface BracketView {
+  tier: number
+  duelNumber: number
+  duelCount: number
+  left?: number
+  right?: number
+  wins: DuelWinsView[]
+  championId?: number
+}
+
 export interface RoundView {
   number: number
   situation: SituationCardView
@@ -86,6 +128,7 @@ export interface RoundView {
   czarId?: string
   answers: AnswerView[]
   myVote?: number
+  bracket?: BracketView
   outcome?: RoundOutcomeView
 }
 
@@ -105,11 +148,14 @@ export interface DeckSummary {
 
 export interface GameSettingsView {
   selectionMode: SelectionMode
+  selectionFormat: SelectionFormat
   answerMode: AnswerMode
   rounds: number
   handSize: number
   submitSeconds: number
   selectSeconds: number
+  /** How long a single duel lasts in the `DUELS` format; ignored when judging all at once. */
+  duelSeconds: number
   resultSeconds: number
   minPlayers: number
   maxPlayers: number
@@ -117,9 +163,9 @@ export interface GameSettingsView {
   czarAnswers: boolean
   pointsPerVote: number
   unanimityBonus: number
-  czarWinPoints: number
   /** In the `CHAT` mode, the chats of the other streamers at the table are read too. */
   twitchGuestChats: boolean
+  chatCards: ChatCardsView
 }
 
 export interface GameView {
@@ -189,11 +235,13 @@ export interface AvatarInput {
 
 export interface GameSettingsInput {
   selectionMode?: SelectionMode
+  selectionFormat?: SelectionFormat
   answerMode?: AnswerMode
   rounds?: number
   handSize?: number
   submitSeconds?: number
   selectSeconds?: number
+  duelSeconds?: number
   resultSeconds?: number
   minPlayers?: number
   maxPlayers?: number
@@ -201,8 +249,8 @@ export interface GameSettingsInput {
   czarAnswers?: boolean
   pointsPerVote?: number
   unanimityBonus?: number
-  czarWinPoints?: number
   twitchGuestChats?: boolean
+  chatCards?: ChatCardsInput
 }
 
 export interface DeckInput {

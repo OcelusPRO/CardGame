@@ -6,6 +6,7 @@ import fr.ftnl.cardgame.catalog.CardPoolResolver
 import fr.ftnl.cardgame.catalog.CustomCardFactory
 import fr.ftnl.cardgame.catalog.DeckRequest
 import fr.ftnl.cardgame.domain.card.CardId
+import fr.ftnl.cardgame.domain.card.CardPool
 import fr.ftnl.cardgame.domain.engine.GameCommand
 import fr.ftnl.cardgame.domain.game.AnswerMode
 import fr.ftnl.cardgame.domain.game.GameCode
@@ -30,6 +31,7 @@ class GameCommandTranslator(
         settings: GameSettings,
         code: GameCode,
         allowAdult: Boolean,
+        isHost: Boolean,
     ): GameCommand? = when (message) {
         is ClientMessage.PlayCards ->
             GameCommand.PlayCards(playerId, message.cardIds.map(::CardId), message.fills)
@@ -38,10 +40,20 @@ class GameCommandTranslator(
         is ClientMessage.UpdateSettings ->
             GameCommand.UpdateSettings(playerId, SettingsMapper.merge(settings, message.settings))
 
-        is ClientMessage.UpdateDeck -> {
-            val request = deckRequest(message.deck)
-            applied.remember(code, request)
-            GameCommand.SetCardPool(playerId, decks.resolve(request, settings.answerMode, allowAdult))
+        // Resolving a deck reads the catalogue, so a table full of players could turn a
+        // message anybody may send into a stream of queries. Who owns the rule stays the
+        // domain's business — the empty pool below is refused by `CardPoolHandler` all the
+        // same, with the very same `NOT_THE_HOST` — but the database is left out of it.
+        is ClientMessage.UpdateDeck -> when {
+            !isHost -> GameCommand.SetCardPool(playerId, CardPool.EMPTY)
+            else -> {
+                val request = deckRequest(message.deck)
+                applied.remember(code, request)
+                GameCommand.SetCardPool(
+                    playerId,
+                    decks.resolve(request, settings.answerMode, allowAdult),
+                )
+            }
         }
 
         is ClientMessage.Kick -> GameCommand.Kick(playerId, PlayerId(message.playerId))
@@ -65,8 +77,6 @@ class GameCommandTranslator(
         val request = applied.of(code) ?: return null
         return GameCommand.SetCardPool(by, decks.resolve(request, answerMode, allowAdult))
     }
-
-    fun forget(code: GameCode) = applied.forget(code)
 
     /**
      * A line the host typed into "Vos situations" that matches a hidden pack's secret code
