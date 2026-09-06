@@ -126,8 +126,13 @@ class TwitchRewardCards(
 
     private suspend fun run(code: GameCode, terms: Terms) {
         val standing = raise(terms)
-        if (standing.kinds.isEmpty()) {
-            log.warn("No channel point reward could be raised for {}", terms.broadcasterId)
+        if (standing == null) {
+            log.warn("The channel point rewards of {} could not all be raised", terms.broadcasterId)
+            // Nothing of this attempt survives, so nothing must be remembered of it either:
+            // left in place, these terms would be taken for "already handled" and the host
+            // pressing save again — on the very same settings — would be answered with
+            // silence instead of another try.
+            forget(code, terms)
             return
         }
         try {
@@ -152,25 +157,47 @@ class TwitchRewardCards(
         }
     }
 
-    /** The rewards this table will read, by the id their redemptions carry. */
-    private suspend fun raise(terms: Terms): Standing {
-        val token = tokens.token(terms.broadcasterId) ?: return Standing()
+    /**
+     * The rewards this table will read, by the id their redemptions carry.
+     *
+     * All of the piles the host opened, or none: a table running on half its rewards takes
+     * points for one pile and silently drops the other, and the host has no way of telling.
+     * Twitch refuses a reward whose name is already taken, which is exactly the mistake
+     * worth failing loudly on. Null says so, and what was already created is undone.
+     */
+    private suspend fun raise(terms: Terms): Standing? {
+        val token = tokens.token(terms.broadcasterId) ?: return null
         val kinds = mutableMapOf<String, ChatCardKind>()
         val created = mutableSetOf<String>()
-        suspend fun raise(pile: Pile?, kind: ChatCardKind, prompt: String) {
-            when (pile) {
-                null -> Unit
-                is Pile.Adopt -> kinds[pile.rewardId] = kind
-                is Pile.Create ->
-                    rewards.create(token, terms.broadcasterId, pile.title, pile.cost, prompt)?.let {
-                        kinds[it] = kind
-                        created += it
-                    }
+        suspend fun raise(pile: Pile?, kind: ChatCardKind, prompt: String): Boolean = when (pile) {
+            null -> true
+            is Pile.Adopt -> {
+                kinds[pile.rewardId] = kind
+                true
+            }
+            is Pile.Create -> {
+                val made = rewards.create(token, terms.broadcasterId, pile.title, pile.cost, prompt)
+                if (made != null) {
+                    kinds[made] = kind
+                    created += made
+                }
+                made != null
             }
         }
-        raise(terms.situation, ChatCardKind.SITUATION, SITUATION_PROMPT)
-        raise(terms.punchline, ChatCardKind.PUNCHLINE, PUNCHLINE_PROMPT)
+        val whole = raise(terms.situation, ChatCardKind.SITUATION, SITUATION_PROMPT) &&
+            raise(terms.punchline, ChatCardKind.PUNCHLINE, PUNCHLINE_PROMPT)
+        if (!whole || kinds.isEmpty()) {
+            remove(terms, created)
+            return null
+        }
         return Standing(kinds, created, settleable(terms, token, kinds.keys, created))
+    }
+
+    /** Drops this attempt from the watch list, so an identical one is tried afresh. */
+    private fun forget(code: GameCode, terms: Terms) {
+        synchronized(watched) {
+            if (watched[code.value]?.terms == terms) watched.remove(code.value)
+        }
     }
 
     /**

@@ -416,6 +416,13 @@ poser une récompense, c'est retirer l'ancienne et en créer une autre sur la ch
 veut pas faire à chaque lettre tapée. Tant que rien n'est enregistré, le salon le dit — « pas
 encore posées sur votre chaîne » — et propose d'annuler.
 
+L'enregistrement ne se contente pas d'annoncer que c'est fait : les réglages descendent par le
+socket, le serveur pose les récompenses ensuite, et le salon **relit la chaîne** pour les y
+trouver. C'est ce qui rafraîchit les listes déroulantes au passage, et ce qui permet de dire la
+vérité quand ça a échoué — le plus souvent parce qu'une récompense du même nom existe déjà.
+Le bouton reste alors cliquable : un enregistrement raté est réellement retenté, le serveur
+ayant pris soin d'oublier la tentative manquée plutôt que de la prendre pour un état acquis.
+
 Sur une récompense que le jeu gère, il peut **rendre les points** : une carte trop courte,
 arrivée après la fin, ou au-delà des deux cents de la partie, annule l'échange au lieu de
 l'encaisser pour rien.

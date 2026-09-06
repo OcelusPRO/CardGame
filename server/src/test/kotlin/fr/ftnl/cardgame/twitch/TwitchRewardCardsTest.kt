@@ -187,6 +187,42 @@ class TwitchRewardCardsTest {
         assertTrue(channel.deleted.isEmpty(), "the host had it before this table")
     }
 
+    // The host presses save again on settings Twitch refused the first time. Remembering
+    // the failed attempt would answer that with silence, so the attempt is forgotten and
+    // an identical one is genuinely retried.
+    @Test
+    fun `a refused reward is retried when the host saves the same thing again`() = runBlocking {
+        val channel = FakeChannel()
+        channel.refuse = true
+        val cards = listener(channel) { updated() }
+
+        cards.onGameCreated(game())
+        waitFor { channel.refusedCount >= 1 }
+        // Nothing stands, so nothing is watched: the same settings are a fresh attempt.
+        waitFor { cards.size == 0 }
+
+        channel.refuse = false
+        cards.onGameCreated(game())
+
+        channel.awaitCreated(2)
+        assertEquals(2, channel.created.size)
+    }
+
+    // Half a set of rewards takes points for one pile and silently drops the other, and
+    // the host has no way of telling — so a partial failure is undone rather than run with.
+    @Test
+    fun `a pile that could not be raised takes the whole attempt down with it`() = runBlocking {
+        val channel = FakeChannel()
+        channel.refuseAfter = 1
+        val cards = listener(channel) { updated() }
+
+        cards.onGameCreated(game())
+
+        waitFor { channel.deleted.size == 1 }
+        assertEquals(channel.created.map { it.id }.toSet(), channel.deleted.toSet())
+        waitFor { cards.size == 0 }
+    }
+
     @Test
     fun `the rewards come down with the table`() = runBlocking {
         val channel = FakeChannel()
@@ -283,6 +319,9 @@ class TwitchRewardCardsTest {
         val followed = ConcurrentHashMap.newKeySet<String>()
         val settled = CopyOnWriteArrayList<Pair<String, Boolean>>()
 
+        /** Reads the counter a refusing channel bumps, whichever way it was told to refuse. */
+        val refusedCount: Int get() = refused.get()
+
         /** Rewards that were on the channel before this table sat down. */
         val standing = CopyOnWriteArrayList<StandingReward>()
 
@@ -310,13 +349,29 @@ class TwitchRewardCardsTest {
         private var onRedemption: (suspend (RewardRedemption) -> Unit)? = null
         private val redemptions = AtomicInteger()
 
+        /** Twitch turning every creation down, as it does on a name already taken. */
+        @Volatile
+        var refuse = false
+
+        /** Or turning down everything past the first, for a half built set. */
+        @Volatile
+        var refuseAfter = Int.MAX_VALUE
+
+        val refused = AtomicInteger()
+
         override suspend fun create(
             token: String,
             broadcasterId: String,
             title: String,
             cost: Int,
             prompt: String,
-        ): String = "reward-${created.size + 1}".also { created += Made(it, title, cost) }
+        ): String? {
+            if (refuse || created.size >= refuseAfter) {
+                refused.incrementAndGet()
+                return null
+            }
+            return "reward-${created.size + 1}".also { created += Made(it, title, cost) }
+        }
 
         override suspend fun delete(token: String, broadcasterId: String, rewardId: String): Boolean =
             deleted.add(rewardId)

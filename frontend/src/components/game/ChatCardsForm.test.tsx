@@ -51,7 +51,10 @@ function renderForm(settings: ChatCardsView, options: Options = {}) {
 
 const DOOR = 'Le tchat de kameto peut créer des cartes'
 
-/** The points mode with one pile open, pointed at a reward already on the channel. */
+/**
+ * The points mode with one pile open. A blank id means the game is to build the reward,
+ * under the default name the server falls back on for an empty box.
+ */
 function chatCardsOn(rewardId: string): ChatCardsView {
   return rules({
     access: 'CHANNEL_POINTS',
@@ -167,12 +170,47 @@ describe('ChatCardsForm', () => {
     })
   })
 
-  it('has nothing to save until something actually changed', async () => {
+  it('says nothing is pending until something actually changed', async () => {
     renderForm(rules({ access: 'CHANNEL_POINTS' }))
 
-    expect(screen.getByRole('button', { name: 'Enregistrer les récompenses' })).toBeDisabled()
     expect(screen.queryByText(/Pas encore posées/)).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Annuler' })).not.toBeInTheDocument()
+  })
+
+  // The settings go down the game socket and the rewards go up on Twitch afterwards, so
+  // the only honest confirmation is reading the channel back and finding them there.
+  it('confirms a save only once the reward is actually on the channel', async () => {
+    renderForm(chatCardsOn(''))
+    twitchRewards.mockResolvedValue([
+      standing({ id: 'made', title: 'Écrire une situation', managed: true }),
+    ])
+
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer les récompenses' }))
+
+    expect(await screen.findByText(/C'est posé sur votre chaîne/)).toBeInTheDocument()
+    // Reading it back is also what refreshes the picker.
+    expect(twitchRewards.mock.calls.length).toBeGreaterThan(1)
+  })
+
+  it('says which reward Twitch never posted, and lets the host try again', async () => {
+    renderForm(chatCardsOn(''))
+
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer les récompenses' }))
+
+    expect(await screen.findByText(/n'a pas posé la récompense « situation »/, undefined, {
+      timeout: 6000,
+    })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Enregistrer les récompenses' })).toBeEnabled()
+  }, 10000)
+
+  it('lets the host press save again when nothing has changed', async () => {
+    const { onChange } = renderForm(rules({ access: 'CHANNEL_POINTS' }))
+
+    const button = screen.getByRole('button', { name: 'Enregistrer les récompenses' })
+    expect(button).toBeEnabled()
+    await userEvent.click(button)
+
+    expect(onChange).toHaveBeenCalledTimes(1)
   })
 
   it('throws an unsaved edit away on demand', async () => {

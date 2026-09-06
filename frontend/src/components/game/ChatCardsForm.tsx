@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type {
   ChannelRewardView,
   ChatCardAccess,
@@ -151,22 +151,24 @@ function useChannelRewards(wanted: boolean) {
   const [rewards, setRewards] = useState<ChannelRewardView[]>([])
   const [error, setError] = useState<string | null>(null)
 
-  const reload = useCallback(() => {
-    if (!wanted) return
-    sessionApi
-      .twitchRewards()
-      .then((found) => {
-        setRewards(found)
-        setError(null)
-      })
-      .catch(() =>
-        setError(
-          "Les récompenses de la chaîne n'ont pas pu être lues. Les points de chaîne demandent une chaîne affiliée ou partenaire.",
-        ),
+  const reload = useCallback(async (): Promise<ChannelRewardView[]> => {
+    if (!wanted) return []
+    try {
+      const found = await sessionApi.twitchRewards()
+      setRewards(found)
+      setError(null)
+      return found
+    } catch {
+      setError(
+        "Les récompenses de la chaîne n'ont pas pu être lues. Les points de chaîne demandent une chaîne affiliée ou partenaire.",
       )
+      return []
+    }
   }, [wanted])
 
-  useEffect(reload, [reload])
+  useEffect(() => {
+    void reload()
+  }, [reload])
 
   return { rewards, error, reload }
 }
@@ -201,9 +203,16 @@ interface RewardsEditorProps {
   error: string | null
   disabled: boolean
   lockedBecause: string | null
-  onReload: () => void
+  onReload: () => Promise<ChannelRewardView[]>
   onApply: (patch: ChatCardsInput) => void
 }
+
+/** Where a save has got to. Nothing is claimed until the channel has been read back. */
+type SaveState = 'idle' | 'saving' | 'saved' | 'failed'
+
+/** How long to keep asking Twitch whether the rewards turned up, and how often. */
+const CONFIRM_TRIES = 6
+const CONFIRM_PAUSE = 500
 
 /**
  * The rewards of both piles, edited together and posted on the channel only when asked.
@@ -225,9 +234,39 @@ function RewardsEditor({
   onApply,
 }: RewardsEditorProps) {
   const [drafts, setDrafts] = useState<Drafts>(() => draftsOf(settings))
+  const [save, setSave] = useState<SaveState>('idle')
+  const [missing, setMissing] = useState<string[]>([])
+  const alive = useRef(true)
+  useEffect(() => () => { alive.current = false }, [])
+
   const dirty =
     !sameReward(drafts.situation, settings.situationReward) ||
     !sameReward(drafts.punchline, settings.punchlineReward)
+
+  /**
+   * Sends the rewards, then goes and looks.
+   *
+   * There is no reply to wait for: the settings travel down the game socket, and the server
+   * puts the rewards up on Twitch afterwards, in its own time. So the only honest way to
+   * tell the host it worked is to read their channel back and find them there — which is
+   * also what refreshes the pickers, since a reward just created belongs in the list.
+   */
+  const apply = async () => {
+    setSave('saving')
+    setMissing([])
+    onApply({ situationReward: drafts.situation, punchlineReward: drafts.punchline })
+    for (let tries = 0; tries < CONFIRM_TRIES; tries++) {
+      await pause(CONFIRM_PAUSE)
+      if (!alive.current) return
+      const gaps = absent(drafts, settings, await onReload())
+      if (!alive.current) return
+      if (gaps.length === 0) return setSave('saved')
+      if (tries === CONFIRM_TRIES - 1) {
+        setMissing(gaps)
+        setSave('failed')
+      }
+    }
+  }
 
   // The table wins whenever there is nothing of the host's own to lose — a guest watching
   // always follows it, and so does a host who has no unsaved edit in front of them.
@@ -265,30 +304,53 @@ function RewardsEditor({
       )}
 
       {!disabled && (
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            disabled={!dirty}
-            onClick={() =>
-              onApply({ situationReward: drafts.situation, punchlineReward: drafts.punchline })
-            }
-            className="sketch-pill bg-[#772ce8] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-40"
-          >
-            Enregistrer les récompenses
-          </button>
-          {dirty && (
-            <>
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Never locked on "nothing changed": a save that went wrong leaves the boxes
+                looking right, and the host must be able to simply press it again. */}
+            <button
+              type="button"
+              disabled={save === 'saving'}
+              onClick={apply}
+              className="sketch-pill bg-[#772ce8] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-40"
+            >
+              {save === 'saving' ? 'Enregistrement…' : 'Enregistrer les récompenses'}
+            </button>
+            {dirty && save !== 'saving' && (
               <button
                 type="button"
-                onClick={() => setDrafts(draftsOf(settings))}
+                onClick={() => {
+                  setDrafts(draftsOf(settings))
+                  setSave('idle')
+                }}
                 className="sketch-pill bg-ink/5 px-4 py-2 text-sm font-semibold transition hover:bg-ink/10"
               >
                 Annuler
               </button>
+            )}
+            {dirty && save === 'idle' && (
               <span className="text-xs font-semibold text-honey">
                 Pas encore posées sur votre chaîne.
               </span>
-            </>
+            )}
+          </div>
+
+          {save === 'saving' && (
+            <p className="text-xs text-ink/65">
+              Envoi à Twitch, puis vérification sur votre chaîne…
+            </p>
+          )}
+          {save === 'saved' && (
+            <p className="text-xs font-semibold text-mint">
+              C'est posé sur votre chaîne : vos spectateurs peuvent échanger.
+            </p>
+          )}
+          {save === 'failed' && (
+            <p className="text-xs leading-relaxed text-punch">
+              Twitch n'a pas posé {missing.join(' ni ')}. Le plus souvent, une récompense du même
+              nom existe déjà sur la chaîne : changez le nom, ou supprimez l'autre, puis
+              réessayez.
+            </p>
           )}
         </div>
       )}
@@ -307,6 +369,32 @@ function draftsOf(settings: ChatCardsView): Drafts {
 
 function sameReward(a: ChatCardRewardView, b: ChatCardRewardView): boolean {
   return a.id === b.id && a.title === b.title && a.cost === b.cost
+}
+
+const DEFAULT_TITLES = { situation: 'Écrire une situation', punchline: 'Écrire une réponse' }
+
+/**
+ * Which of the wanted rewards are not on the channel, named as the host would say them.
+ *
+ * A picked reward has to still be there; one the game was asked to build has to have shown
+ * up as its own — the server falls back on the default name for an empty box, exactly as
+ * this does, so the two are looking for the same thing.
+ */
+function absent(drafts: Drafts, settings: ChatCardsView, list: ChannelRewardView[]): string[] {
+  const gaps: string[] = []
+  const look = (reward: ChatCardRewardView, fallback: string, said: string) => {
+    const there = reward.id
+      ? list.some((it) => it.id === reward.id)
+      : list.some((it) => it.managed && it.title === (reward.title.trim() || fallback))
+    if (!there) gaps.push(said)
+  }
+  if (settings.situations) look(drafts.situation, DEFAULT_TITLES.situation, 'la récompense « situation »')
+  if (settings.punchlines) look(drafts.punchline, DEFAULT_TITLES.punchline, 'la récompense « réponse »')
+  return gaps
+}
+
+function pause(millis: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, millis))
 }
 
 interface RewardProps {
