@@ -411,6 +411,11 @@ l'identique**. Le jeu ne peut pas supprimer celle d'origine — même règle —
 streamer de le faire dans son tableau de bord ; le salon l'attend et le lui rappelle tant
 qu'elle est encore là, puisque Twitch refuse deux récompenses du même nom.
 
+Le nom, le prix et le choix d'une récompense ne partent **que lorsque l'hôte les enregistre** :
+poser une récompense, c'est retirer l'ancienne et en créer une autre sur la chaîne, ce qu'on ne
+veut pas faire à chaque lettre tapée. Tant que rien n'est enregistré, le salon le dit — « pas
+encore posées sur votre chaîne » — et propose d'annuler.
+
 Sur une récompense que le jeu gère, il peut **rendre les points** : une carte trop courte,
 arrivée après la fin, ou au-delà des deux cents de la partie, annule l'échange au lieu de
 l'encaisser pour rien.

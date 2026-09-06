@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ChannelRewardView, ChatCardsInput, ChatCardsView } from '../../api/types'
@@ -147,18 +147,44 @@ describe('ChatCardsForm', () => {
 
   // A reward is a real thing on a real channel, so what is typed only reaches the table
   // once the host stops typing — the viewers must not watch it flicker letter by letter.
-  it('renames a reward once the host stops typing, and leaves the other alone', async () => {
+  // A reward is a real thing on a real channel: the server takes the old one down and puts
+  // a new one up on every change, so nothing may leave until the host says it is finished.
+  it('keeps a rename to itself until the host saves it', async () => {
     const { onChange } = renderForm(rules({ access: 'CHANNEL_POINTS' }))
 
     await userEvent.type(screen.getByLabelText('Nom de la récompense « situation »'), '!')
-    expect(onChange).not.toHaveBeenCalled()
 
-    await waitFor(() =>
-      expect(onChange).toHaveBeenCalledWith({
-        situationReward: { id: '', title: 'Écrire une situation!', cost: 500 },
-      }),
-    )
+    expect(onChange).not.toHaveBeenCalled()
+    expect(await screen.findByText(/Pas encore posées sur votre chaîne/)).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer les récompenses' }))
+
+    // Both piles travel together: one message, one reward rebuild.
     expect(onChange).toHaveBeenCalledTimes(1)
+    expect(onChange).toHaveBeenCalledWith({
+      situationReward: { id: '', title: 'Écrire une situation!', cost: 500 },
+      punchlineReward: { id: '', title: 'Écrire une réponse', cost: 500 },
+    })
+  })
+
+  it('has nothing to save until something actually changed', async () => {
+    renderForm(rules({ access: 'CHANNEL_POINTS' }))
+
+    expect(screen.getByRole('button', { name: 'Enregistrer les récompenses' })).toBeDisabled()
+    expect(screen.queryByText(/Pas encore posées/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Annuler' })).not.toBeInTheDocument()
+  })
+
+  it('throws an unsaved edit away on demand', async () => {
+    const { onChange } = renderForm(rules({ access: 'CHANNEL_POINTS' }))
+
+    await userEvent.type(screen.getByLabelText('Nom de la récompense « situation »'), '!')
+    await userEvent.click(screen.getByRole('button', { name: 'Annuler' }))
+
+    expect(screen.getByLabelText('Nom de la récompense « situation »')).toHaveValue(
+      'Écrire une situation',
+    )
+    expect(onChange).not.toHaveBeenCalled()
   })
 
   it('offers the rewards already on the channel, and adopts the one picked', async () => {
@@ -167,13 +193,16 @@ describe('ChatCardsForm', () => {
 
     const picker = await screen.findByLabelText('Récompense « situation »')
     await userEvent.selectOptions(picker, 'reward-mine')
-
-    // A pick has no next keystroke to wait for, so it goes straight through.
-    expect(onChange).toHaveBeenCalledWith({
-      situationReward: { id: 'reward-mine', title: 'Ma carte', cost: 1000 },
-    })
     // Adopting one means there is nothing left to name or price here.
     expect(screen.queryByLabelText('Nom de la récompense « situation »')).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer les récompenses' }))
+
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        situationReward: { id: 'reward-mine', title: 'Ma carte', cost: 1000 },
+      }),
+    )
   })
 
   it('says a reward it owns will be settled and refunded on its own', async () => {
@@ -202,10 +231,11 @@ describe('ChatCardsForm', () => {
     const { onChange } = renderForm(chatCardsOn('reward-theirs'))
 
     await userEvent.click(await screen.findByRole('button', { name: /La recréer à l'identique/ }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer les récompenses' }))
 
-    expect(onChange).toHaveBeenCalledWith({
-      situationReward: { id: '', title: 'La leur', cost: 250 },
-    })
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ situationReward: { id: '', title: 'La leur', cost: 250 } }),
+    )
   })
 
   it('says so while the reward being rebuilt is still standing on the channel', async () => {

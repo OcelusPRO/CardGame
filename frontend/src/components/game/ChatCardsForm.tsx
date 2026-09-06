@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type {
   ChannelRewardView,
   ChatCardAccess,
@@ -123,31 +123,15 @@ export function ChatCardsForm({
           {askSignIn && <Reconnect />}
 
           {showRewards && (
-            <div className="flex flex-col gap-3">
-              {channel.error && <p className="text-xs leading-relaxed text-honey">{channel.error}</p>}
-              {settings.situations && (
-                <Reward
-                  pile="situation"
-                  reward={settings.situationReward}
-                  standing={channel.rewards}
-                  disabled={disabled}
-                  lockedBecause={lockedBecause}
-                  onReload={channel.reload}
-                  onChange={(situationReward) => onChange({ situationReward })}
-                />
-              )}
-              {settings.punchlines && (
-                <Reward
-                  pile="réponse"
-                  reward={settings.punchlineReward}
-                  standing={channel.rewards}
-                  disabled={disabled}
-                  lockedBecause={lockedBecause}
-                  onReload={channel.reload}
-                  onChange={(punchlineReward) => onChange({ punchlineReward })}
-                />
-              )}
-            </div>
+            <RewardsEditor
+              settings={settings}
+              standing={channel.rewards}
+              error={channel.error}
+              disabled={disabled}
+              lockedBecause={lockedBecause}
+              onReload={channel.reload}
+              onApply={onChange}
+            />
           )}
 
           <p className="text-xs leading-relaxed text-ink/65">
@@ -210,11 +194,125 @@ function Reconnect() {
   )
 }
 
+interface RewardsEditorProps {
+  settings: ChatCardsView
+  /** What is already standing on the channel, to pick from. */
+  standing: ChannelRewardView[]
+  error: string | null
+  disabled: boolean
+  lockedBecause: string | null
+  onReload: () => void
+  onApply: (patch: ChatCardsInput) => void
+}
+
+/**
+ * The rewards of both piles, edited together and posted on the channel only when asked.
+ *
+ * Nothing here reaches the table on its own, and that is the point: a reward is a real
+ * thing standing on a real channel, and the server takes the old one down and puts a new
+ * one up whenever its name or its price changes. Pushing as the host types would have the
+ * viewers watch a reward flicker in and out once per keystroke, and would hammer Twitch for
+ * a name that is not finished being written. So edits stay here until the button is
+ * pressed, and the button says plainly that they are not on the channel yet.
+ */
+function RewardsEditor({
+  settings,
+  standing,
+  error,
+  disabled,
+  lockedBecause,
+  onReload,
+  onApply,
+}: RewardsEditorProps) {
+  const [drafts, setDrafts] = useState<Drafts>(() => draftsOf(settings))
+  const dirty =
+    !sameReward(drafts.situation, settings.situationReward) ||
+    !sameReward(drafts.punchline, settings.punchlineReward)
+
+  // The table wins whenever there is nothing of the host's own to lose — a guest watching
+  // always follows it, and so does a host who has no unsaved edit in front of them.
+  useEffect(() => {
+    if (disabled || !dirty) setDrafts(draftsOf(settings))
+    // Deliberately keyed on the saved values alone: re-syncing on every render would
+    // wipe the edit the host is in the middle of making.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [disabled, settings.situationReward, settings.punchlineReward])
+
+  return (
+    <div className="flex flex-col gap-3">
+      {error && <p className="text-xs leading-relaxed text-honey">{error}</p>}
+      {settings.situations && (
+        <Reward
+          pile="situation"
+          reward={drafts.situation}
+          standing={standing}
+          disabled={disabled}
+          lockedBecause={lockedBecause}
+          onReload={onReload}
+          onChange={(situation) => setDrafts({ ...drafts, situation })}
+        />
+      )}
+      {settings.punchlines && (
+        <Reward
+          pile="réponse"
+          reward={drafts.punchline}
+          standing={standing}
+          disabled={disabled}
+          lockedBecause={lockedBecause}
+          onReload={onReload}
+          onChange={(punchline) => setDrafts({ ...drafts, punchline })}
+        />
+      )}
+
+      {!disabled && (
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            disabled={!dirty}
+            onClick={() =>
+              onApply({ situationReward: drafts.situation, punchlineReward: drafts.punchline })
+            }
+            className="sketch-pill bg-[#772ce8] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-40"
+          >
+            Enregistrer les récompenses
+          </button>
+          {dirty && (
+            <>
+              <button
+                type="button"
+                onClick={() => setDrafts(draftsOf(settings))}
+                className="sketch-pill bg-ink/5 px-4 py-2 text-sm font-semibold transition hover:bg-ink/10"
+              >
+                Annuler
+              </button>
+              <span className="text-xs font-semibold text-honey">
+                Pas encore posées sur votre chaîne.
+              </span>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+interface Drafts {
+  situation: ChatCardRewardView
+  punchline: ChatCardRewardView
+}
+
+function draftsOf(settings: ChatCardsView): Drafts {
+  return { situation: settings.situationReward, punchline: settings.punchlineReward }
+}
+
+function sameReward(a: ChatCardRewardView, b: ChatCardRewardView): boolean {
+  return a.id === b.id && a.title === b.title && a.cost === b.cost
+}
+
 interface RewardProps {
   /** Which pile it feeds, said as the viewers would read it. */
   pile: string
   reward: ChatCardRewardView
-  /** What is already standing on the channel, to pick from. */
   standing: ChannelRewardView[]
   disabled: boolean
   lockedBecause: string | null
@@ -222,42 +320,17 @@ interface RewardProps {
   onChange: (reward: ChatCardRewardView) => void
 }
 
-/** How long a host may keep typing a reward name before the table hears about it. */
-const TYPING_PAUSE = 400
-
 /**
- * Which reward feeds this pile: one already on the channel, or one the game builds.
- *
- * What is typed is held here and pushed after a pause, which is not a nicety: a reward is a
- * real thing standing on a real channel, and the server puts up a new one whenever its name
- * or its price changes. Sending a keystroke at a time would have the viewers watch a reward
- * flicker in and out twenty times while the host types its name. A pick, having no next
- * keystroke to wait for, goes straight through.
+ * Which reward feeds this pile: one already on the channel, or one the game builds. Purely
+ * a set of boxes — what becomes of them is [RewardsEditor]'s business.
  */
 function Reward({ pile, reward, standing, disabled, lockedBecause, onReload, onChange }: RewardProps) {
-  const [draft, setDraft] = useState(reward)
-  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-
-  // A guest is watching the host choose, so their boxes follow the table. The host's own do
-  // not: a snapshot landing mid-word would take the cursor with it.
-  useEffect(() => {
-    if (disabled) setDraft(reward)
-  }, [disabled, reward])
-  useEffect(() => () => clearTimeout(timer.current), [])
-
-  const push = (next: ChatCardRewardView, now = false) => {
-    setDraft(next)
-    clearTimeout(timer.current)
-    if (now) onChange(next)
-    else timer.current = setTimeout(() => onChange(next), TYPING_PAUSE)
-  }
-
-  const picked = standing.find((it) => it.id === draft.id)
+  const picked = standing.find((it) => it.id === reward.id)
   const ours = standing.filter((it) => it.managed)
   const theirs = standing.filter((it) => !it.managed)
   // The host asked to rebuild a reward whose original is still standing. Twitch refuses two
   // rewards of the same name, so nothing can happen until they delete it themselves.
-  const clashing = draft.id === '' && theirs.find((it) => it.title === draft.title.trim())
+  const clashing = reward.id === '' && theirs.find((it) => it.title === reward.title.trim())
 
   return (
     <fieldset title={lockedBecause ?? undefined} className="flex flex-col gap-2">
@@ -272,15 +345,14 @@ function Reward({ pile, reward, standing, disabled, lockedBecause, onReload, onC
           </span>
           <select
             aria-label={`Récompense « ${pile} »`}
-            value={draft.id}
+            value={reward.id}
             disabled={disabled}
             onChange={(event) => {
               const chosen = standing.find((it) => it.id === event.target.value)
-              push(
+              onChange(
                 chosen
                   ? { id: chosen.id, title: chosen.title, cost: chosen.cost }
                   : { id: '', title: reward.title, cost: reward.cost },
-                true,
               )
             }}
             className="sketch-input w-64 bg-paper px-3 py-2 text-sm outline-none focus:border-punch disabled:opacity-40"
@@ -307,29 +379,29 @@ function Reward({ pile, reward, standing, disabled, lockedBecause, onReload, onC
           </select>
         </label>
 
-        {draft.id === '' && (
+        {reward.id === '' && (
           <>
             <label className={`flex flex-col gap-1 ${lockedBecause ? 'cursor-help' : ''}`}>
               <span className="text-xs font-semibold uppercase tracking-wider text-ink/60">Nom</span>
               <input
                 type="text"
                 aria-label={`Nom de la récompense « ${pile} »`}
-                value={draft.title}
+                value={reward.title}
                 maxLength={45}
                 disabled={disabled}
-                onChange={(event) => push({ ...draft, title: event.target.value })}
+                onChange={(event) => onChange({ ...reward, title: event.target.value })}
                 className="sketch-input w-56 bg-paper px-3 py-2 text-sm outline-none focus:border-punch disabled:opacity-40"
               />
             </label>
             <NumberBox
               label="Points"
               name={`Points de la récompense « ${pile} »`}
-              value={draft.cost}
+              value={reward.cost}
               min={1}
               max={1000000}
               disabled={disabled}
               lockedBecause={lockedBecause}
-              onChange={(cost) => push({ ...draft, cost })}
+              onChange={(cost) => onChange({ ...reward, cost })}
             />
           </>
         )}
@@ -347,7 +419,7 @@ function Reward({ pile, reward, standing, disabled, lockedBecause, onReload, onC
         <Unmanaged
           reward={picked}
           disabled={disabled}
-          onRebuild={() => push({ id: '', title: picked.title, cost: picked.cost }, true)}
+          onRebuild={() => onChange({ id: '', title: picked.title, cost: picked.cost })}
         />
       )}
 
