@@ -187,7 +187,7 @@ export function GamePage() {
           chime={game.phase === 'SUBMITTING' || game.phase === 'SELECTING'}
         />
 
-        <GameBoard game={game} send={send} liveChatVotes={chatVotes} />
+        <GameBoard game={game} me={me} send={send} liveChatVotes={chatVotes} />
       </main>
 
       <aside className="order-2 w-full lg:order-1 lg:w-72 lg:shrink-0 xl:w-80">

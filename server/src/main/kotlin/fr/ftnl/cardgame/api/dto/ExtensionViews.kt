@@ -19,10 +19,19 @@ data class ExtensionStateView(
     val access: String = "OFF",
     /** The bits products the panel may offer, cheapest first. Empty outside the bits mode. */
     val products: List<ExtensionProductView> = emptyList(),
+    /**
+     * The channel point rewards to send the viewer to, in the points mode. A redemption
+     * never reaches an extension, so all the panel can do is name them.
+     */
+    val rewards: List<ExtensionRewardView> = emptyList(),
     /** How many cards the chat has already put on this table, and the ceiling. */
     val written: Int = 0,
     val limit: Int = 0,
 )
+
+/** One channel point reward standing on the channel, as the panel needs to name it. */
+@Serializable
+data class ExtensionRewardView(val title: String, val cost: Int)
 
 /** One bits product, as the panel needs it to draw a button. */
 @Serializable

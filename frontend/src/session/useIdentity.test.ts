@@ -13,6 +13,8 @@ function discordUser(username: string): MeView {
     isAdmin: false,
     discordLoginAvailable: true,
     twitchLoginAvailable: true,
+  twitchExtensionAvailable: false,
+  twitchRewardsAuthorized: false,
   }
 }
 
@@ -26,6 +28,8 @@ function twitchUser(username: string): MeView {
     isAdmin: false,
     discordLoginAvailable: true,
     twitchLoginAvailable: true,
+  twitchExtensionAvailable: false,
+  twitchRewardsAuthorized: false,
   }
 }
 
@@ -36,6 +40,8 @@ const anonymous: MeView = {
   isAdmin: false,
   discordLoginAvailable: true,
   twitchLoginAvailable: true,
+  twitchExtensionAvailable: false,
+  twitchRewardsAuthorized: false,
 }
 
 describe('useIdentity', () => {

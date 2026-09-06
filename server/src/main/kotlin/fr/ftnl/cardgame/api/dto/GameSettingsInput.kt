@@ -31,5 +31,17 @@ data class ChatCardsInput(
     val situations: Boolean? = null,
     val punchlines: Boolean? = null,
     val minBits: Int? = null,
-    val rewardId: String? = null,
+    val situationReward: ChatCardRewardInput? = null,
+    val punchlineReward: ChatCardRewardInput? = null,
+)
+
+/**
+ * A reward the host is choosing, renaming or repricing; any part may come on its own.
+ * An empty [id] switches back to a reward the game creates itself.
+ */
+@Serializable
+data class ChatCardRewardInput(
+    val id: String? = null,
+    val title: String? = null,
+    val cost: Int? = null,
 )

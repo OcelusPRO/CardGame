@@ -1,5 +1,5 @@
 import { api } from './client'
-import type { AnswerMode, CardPackView, MeView } from './types'
+import type { AnswerMode, CardPackView, ChannelRewardView, MeView } from './types'
 
 /** Who the browser is, and which packs it may play with. */
 export const sessionApi = {
@@ -17,4 +17,10 @@ export const sessionApi = {
     const suffix = query.toString()
     return api.get<CardPackView[]>(`/api/packs${suffix ? `?${suffix}` : ''}`)
   },
+  /**
+   * The channel point rewards already standing on the signed in host's channel. Only ever
+   * asked for by a host who opened their points to the table: it needs their consent, and
+   * answers 409 without it.
+   */
+  twitchRewards: () => api.get<ChannelRewardView[]>('/api/twitch/rewards'),
 }

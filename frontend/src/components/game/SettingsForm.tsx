@@ -5,7 +5,6 @@ import type {
   SelectionFormat,
   SelectionMode,
 } from '../../api/types'
-import { ChatCardsForm } from './ChatCardsForm'
 
 interface Props {
   settings: GameSettingsView
@@ -17,7 +16,8 @@ interface Props {
   onChange: (patch: GameSettingsInput) => void
 }
 
-const NOT_HOST = "Seul l'hôte peut changer les règles."
+/** Why a control is locked. Shared with whatever else the lobby locks the same way. */
+export const NOT_HOST = "Seul l'hôte peut changer les règles."
 
 /**
  * The host control panel of the lobby. Every change is pushed live to the table.
@@ -25,6 +25,10 @@ const NOT_HOST = "Seul l'hôte peut changer les règles."
  * A rule that cannot apply is not greyed out, it is simply absent: no card count in the
  * write-your-own mode, no unanimity bonus when a single czar decides, and nothing about
  * Twitch until the host has actually signed in with it.
+ *
+ * What the viewers may *write* is not here but in the paquet, next to the packs and the
+ * cards the host types in: it is a question about where the cards come from, not about how
+ * a round is played.
  */
 export function SettingsForm({
   settings,
@@ -58,16 +62,6 @@ export function SettingsForm({
         options={judging}
         onSelect={(mode) => onChange({ selectionMode: mode as SelectionMode })}
       />
-
-      {hostTwitchLogin && (
-        <ChatCardsForm
-          settings={settings.chatCards}
-          disabled={disabled}
-          lockedBecause={lockedBecause}
-          hostTwitchLogin={hostTwitchLogin}
-          onChange={(chatCards) => onChange({ chatCards })}
-        />
-      )}
 
       <Choice
         label="Comment ?"

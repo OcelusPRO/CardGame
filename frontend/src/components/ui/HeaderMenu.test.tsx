@@ -18,6 +18,8 @@ const connected: MeView = {
   isAdmin: false,
   discordLoginAvailable: true,
   twitchLoginAvailable: true,
+  twitchExtensionAvailable: false,
+  twitchRewardsAuthorized: false,
 }
 
 const signedOut: MeView = {

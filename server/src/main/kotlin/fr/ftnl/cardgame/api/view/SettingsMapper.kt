@@ -1,10 +1,13 @@
 package fr.ftnl.cardgame.api.view
 
+import fr.ftnl.cardgame.api.dto.ChatCardRewardInput
+import fr.ftnl.cardgame.api.dto.ChatCardRewardView
 import fr.ftnl.cardgame.api.dto.ChatCardsView
 import fr.ftnl.cardgame.api.dto.GameSettingsInput
 import fr.ftnl.cardgame.api.dto.GameSettingsView
 import fr.ftnl.cardgame.domain.game.AnswerMode
 import fr.ftnl.cardgame.domain.game.ChatCardAccess
+import fr.ftnl.cardgame.domain.game.ChatCardReward
 import fr.ftnl.cardgame.domain.game.ChatCardSettings
 import fr.ftnl.cardgame.domain.game.GameSettings
 import fr.ftnl.cardgame.domain.game.ScoringSettings
@@ -56,7 +59,8 @@ object SettingsMapper {
             situations = settings.chatCards.situations,
             punchlines = settings.chatCards.punchlines,
             minBits = settings.chatCards.minBits,
-            rewardId = settings.chatCards.rewardId,
+            situationReward = rewardView(settings.chatCards.situationReward),
+            punchlineReward = rewardView(settings.chatCards.punchlineReward),
         ),
     )
 
@@ -67,9 +71,27 @@ object SettingsMapper {
             situations = patch.situations ?: current.situations,
             punchlines = patch.punchlines ?: current.punchlines,
             minBits = patch.minBits ?: current.minBits,
-            rewardId = patch.rewardId?.trim() ?: current.rewardId,
+            situationReward = mergeReward(current.situationReward, patch.situationReward),
+            punchlineReward = mergeReward(current.punchlineReward, patch.punchlineReward),
         )
     }
+
+    /**
+     * A reward the host renamed or repriced. The title is trimmed and cut to what Twitch
+     * accepts rather than refused: a host who pasted a long name gets a shorter reward,
+     * not an error in the middle of a lobby.
+     */
+    private fun mergeReward(current: ChatCardReward, patch: ChatCardRewardInput?): ChatCardReward {
+        if (patch == null) return current
+        return current.copy(
+            id = patch.id?.trim() ?: current.id,
+            title = patch.title?.trim()?.take(ChatCardReward.MAX_TITLE) ?: current.title,
+            cost = patch.cost?.coerceIn(ChatCardReward.MIN_COST, ChatCardReward.MAX_COST) ?: current.cost,
+        )
+    }
+
+    private fun rewardView(reward: ChatCardReward) =
+        ChatCardRewardView(reward.id, reward.title, reward.cost)
 
     private fun mergeScoring(current: ScoringSettings, input: GameSettingsInput) = current.copy(
         pointsPerVote = input.pointsPerVote ?: current.pointsPerVote,

@@ -2,6 +2,7 @@ package fr.ftnl.cardgame.api
 
 import fr.ftnl.cardgame.auth.AdminGuard
 import fr.ftnl.cardgame.auth.TwitchClient
+import fr.ftnl.cardgame.auth.TwitchHostTokens
 import fr.ftnl.cardgame.auth.TwitchUser
 import fr.ftnl.cardgame.auth.playerSession
 import fr.ftnl.cardgame.plugins.TWITCH_PROVIDER
@@ -19,8 +20,12 @@ import io.ktor.server.sessions.set
  * Optional Twitch sign in. It enriches the session with a name and a picture like Discord
  * does, hands the host the chat mode — a channel name is all the server needs to read a
  * chat — and opens the administration area for the allowlisted accounts.
+ *
+ * It also keeps the token, which is what lets a host open their channel points to the
+ * table without a second trip through Twitch. The token never touches the cookie: the
+ * browser carries an identity, and the right to act on a channel stays on the server.
  */
-fun Route.twitchAuthRoutes(twitch: TwitchClient, guard: AdminGuard) {
+fun Route.twitchAuthRoutes(twitch: TwitchClient, guard: AdminGuard, hostTokens: TwitchHostTokens) {
     authenticate(TWITCH_PROVIDER) {
 
         get("/auth/twitch") {
@@ -33,6 +38,12 @@ fun Route.twitchAuthRoutes(twitch: TwitchClient, guard: AdminGuard) {
             val user = twitch.me(token.accessToken)
                 ?: return@get call.respondRedirect("/?twitch=failed")
             call.remember(user, guard)
+            hostTokens.remember(
+                twitchId = user.id,
+                accessToken = token.accessToken,
+                refreshToken = token.refreshToken,
+                expiresInSeconds = token.expiresIn,
+            )
             call.respondRedirect("/?twitch=ok")
         }
     }

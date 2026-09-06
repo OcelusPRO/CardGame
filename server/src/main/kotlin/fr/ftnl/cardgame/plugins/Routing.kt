@@ -16,6 +16,7 @@ import fr.ftnl.cardgame.api.metricsRoutes
 import fr.ftnl.cardgame.api.spaRoutes
 import fr.ftnl.cardgame.api.twitchAuthRoutes
 import fr.ftnl.cardgame.api.twitchExtensionRoutes
+import fr.ftnl.cardgame.api.twitchRewardRoutes
 import fr.ftnl.cardgame.ws.gameSocketRoute
 import io.ktor.server.application.Application
 import io.ktor.server.routing.routing
@@ -25,12 +26,18 @@ fun Application.configureRouting(services: ApplicationServices) {
     routing {
         healthRoutes()
         metricsRoutes(services.metrics, services.config.metrics)
-        authRoutes(services.config.discord, services.config.twitch)
+        authRoutes(
+            services.config.discord,
+            services.config.twitch,
+            services.config.twitchExtension,
+            services.twitchHostTokens,
+        )
         if (services.config.discord.enabled) {
             discordAuthRoutes(services.discordClient, services.adminGuard)
         }
         if (services.config.twitch.enabled) {
-            twitchAuthRoutes(services.twitchClient, services.adminGuard)
+            twitchAuthRoutes(services.twitchClient, services.adminGuard, services.twitchHostTokens)
+            twitchRewardRoutes(services.twitchHostTokens, services.rewardCards, services.twitchRewards)
         }
         if (services.config.twitchExtension.enabled) {
             twitchExtensionRoutes(

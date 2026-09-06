@@ -17,4 +17,17 @@ data class MeView(
     val isAdmin: Boolean,
     val discordLoginAvailable: Boolean,
     val twitchLoginAvailable: Boolean = false,
+    /**
+     * Whether this server has a Twitch extension configured at all. Without one there is
+     * no panel for a viewer to cheer from, so the bits way of writing a card is not
+     * offered rather than offered and then found to lead nowhere.
+     */
+    val twitchExtensionAvailable: Boolean = false,
+    /**
+     * Whether the server still holds a Twitch token for this account, which is what the
+     * channel point mode runs on. Granted by the sign in itself, so it is true for anybody
+     * signed in — and false for a session opened before the game asked for that right, or
+     * after a restart, both of which signing in again fixes.
+     */
+    val twitchRewardsAuthorized: Boolean = false,
 )

@@ -78,9 +78,19 @@ data class GameState(
                 .distinct()
         }
 
-    /** The channels allowed to write cards right now; empty unless the host opened it. */
+    /**
+     * The channels whose chat may write cards right now; empty unless the host opened it.
+     *
+     * The channel point mode is absent on purpose: there the cards arrive through the
+     * rewards the game creates, and reading the room would only pick up the people
+     * talking about the reward rather than redeeming it.
+     */
     val cardChannels: List<String>
-        get() = if (settings.chatCards.enabled) twitchChannels else emptyList()
+        get() = if (settings.chatCards.readsChat) twitchChannels else emptyList()
+
+    /** The channel the game owns its channel point rewards on: the host's, and only theirs. */
+    val rewardChannelId: String?
+        get() = if (settings.chatCards.usesRewards) playerOf(hostId)?.twitchId else null
 
     /** How many cards this chat has already pushed into the game, both piles together. */
     val chatCardCount: Int

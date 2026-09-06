@@ -78,8 +78,13 @@ private fun discordSettings(config: DiscordConfig) = OAuthServerSettings.OAuth2S
 )
 
 /**
- * No scope at all: reading the signed in account through Helix needs none, and the chat
- * is read anonymously, so the player is never asked to grant anything.
+ * One scope, asked once, on the sign in itself.
+ *
+ * Reading the signed in account needs none and the chat is read anonymously, so this is
+ * asked for the one thing that genuinely cannot be done without it: owning the channel
+ * point rewards a host opens to their viewers. It rides here rather than on a consent of
+ * its own because a second flow means a second redirect URL to register and to get right,
+ * and the sign in already lands where the deployment actually lives.
  */
 private fun twitchSettings(config: TwitchConfig) = OAuthServerSettings.OAuth2ServerSettings(
     name = TWITCH_PROVIDER,
@@ -88,5 +93,5 @@ private fun twitchSettings(config: TwitchConfig) = OAuthServerSettings.OAuth2Ser
     requestMethod = HttpMethod.Post,
     clientId = config.clientId,
     clientSecret = config.clientSecret,
-    defaultScopes = emptyList(),
+    defaultScopes = listOf(TwitchConfig.REWARDS_SCOPE),
 )

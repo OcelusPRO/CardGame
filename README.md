@@ -303,8 +303,14 @@ La connexion Twitch est **facultative** elle aussi, et indépendante de Discord 
 n'avoir ni l'une ni l'autre, l'une des deux, ou les deux. Créez une application sur la
 [console développeur Twitch](https://dev.twitch.tv/console/apps), ajoutez
 `http://localhost:8080/auth/twitch/callback` comme *OAuth Redirect URL*, puis reportez
-l'identifiant et le secret dans `.env`. **Aucun scope n'est demandé** : lire le profil du compte
-connecté n'en réclame pas, et le tchat est lu anonymement.
+l'identifiant et le secret dans `.env`. **Une seule URL de retour**, celle du site.
+
+La connexion demande **un scope, et un seul** : `channel:manage:redemptions`. Lire le profil
+n'en réclame aucun et le tchat est lu anonymement ; celui-ci sert à l'unique chose qui ne peut
+pas s'en passer — poser les récompenses de points de chaîne qu'un hôte ouvre à ses spectateurs
+(voir [Le tchat écrit des cartes](#le-tchat-écrit-des-cartes)). Il est demandé à la connexion
+plutôt que dans un second passage : une seconde autorisation, c'est une seconde URL de retour
+à déclarer et à faire correspondre, alors que la connexion atterrit déjà là où le site vit.
 
 Une fois l'hôte connecté avec Twitch, la question **« Qui désigne la meilleure réponse ? »**
 gagne un troisième choix, à côté de « tout le monde vote » et du maître du jeu tournant :
@@ -361,25 +367,63 @@ dans le tchat rejoint le paquet où la table pioche, et une réponse celui d'où
 distribuées — l'idée d'un spectateur revient donc quelques minutes plus tard dans la main de
 quelqu'un, ce qui est tout l'intérêt.
 
-C'est **fermé par défaut**, et cela s'ouvre dans le salon, sous « Le tchat de *votre chaîne*
-écrit des cartes ». L'hôte choisit ce qui est ouvert — situations, réponses, ou les deux —
-et à quel prix :
+C'est **fermé par défaut**, et cela s'ouvre d'une case à cocher dans le salon : « Le tchat de
+*votre chaîne* peut créer des cartes ». Rien n'apparaît en dessous tant qu'elle est décochée.
+Une fois cochée, l'hôte choisit ce qui est ouvert — situations, réponses, ou les deux — et à
+quel prix :
 
 | Accès | Ce que le spectateur doit faire |
 | --- | --- |
 | **Ouvert à tous** | Rien : `!situation …` ou `!réponse …` dans le tchat |
-| **Points de chaîne** | Échanger une récompense qui demande un message, et y taper sa carte |
+| **Points de chaîne** | Échanger la récompense choisie par l'hôte, et écrire sa carte dans sa case |
 | **Bits** | Payer depuis le panneau de l'extension, à partir du minimum fixé par l'hôte |
 
-La syntaxe ne cherche pas la petite bête : la casse est libre, les accents sont facultatifs,
+Le réglage vit dans le panneau **« Paquet de cartes »** du salon, à côté des packs et des
+cartes que l'hôte tape lui-même : c'est une question de *provenance des cartes*, pas de règle
+de manche. Le mode **Bits** n'apparaît que si une extension est configurée sur le serveur —
+sans panneau, il n'y a nulle part où encaisser un cheer.
+
+Dans les modes qui passent par le tchat — ouvert à tous, et le cheer accompagné d'un message —
+la syntaxe ne cherche pas la petite bête : la casse est libre, les accents sont facultatifs,
 et les raccourcis `!situ` et `!rep` valent les formes longues — `!RÉPONSE`, `!Reponse` et
 `!rep` sont la même commande. Seul le premier mot compte, si bien qu'une phrase où traîne un
 `!reponse` reste une phrase.
 
-Le prix lui-même est fixé sur Twitch, par le streamer : le jeu vérifie seulement qu'il a été
-payé. Les deux étiquettes qui le disent — `bits` et `custom-reward-id` — voyagent sur le
-message IRC lui-même, si bien qu'aucun jeton, aucun webhook et aucune autorisation
-supplémentaire ne sont demandés à qui que ce soit.
+**Les bits** ne demandent rien à personne : l'étiquette `bits` voyage sur le message IRC
+lui-même, et un cheer depuis le panneau arrive avec un reçu signé par Twitch.
+
+**Les points de chaîne** passent par une vraie récompense, suivie par EventSub. Le spectateur
+écrit sa carte directement dans sa case : il n'a rien à taper dans le tchat. Le salon liste
+les récompenses déjà présentes sur la chaîne, et l'hôte choisit, pour chaque pile :
+
+| Choix | Ce que fait le jeu |
+| --- | --- |
+| **Une nouvelle** | Il la crée (nom et prix donnés ici), la suit, la règle, et la **retire** à la fin de la partie |
+| **Une récompense qu'il gère déjà** | Il la suit et la règle, et la **laisse en place** après la partie |
+| **Une récompense créée sur Twitch** | Il la suit et prend les cartes, mais **ne peut ni valider ni rembourser** |
+
+Cette dernière ligne est une règle de Twitch, pas un choix : *seule l'application qui a créé
+une récompense peut valider ou annuler un de ses échanges*. Une récompense faite dans le
+tableau de bord reste donc **lisible** — la carte arrive bien sur la table — mais ses échanges
+restent dans la file d'attente du streamer, à valider ou refuser à la main. Le salon le dit
+en toutes lettres avant qu'il choisisse, et lui propose l'alternative : **la recréer à
+l'identique**. Le jeu ne peut pas supprimer celle d'origine — même règle —, c'est donc au
+streamer de le faire dans son tableau de bord ; le salon l'attend et le lui rappelle tant
+qu'elle est encore là, puisque Twitch refuse deux récompenses du même nom.
+
+Sur une récompense que le jeu gère, il peut **rendre les points** : une carte trop courte,
+arrivée après la fin, ou au-delà des deux cents de la partie, annule l'échange au lieu de
+l'encaisser pour rien.
+
+Tout cela repose sur l'autorisation `channel:manage:redemptions`, accordée **à la connexion
+Twitch** : un hôte connecté peut donc utiliser le mode sans passage supplémentaire. Le jeton
+vit en mémoire du serveur, jamais dans un cookie ni en base — un redémarrage l'oublie, et le
+salon invite alors à se reconnecter. Les
+récompenses **créées par le jeu** sont posées quand la partie s'ouvre et retirées quand elle
+se termine ; une chaîne ne se retrouve jamais avec une récompense orpheline, et celles que
+l'hôte avait déjà ne sont jamais touchées. Twitch réserve les récompenses personnalisées aux
+chaînes affiliées ou partenaires : sur une chaîne qui ne l'est pas, le mode ne s'ouvre
+simplement pas, et le reste de la partie continue.
 
 Les garde-fous sont volontairement simples : une carte par spectateur et par lot de quelques
 secondes, **200 cartes au maximum pour toute la partie**, et une insertion mélangée à une
@@ -395,6 +439,9 @@ l'endroit où il tourne : l'identifiant de chaîne que Twitch signe dans le jeto
 spectateur. Le serveur retrouve la table à partir de cet identifiant seul, jamais à partir de
 ce que la page raconte, et un reçu de bits n'est cru que parce que Twitch l'a signé — puis
 il est **consommé**, une fois pour toutes.
+
+En mode points de chaîne le panneau ne fait que nommer les récompenses : un échange n'atteint
+jamais une extension, il va de la récompense au jeu.
 
 Le montage complet (console développeur, produits bits, CORS, envoi de l'archive) est dans
 [`twitch-extension/README.md`](twitch-extension/README.md).

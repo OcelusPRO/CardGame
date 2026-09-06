@@ -11,9 +11,9 @@ import kotlin.test.assertTrue
 /**
  * Reading a card out of a chat line, and deciding whether the viewer paid for it.
  *
- * The gate is Twitch's own — the `bits` and `custom-reward-id` tags ride on the very
- * message — so what is under test here is that a claim is never taken on trust and that an
- * ordinary sentence is never mistaken for a proposal.
+ * The gate is Twitch's own — the `bits` tag rides on the very message — so what is under
+ * test here is that a claim is never taken on trust and that an ordinary sentence is never
+ * mistaken for a proposal.
  */
 class ChatCardCommandTest {
 
@@ -112,14 +112,20 @@ class ChatCardCommandTest {
     }
 
     @Test
-    fun `channel points mode wants a redemption, and the right one when it is pinned`() {
-        val any = rules(ChatCardAccess.CHANNEL_POINTS)
-        val pinned = any.copy(rewardId = "reward-42")
+    fun `channel points never come through the chat, redemption tag or not`() {
+        val points = rules(ChatCardAccess.CHANNEL_POINTS)
 
-        assertFalse(ChatCardCommand.allows(any, line("!situation gratuite")))
-        assertTrue(ChatCardCommand.allows(any, line("!situation payée", rewardId = "whatever")))
-        assertFalse(ChatCardCommand.allows(pinned, line("!situation autre", rewardId = "reward-7")))
-        assertTrue(ChatCardCommand.allows(pinned, line("!situation la bonne", rewardId = "reward-42")))
+        // The game owns those rewards and reads them off EventSub, where a refused card
+        // can hand the points back. A line in the room is somebody talking about it.
+        assertFalse(ChatCardCommand.allows(points, line("!situation gratuite")))
+        assertFalse(ChatCardCommand.allows(points, line("!situation payée", rewardId = "reward-42")))
+    }
+
+    @Test
+    fun `a card written outside the chat carries no command to peel off`() {
+        assertEquals("Le pire, c'est ____.", ChatCardCommand.cardOf("  Le pire,   c'est ____.  "))
+        assertNull(ChatCardCommand.cardOf("ab"))
+        assertNull(ChatCardCommand.cardOf("a".repeat(ChatCardCommand.MAX_LENGTH + 1)))
     }
 
     @Test

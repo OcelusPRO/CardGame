@@ -12,13 +12,44 @@ export type AnswerMode = 'CARDS' | 'FREE_TEXT'
 /** What a viewer has to do before their idea is allowed onto the table. */
 export type ChatCardAccess = 'OFF' | 'EVERYONE' | 'CHANNEL_POINTS' | 'BITS'
 
+/**
+ * One channel point reward for a pile. A blank `id` means the game creates it, under the
+ * title and cost given here; a filled one names a reward already on the channel.
+ */
+export interface ChatCardRewardView {
+  id: string
+  title: string
+  cost: number
+}
+
+/**
+ * A reward already standing on the host's channel.
+ *
+ * `managed` is what the choice turns on: Twitch only lets the application that created a
+ * reward fulfil or cancel its redemptions, so a reward built in the streamer's dashboard
+ * can be read by the game but never answered for.
+ */
+export interface ChannelRewardView {
+  id: string
+  title: string
+  cost: number
+  managed: boolean
+}
+
 /** Whether — and at what price — the viewers may write cards into the game. */
 export interface ChatCardsView {
   access: ChatCardAccess
   situations: boolean
   punchlines: boolean
   minBits: number
-  rewardId: string
+  situationReward: ChatCardRewardView
+  punchlineReward: ChatCardRewardView
+}
+
+export interface ChatCardRewardInput {
+  id?: string
+  title?: string
+  cost?: number
 }
 
 export interface ChatCardsInput {
@@ -26,7 +57,8 @@ export interface ChatCardsInput {
   situations?: boolean
   punchlines?: boolean
   minBits?: number
-  rewardId?: string
+  situationReward?: ChatCardRewardInput
+  punchlineReward?: ChatCardRewardInput
 }
 
 export interface AvatarPartView {
@@ -214,6 +246,10 @@ export interface MeView {
   isAdmin: boolean
   discordLoginAvailable: boolean
   twitchLoginAvailable: boolean
+  /** Whether this server has a Twitch extension at all; without one there are no bits. */
+  twitchExtensionAvailable: boolean
+  /** Whether this Twitch account let the game own channel point rewards on its channel. */
+  twitchRewardsAuthorized: boolean
 }
 
 export interface CardPackView {

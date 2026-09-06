@@ -90,10 +90,16 @@ autorise aussi cette origine en CORS.
 
 ## Points de chaîne
 
-Une récompense de points de chaîne **n'arrive jamais jusqu'à une extension** : elle arrive
-dans le tchat, avec le message qui va avec. Dans ce mode, le panneau le dit et renvoie vers
-le tchat, où `!situation ...` fonctionne — le serveur y lit l'étiquette `custom-reward-id`
-que Twitch attache au message, ce qui lui suffit à savoir que la récompense a bien été payée.
+Une récompense de points de chaîne **n'arrive jamais jusqu'à une extension**. Dans ce mode le
+panneau ne fait donc que nommer les récompenses et leur prix, et renvoyer le spectateur vers
+la liste sous le tchat ; ce qu'il y écrit part directement au jeu.
 
-C'est aussi pour cela que le prix est réglé sur la chaîne, par le streamer : le jeu ne fait
-que vérifier qu'il a été payé.
+Ces récompenses n'ont pas à être créées à la main : dans le salon, l'hôte choisit pour chaque
+pile une récompense déjà sur sa chaîne, ou en fait créer une par le jeu — auquel cas elle est
+retirée à la fin de la partie. Le jeu suit les échanges par EventSub, et sur une récompense
+qu'il a créée il peut aussi **rendre les points** d'une carte que la table n'a pas prise.
+
+Sur une récompense créée dans le tableau de bord Twitch, il lit les échanges mais ne peut pas
+les valider : Twitch réserve cela à l'application qui a créé la récompense, et le streamer
+les valide donc lui-même. Rien de tout cela ne passe par l'extension, ni par son secret :
+c'est l'autorisation Twitch donnée par l'hôte dans le salon qui en répond.

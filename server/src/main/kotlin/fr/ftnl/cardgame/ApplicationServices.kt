@@ -7,6 +7,7 @@ import fr.ftnl.cardgame.auth.AdminGuard
 import fr.ftnl.cardgame.auth.AdultAccessGuard
 import fr.ftnl.cardgame.auth.DiscordClient
 import fr.ftnl.cardgame.auth.TwitchClient
+import fr.ftnl.cardgame.auth.TwitchHostTokens
 import fr.ftnl.cardgame.catalog.AdminCardService
 import fr.ftnl.cardgame.catalog.AdminPackService
 import fr.ftnl.cardgame.catalog.AdultAccessService
@@ -50,12 +51,17 @@ import fr.ftnl.cardgame.stats.UsageStatsWriter
 import fr.ftnl.cardgame.twitch.ChatVoteBoard
 import fr.ftnl.cardgame.twitch.ExtensionCardService
 import fr.ftnl.cardgame.twitch.ExtensionTokens
+import fr.ftnl.cardgame.twitch.HelixRewards
 import fr.ftnl.cardgame.twitch.TwitchAppTokens
 import fr.ftnl.cardgame.twitch.TwitchChannelIndex
 import fr.ftnl.cardgame.twitch.TwitchChatCards
 import fr.ftnl.cardgame.twitch.TwitchChatReader
 import fr.ftnl.cardgame.twitch.TwitchChatSocket
 import fr.ftnl.cardgame.twitch.TwitchChatVoting
+import fr.ftnl.cardgame.twitch.TwitchEventFeed
+import fr.ftnl.cardgame.twitch.TwitchEventSubSocket
+import fr.ftnl.cardgame.twitch.TwitchRewardCards
+import fr.ftnl.cardgame.twitch.TwitchRewards
 import fr.ftnl.cardgame.twitch.TwitchViewers
 import fr.ftnl.cardgame.twitch.ViewerPictures
 import fr.ftnl.cardgame.ws.ChatVoteBroadcaster
@@ -79,6 +85,7 @@ class ApplicationServices(
     sessionStore: GameSessionStore? = null,
     val clock: GameClock = SystemGameClock,
     chatReader: TwitchChatReader = TwitchChatSocket(httpClient, config.twitch.chatUrl),
+    eventFeed: TwitchEventFeed = TwitchEventSubSocket(httpClient),
 ) {
     private val redis: JedisPooled? =
         if (sessionStore == null && config.redis.enabled) JedisPooled(config.redis.url) else null
@@ -95,6 +102,9 @@ class ApplicationServices(
     val discordClient = DiscordClient(httpClient)
     val twitchClient = TwitchClient(httpClient, config.twitch.clientId)
     private val twitchTokens = TwitchAppTokens(httpClient, config.twitch)
+
+    /** Which hosts have opened their channel points to a table, and with what token. */
+    val twitchHostTokens = TwitchHostTokens(httpClient, config.twitch)
 
     /** Puts a name on an id, and turns a Twitch channel name into the id behind it. */
     val accounts: AccountLookup = AccountDirectory(discordClient, config.discord, twitchClient, twitchTokens)
@@ -178,6 +188,21 @@ class ApplicationServices(
         games.dispatch(code, command)
     }
 
+    /**
+     * The same viewers, paying in channel points. That road does not go through the chat
+     * at all: the game owns the rewards, reads the redemptions off EventSub, and settles
+     * each one — so a card the table refused hands the points back.
+     */
+    /** The rewards standing on a host's channel, which both the lobby and the table read. */
+    val twitchRewards: TwitchRewards = HelixRewards(httpClient, config.twitch.clientId)
+
+    val rewardCards = TwitchRewardCards(
+        rewards = twitchRewards,
+        feed = eventFeed,
+        tokens = twitchHostTokens,
+        scope = scope,
+    ) { code, command -> games.dispatch(code, command) }
+
     /** The faces under the answers; without Twitch credentials, voters keep their names. */
     private fun viewerPictures(): ViewerPictures =
         if (config.twitch.enabled) TwitchViewers(twitchClient, twitchTokens) else ViewerPictures.NONE
@@ -189,6 +214,7 @@ class ApplicationServices(
         games.addListener(idleReaper)
         games.addListener(chatVoting)
         games.addListener(chatCards)
+        games.addListener(rewardCards)
         games.addListener(chatVotes)
         games.addListener(twitchChannels)
         // The deck store follows the games it holds decks for, so an entry never outlives
@@ -216,6 +242,12 @@ class ApplicationServices(
         }
         gauge("cardgame.twitch.channels", "Twitch channels mapped to a table") {
             twitchChannels.size.toDouble()
+        }
+        gauge("cardgame.twitch.rewards", "Tables holding channel point rewards") {
+            rewardCards.size.toDouble()
+        }
+        gauge("cardgame.twitch.consents", "Hosts who opened their channel points") {
+            twitchHostTokens.size.toDouble()
         }
     }
 

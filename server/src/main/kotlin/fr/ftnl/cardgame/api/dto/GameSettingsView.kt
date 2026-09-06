@@ -38,5 +38,15 @@ data class ChatCardsView(
     val situations: Boolean = true,
     val punchlines: Boolean = true,
     val minBits: Int = 100,
-    val rewardId: String = "",
+    /** The rewards the game puts on the channel in the `CHANNEL_POINTS` mode. */
+    val situationReward: ChatCardRewardView = ChatCardRewardView(),
+    val punchlineReward: ChatCardRewardView = ChatCardRewardView(),
 )
+
+/**
+ * One channel point reward for a pile. A blank [id] means the game will create it, under
+ * the [title] and [cost] given here; a filled one names a reward already on the channel,
+ * whose title and cost are then Twitch's copy of them.
+ */
+@Serializable
+data class ChatCardRewardView(val id: String = "", val title: String = "", val cost: Int = 500)

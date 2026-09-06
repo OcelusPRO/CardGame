@@ -15,5 +15,13 @@ data class TwitchConfig(
 
     companion object {
         const val DEFAULT_CHAT_URL = "wss://irc-ws.chat.twitch.tv:443"
+
+        /**
+         * Creating the channel point rewards, following their redemptions and settling
+         * them are all the same right on Twitch, so this one scope is the whole ask. It
+         * rides on the sign in itself: one consent screen, on the one redirect URL the
+         * deployment already has registered.
+         */
+        const val REWARDS_SCOPE = "channel:manage:redemptions"
     }
 }

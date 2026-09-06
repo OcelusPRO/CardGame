@@ -7,4 +7,4 @@
  * console, under "Allowlist for URL Fetching Domains": the panel runs under a CSP that
  * blocks anything it has not been promised.
  */
-window.CARDGAME_API = 'https://sans-filtre.example'
+window.CARDGAME_API = 'https://sansfiltres.backse.at'

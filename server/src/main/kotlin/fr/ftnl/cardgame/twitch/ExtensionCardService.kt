@@ -2,6 +2,7 @@ package fr.ftnl.cardgame.twitch
 
 import fr.ftnl.cardgame.api.dto.ExtensionCardRequest
 import fr.ftnl.cardgame.api.dto.ExtensionProductView
+import fr.ftnl.cardgame.api.dto.ExtensionRewardView
 import fr.ftnl.cardgame.api.dto.ExtensionStateView
 import fr.ftnl.cardgame.config.TwitchExtensionConfig
 import fr.ftnl.cardgame.domain.card.CardId
@@ -11,6 +12,7 @@ import fr.ftnl.cardgame.domain.card.SituationCard
 import fr.ftnl.cardgame.domain.card.SituationText
 import fr.ftnl.cardgame.domain.engine.GameCommand
 import fr.ftnl.cardgame.domain.game.ChatCardAccess
+import fr.ftnl.cardgame.domain.game.ChatCardReward
 import fr.ftnl.cardgame.domain.game.ChatCardSettings
 import fr.ftnl.cardgame.domain.game.GameState
 import fr.ftnl.cardgame.game.DispatchResult
@@ -53,6 +55,7 @@ class ExtensionCardService(
             punchlines = rules.punchlines,
             access = rules.access.name,
             products = if (rules.access == ChatCardAccess.BITS) products(config, rules) else emptyList(),
+            rewards = if (rules.access == ChatCardAccess.CHANNEL_POINTS) rewards(rules) else emptyList(),
             written = game.chatCardCount,
             limit = ChatCardSettings.MAX_CARDS_PER_GAME,
         )
@@ -91,8 +94,8 @@ class ExtensionCardService(
      * Whether this viewer paid what the host is asking.
      *
      * Bits are settled here, against a receipt Twitch signed. Channel points are not: a
-     * redemption never reaches an extension, it reaches the chat — so in that mode the
-     * panel simply says so, and the viewer redeems the reward the usual way.
+     * redemption never reaches an extension — it reaches the game through EventSub — so in
+     * that mode the panel simply names the reward, and the viewer redeems it the usual way.
      */
     private fun paymentRefusal(
         viewer: ExtensionViewer,
@@ -105,7 +108,7 @@ class ExtensionCardService(
         ChatCardAccess.EVERYONE -> null
         ChatCardAccess.CHANNEL_POINTS -> refusedPayment(
             "USE_CHANNEL_POINTS",
-            "Sur cette chaîne, une carte se propose en échangeant la récompense de points de chaîne, dans le tchat.",
+            "Sur cette chaîne, une carte se propose en échangeant la récompense de points de chaîne.",
         )
         ChatCardAccess.BITS -> bitsRefusal(viewer, request, rules, config, tokens)
     }
@@ -160,6 +163,15 @@ class ExtensionCardService(
 
     private suspend fun gameOf(channelId: String): GameState? =
         channels.gameOf(channelId)?.let { games.find(it) }
+
+    /** The rewards actually standing on the channel, in the order the piles are offered. */
+    private fun rewards(rules: ChatCardSettings) = listOfNotNull(
+        rules.situationReward.takeIf { rules.situations }?.let { view(it, ChatCardReward.SITUATION) },
+        rules.punchlineReward.takeIf { rules.punchlines }?.let { view(it, ChatCardReward.PUNCHLINE) },
+    )
+
+    private fun view(reward: ChatCardReward, fallback: ChatCardReward) =
+        ExtensionRewardView(reward.title.ifBlank { fallback.title }, reward.cost)
 
     private fun products(config: TwitchExtensionConfig, rules: ChatCardSettings) = config.products
         .filterValues { it >= rules.minBits }

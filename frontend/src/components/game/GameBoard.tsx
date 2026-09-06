@@ -1,4 +1,4 @@
-import type { GameView } from '../../api/types'
+import type { GameView, MeView } from '../../api/types'
 import type { LiveChatVotes } from '../../game/gameStore'
 import type { ClientMessage } from '../../game/messages'
 import { messages } from '../../game/messages'
@@ -11,18 +11,21 @@ import { VotePanel } from './VotePanel'
 
 interface Props {
   game: GameView
+  /** Who the browser is; the lobby needs it to know what this server can offer. */
+  me?: MeView | null
   send: (message: ClientMessage) => void
   /** The running Twitch tally, which arrives apart from the snapshot. */
   liveChatVotes?: LiveChatVotes
 }
 
 /** Picks the screen matching the current step. The server decides, the client obeys. */
-export function GameBoard({ game, send, liveChatVotes }: Props) {
+export function GameBoard({ game, me, send, liveChatVotes }: Props) {
   switch (game.phase) {
     case 'LOBBY':
       return (
         <LobbyPanel
           game={game}
+          me={me}
           onSettings={(patch) => send(messages.settings(patch))}
           onDeck={(deck) => send(messages.deck(deck))}
         />

@@ -74,6 +74,14 @@ object ChatCardCommand {
         return ChatProposal(kind, body, line.viewerId, line.viewerName)
     }
 
+    /**
+     * A card written somewhere other than the chat — the box of a channel point reward,
+     * the extension panel — where there is no command to peel off and no cheermote glued
+     * on. Null when what came in is too short or too long to be a card at all.
+     */
+    fun cardOf(text: String): String? =
+        clean(text, stripCheermotes = false).takeIf { it.length in MIN_LENGTH..MAX_LENGTH }
+
     private fun kindOf(word: String): ChatCardKind? = when (plain(word)) {
         in SITUATIONS -> ChatCardKind.SITUATION
         in PUNCHLINES -> ChatCardKind.PUNCHLINE
@@ -91,17 +99,17 @@ object ChatCardCommand {
     }
 
     /**
-     * Whether this line paid what the host is asking. The price itself is set on Twitch —
-     * the streamer prices their own reward, and their own cheer — so all that is checked
-     * here is that Twitch says it was paid, and that it was the right reward when the host
-     * pinned one down.
+     * Whether this line paid what the host is asking. A cheer says so on the message
+     * itself, which is why the bits mode needs nothing but the tag.
+     *
+     * Channel points never come through here: the game owns those rewards and reads the
+     * redemptions through EventSub, where a card can be refused and the points handed
+     * back. A chat line in that mode is somebody talking about the reward.
      */
     fun allows(rules: ChatCardSettings, line: ChatLine): Boolean = when (rules.access) {
-        ChatCardAccess.OFF -> false
+        ChatCardAccess.OFF, ChatCardAccess.CHANNEL_POINTS -> false
         ChatCardAccess.EVERYONE -> true
         ChatCardAccess.BITS -> line.bits > 0 && line.bits >= rules.minBits
-        ChatCardAccess.CHANNEL_POINTS ->
-            line.rewardId != null && (rules.rewardId.isBlank() || rules.rewardId == line.rewardId)
     }
 
     /** Whether the pile this proposal is aimed at is open at all. */

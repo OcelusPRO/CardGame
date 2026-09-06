@@ -95,6 +95,13 @@ button.send {
   font-size: 13px;
 }
 
+/* The rewards standing on the channel, named under the explanation of the points mode. */
+.rewards {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+}
+
 .notice {
   margin: 0;
   padding: 8px 11px;

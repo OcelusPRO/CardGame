@@ -196,9 +196,17 @@
 
   function actions(game) {
     if (game.access === 'CHANNEL_POINTS') {
+      // A redemption never reaches an extension: it goes straight from the reward to the
+      // game. All the panel can usefully do is name the reward and its price.
+      const named = (game.rewards || [])
+        .map(function (reward) {
+          return '<li>' + escape(reward.title) + ' — <strong>' + reward.cost + '</strong> points</li>'
+        })
+        .join('')
       return (
         '<p class="pay">Sur cette chaîne, une carte se propose avec les <strong>points de chaîne</strong> :' +
-        ' échangez la récompense prévue, et tapez votre carte dans le tchat.</p>'
+        ' échangez la récompense sous le tchat, et écrivez votre carte dans sa case.</p>' +
+        (named ? '<ul class="rewards">' + named + '</ul>' : '')
       )
     }
     if (game.access === 'BITS') {
