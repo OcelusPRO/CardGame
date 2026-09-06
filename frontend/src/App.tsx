@@ -10,6 +10,7 @@ import { AnimationToggle } from './components/ui/AnimationToggle'
 import { ThemeToggle } from './components/ui/ThemeToggle'
 import { SoundToggle } from './components/ui/SoundToggle'
 import { AccountMenu } from './components/ui/AccountMenu'
+import { HeaderMenu } from './components/ui/HeaderMenu'
 import { useAnimationPref } from './session/useAnimationPref'
 import { useThemePref } from './session/useThemePref'
 import { useSoundPref } from './audio/useSoundPref'
@@ -58,11 +59,24 @@ export function App() {
             <img src={logo} alt="" className="h-9 w-auto" />
             Sans<span className="text-punch">Filtres</span>
           </Link>
-          <div className="flex items-center gap-2">
+          {/* Wide enough for the row, the four controls sit in the header; on a phone they
+              fold into one trigger so the site name keeps its width. */}
+          <div className="hidden items-center gap-2 sm:flex">
             <SoundToggle enabled={sound} onToggle={toggleSound} />
             <ThemeToggle dark={dark} onToggle={toggleTheme} />
             <AnimationToggle enabled={animate} onToggle={toggleAnimations} />
             <AccountMenu me={me} />
+          </div>
+          <div className="sm:hidden">
+            <HeaderMenu
+              me={me}
+              sound={sound}
+              onToggleSound={toggleSound}
+              dark={dark}
+              onToggleTheme={toggleTheme}
+              animate={animate}
+              onToggleAnimations={toggleAnimations}
+            />
           </div>
         </header>
 

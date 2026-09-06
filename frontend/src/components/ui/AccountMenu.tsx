@@ -3,7 +3,8 @@ import { AnimatePresence, motion } from 'motion/react'
 import { Link } from 'react-router-dom'
 import { sessionApi } from '../../api/session'
 import type { MeView } from '../../api/types'
-import { SignInDialog, type SignInProvider } from './SignInDialog'
+import { SignInDialog } from './SignInDialog'
+import { isSignedIn, nameOf, pictureOf, providersOf, signOut } from './accountInfo'
 
 interface Props {
   me: MeView | null
@@ -40,7 +41,7 @@ export function AccountMenu({ me }: Props) {
   if (!me) return null
 
   const offered = providersOf(me)
-  const signedIn = me.discordConnected || me.twitchConnected
+  const signedIn = isSignedIn(me)
 
   if (!signedIn) {
     return offered.length === 0 ? null : (
@@ -61,13 +62,7 @@ export function AccountMenu({ me }: Props) {
 
   const logout = async () => {
     setBusy(true)
-    try {
-      await sessionApi.logout()
-    } catch {
-      // The cookie is cleared server-side on a best effort; reload regardless so no
-      // screen keeps showing a stale identity.
-    }
-    window.location.href = '/'
+    await signOut(sessionApi.logout)
   }
 
   return (
@@ -128,35 +123,4 @@ export function AccountMenu({ me }: Props) {
       </AnimatePresence>
     </div>
   )
-}
-
-/** The accounts this server can actually sign somebody in with. */
-function providersOf(me: MeView): SignInProvider[] {
-  const providers: SignInProvider[] = []
-  if (me.discordLoginAvailable) {
-    providers.push({
-      id: 'discord',
-      label: 'Discord',
-      href: '/auth/discord',
-      colour: 'bg-[#5865F2]',
-    })
-  }
-  if (me.twitchLoginAvailable) {
-    providers.push({
-      id: 'twitch',
-      label: 'Twitch',
-      href: '/auth/twitch',
-      colour: 'bg-[#9146FF]',
-    })
-  }
-  return providers
-}
-
-/** Whichever name the player gave us, Discord first because it came first. */
-function nameOf(me: MeView): string {
-  return me.discordUsername ?? me.twitchUsername ?? 'Vous'
-}
-
-function pictureOf(me: MeView): string | undefined {
-  return me.discordAvatarUrl ?? me.twitchAvatarUrl
 }
