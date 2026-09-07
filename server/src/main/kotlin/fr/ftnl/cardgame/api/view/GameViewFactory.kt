@@ -1,7 +1,10 @@
 package fr.ftnl.cardgame.api.view
 
+import fr.ftnl.cardgame.api.dto.ChatCardLogView
+import fr.ftnl.cardgame.api.dto.ChatWrittenCardView
 import fr.ftnl.cardgame.api.dto.DeckSummary
 import fr.ftnl.cardgame.api.dto.GameView
+import fr.ftnl.cardgame.domain.game.ChatCardLog
 import fr.ftnl.cardgame.domain.game.GameClock
 import fr.ftnl.cardgame.domain.game.GameState
 import fr.ftnl.cardgame.domain.player.PlayerId
@@ -29,5 +32,11 @@ class GameViewFactory(
         deadlineMillis = state.phaseDeadlineMillis,
         serverTimeMillis = clock.nowMillis(),
         chatChannels = state.chatChannels,
+        chatCardLog = if (state.isHost(viewer)) logOf(state.chatCardLog) else ChatCardLogView(),
+    )
+
+    private fun logOf(log: ChatCardLog) = ChatCardLogView(
+        situations = log.situations.map { ChatWrittenCardView(it.id, it.text) },
+        punchlines = log.punchlines.map { ChatWrittenCardView(it.id, it.text) },
     )
 }

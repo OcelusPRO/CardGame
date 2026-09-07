@@ -619,7 +619,7 @@ function explanation(settings: ChatCardsView, rewardsAuthorized: boolean): strin
     }
     return `Vos spectateurs écrivent ${what} directement dans la case de la récompense — rien à taper dans le tchat. Une récompense créée par le jeu est retirée à la fin de la partie ; une récompense que vous avez choisie reste où elle est.`
   }
-  return `N'importe qui dans votre tchat peut écrire ${what} avec ${commands}.${shortcuts} Une carte par personne toutes les quelques secondes, et 200 au maximum pour toute la partie.`
+  return `N'importe qui dans votre tchat peut écrire ${what} avec ${commands}.${shortcuts} Une carte par personne toutes les quelques secondes.`
 }
 
 interface NumberBoxProps {

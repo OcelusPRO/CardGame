@@ -48,6 +48,52 @@ describe('DeckBuilder', () => {
     expect(stored[0]).toMatchObject({ id: 'deck-1', name: 'Soirée entre amis (v2)' })
   })
 
+  it('asks before deleting a deck, naming the one about to go', async () => {
+    window.localStorage.setItem('cardgame.decks', JSON.stringify([savedDeck()]))
+    const user = userEvent.setup()
+
+    render(<DeckBuilder packs={[]} disabled={false} onApply={vi.fn()} />)
+
+    await user.selectOptions(screen.getByLabelText('Supprimer un deck enregistré'), 'deck-1')
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Soirée entre amis')
+    const stored = JSON.parse(window.localStorage.getItem('cardgame.decks') ?? '[]') as SavedDeck[]
+    expect(stored).toEqual([savedDeck()])
+  })
+
+  it('deletes the deck once the host confirms, and plays on without it', async () => {
+    window.localStorage.setItem('cardgame.decks', JSON.stringify([savedDeck()]))
+    const user = userEvent.setup()
+    const onApply = vi.fn()
+
+    render(<DeckBuilder packs={[]} disabled={false} onApply={onApply} />)
+
+    await user.selectOptions(screen.getByLabelText('Supprimer un deck enregistré'), 'deck-1')
+    await user.click(screen.getByRole('button', { name: /Oui, supprimer/ }))
+
+    expect(window.localStorage.getItem('cardgame.decks')).toBe('[]')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(onApply).toHaveBeenLastCalledWith({
+      packIds: [],
+      customSituations: [],
+      customPunchlines: [],
+    })
+  })
+
+  it('keeps the deck when the host backs out', async () => {
+    window.localStorage.setItem('cardgame.decks', JSON.stringify([savedDeck()]))
+    const user = userEvent.setup()
+
+    render(<DeckBuilder packs={[]} disabled={false} onApply={vi.fn()} />)
+
+    await user.selectOptions(screen.getByLabelText('Supprimer un deck enregistré'), 'deck-1')
+    await user.click(screen.getByRole('button', { name: /Non, garder/ }))
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    const stored = JSON.parse(window.localStorage.getItem('cardgame.decks') ?? '[]') as SavedDeck[]
+    expect(stored).toEqual([savedDeck()])
+  })
+
   it('cancels editing without touching the stored deck', async () => {
     window.localStorage.setItem('cardgame.decks', JSON.stringify([savedDeck()]))
     const user = userEvent.setup()

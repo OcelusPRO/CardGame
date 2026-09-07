@@ -1,6 +1,5 @@
 package fr.ftnl.cardgame.domain.game
 
-import fr.ftnl.cardgame.domain.card.CardOrigin
 import fr.ftnl.cardgame.domain.card.PunchlineCard
 import fr.ftnl.cardgame.domain.card.SituationCard
 import fr.ftnl.cardgame.domain.deck.DrawPile
@@ -26,6 +25,8 @@ data class GameState(
     val round: Round? = null,
     val phaseDeadlineMillis: Long? = null,
     val createdAtMillis: Long = 0,
+    /** What the Twitch chats have written into this game, kept for the host to read. */
+    val chatCardLog: ChatCardLog = ChatCardLog.EMPTY,
 ) {
     fun playerOf(playerId: PlayerId): Player? = players.firstOrNull { it.id == playerId }
 
@@ -92,10 +93,14 @@ data class GameState(
     val rewardChannelId: String?
         get() = if (settings.chatCards.usesRewards) playerOf(hostId)?.twitchId else null
 
-    /** How many cards this chat has already pushed into the game, both piles together. */
-    val chatCardCount: Int
-        get() = situations.all.count { it.origin == CardOrigin.CHAT } +
-            punchlines.all.count { it.origin == CardOrigin.CHAT }
+    /**
+     * How many cards the chats have written into this game, both piles together.
+     *
+     * Read off the log rather than the piles, so a card that has since been drawn, played
+     * or replaced still counts against the ceiling: the limit is on what a chat may write,
+     * not on what happens to be waiting to be dealt.
+     */
+    val chatCardCount: Int get() = chatCardLog.size
 
     /** True when the chat is voting right now, which is what puts the numbers on screen. */
     val chatVoteOpen: Boolean get() = phase == GamePhase.SELECTING && chatChannels.isNotEmpty()

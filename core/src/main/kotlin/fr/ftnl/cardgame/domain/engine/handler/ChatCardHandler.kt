@@ -48,5 +48,6 @@ internal class ChatCardHandler(private val shuffler: Shuffler) {
     ): GameState = state.copy(
         situations = state.situations.addShuffled(situations, shuffler),
         punchlines = state.punchlines.addShuffled(punchlines, shuffler),
+        chatCardLog = state.chatCardLog.record(situations, punchlines),
     )
 }

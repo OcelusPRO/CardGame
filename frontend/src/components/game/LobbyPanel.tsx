@@ -69,7 +69,13 @@ export function LobbyPanel({ game, me, onSettings, onDeck }: Props) {
                 onChange={(chatCards) => onSettings({ chatCards })}
               />
             )}
-            <DeckBuilder packs={packs} disabled={notHost} onApply={onDeck} />
+            <DeckBuilder
+              packs={packs}
+              disabled={notHost}
+              gameCode={game.code}
+              chatCards={game.chatCardLog}
+              onApply={onDeck}
+            />
           </div>
         </Panel>
       </div>

@@ -10,6 +10,8 @@ import fr.ftnl.cardgame.domain.deck.IdentityShuffler
 import fr.ftnl.cardgame.domain.engine.CommandResult
 import fr.ftnl.cardgame.domain.engine.GameCommand
 import fr.ftnl.cardgame.domain.engine.GameEngine
+import fr.ftnl.cardgame.domain.game.ChatCardLog
+import fr.ftnl.cardgame.domain.game.ChatWrittenCard
 import fr.ftnl.cardgame.domain.game.GameClock
 import fr.ftnl.cardgame.domain.game.GameCode
 import fr.ftnl.cardgame.domain.game.GameSettings
@@ -115,6 +117,22 @@ class GameViewFactoryTest {
     }
 
     @Test
+    fun `what the chats wrote goes to the host, who is the one composing the paquet`() {
+        val view = factory.create(withChatCards(), alice.id)
+
+        assertEquals(listOf("Le pire du stream, c'est ____."), view.chatCardLog.situations.map { it.text })
+        assertEquals(listOf("un poulet mal cuit"), view.chatCardLog.punchlines.map { it.text })
+    }
+
+    @Test
+    fun `a proposal the host may still refuse shows on nobody else's screen`() {
+        val view = factory.create(withChatCards(), bob.id)
+
+        assertTrue(view.chatCardLog.situations.isEmpty())
+        assertTrue(view.chatCardLog.punchlines.isEmpty())
+    }
+
+    @Test
     fun `the lobby carries no round at all`() {
         assertNull(factory.create(lobby(), alice.id).round)
     }
@@ -136,6 +154,13 @@ class GameViewFactoryTest {
         players = listOf(alice, bob, carl),
         settings = GameSettings(minPlayers = 2),
         scoreboard = Scoreboard(mapOf(alice.id to 0, bob.id to 0, carl.id to 0)),
+    )
+
+    private fun withChatCards(): GameState = lobby().copy(
+        chatCardLog = ChatCardLog(
+            situations = listOf(ChatWrittenCard("chat-s-1", "Le pire du stream, c'est ____.")),
+            punchlines = listOf(ChatWrittenCard("chat-p-1", "un poulet mal cuit")),
+        ),
     )
 
     private fun running(): GameState {

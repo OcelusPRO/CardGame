@@ -61,6 +61,18 @@ export interface ChatCardsInput {
   punchlineReward?: ChatCardRewardInput
 }
 
+/** One card a viewer wrote, as the host reads it back in their own card boxes. */
+export interface ChatWrittenCardView {
+  id: string
+  text: string
+}
+
+/** Everything the chats wrote into the paquet. Only ever filled for the host. */
+export interface ChatCardLogView {
+  situations: ChatWrittenCardView[]
+  punchlines: ChatWrittenCardView[]
+}
+
 export interface AvatarPartView {
   styleId: string
   color: string
@@ -213,6 +225,8 @@ export interface GameView {
   serverTimeMillis: number
   /** The Twitch channels whose chat votes on this table; empty when nobody's does. */
   chatChannels: string[]
+  /** What the chats wrote into the paquet, for the host to keep or refuse. */
+  chatCardLog: ChatCardLogView
 }
 
 export interface GameTicket {

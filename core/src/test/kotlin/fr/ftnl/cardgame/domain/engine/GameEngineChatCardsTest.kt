@@ -5,6 +5,7 @@ import fr.ftnl.cardgame.domain.card.CardOrigin
 import fr.ftnl.cardgame.domain.card.PunchlineCard
 import fr.ftnl.cardgame.domain.card.SituationCard
 import fr.ftnl.cardgame.domain.card.SituationText
+import fr.ftnl.cardgame.domain.deck.DrawPile
 import fr.ftnl.cardgame.domain.game.ChatCardAccess
 import fr.ftnl.cardgame.domain.game.ChatCardSettings
 import fr.ftnl.cardgame.domain.game.GamePhase
@@ -77,15 +78,36 @@ class GameEngineChatCardsTest {
 
     @Test
     fun `a chat can only write so much of one game`() {
-        val full = (1..ChatCardSettings.MAX_CARDS_PER_GAME).fold(lobby()) { state, index ->
-            engine.perform(state, GameCommand.AddChatCards(situations("situation $index")))
-        }
+        val many = (1..ChatCardSettings.MAX_CARDS_PER_GAME).map { "situation $it" }
+        val full = engine.perform(lobby(), GameCommand.AddChatCards(situations(*many.toTypedArray())))
 
         assertEquals(ChatCardSettings.MAX_CARDS_PER_GAME, full.chatCardCount)
         assertEquals(
             GameError.CHAT_CARDS_FULL,
             engine.refusal(full, GameCommand.AddChatCards(situations("une de trop"))),
         )
+    }
+
+    @Test
+    fun `what the chat writes is written down, so the host can keep it`() {
+        val state = engine.perform(
+            lobby(),
+            GameCommand.AddChatCards(situations("une situation"), punchlines("une réponse")),
+        )
+
+        assertEquals(listOf("une situation"), state.chatCardLog.situations.map { it.text })
+        assertEquals(listOf("une réponse"), state.chatCardLog.punchlines.map { it.text })
+    }
+
+    @Test
+    fun `a card that has been dealt is still readable in what the chat wrote`() {
+        val written =
+            engine.perform(running(), GameCommand.AddChatCards(punchlines = punchlines("la honte")))
+
+        val emptied = written.copy(punchlines = DrawPile(emptyList()))
+
+        assertEquals(listOf("la honte"), emptied.chatCardLog.punchlines.map { it.text })
+        assertEquals(1, emptied.chatCardCount)
     }
 
     @Test

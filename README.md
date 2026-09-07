@@ -424,7 +424,7 @@ Le bouton reste alors cliquable : un enregistrement raté est réellement retent
 ayant pris soin d'oublier la tentative manquée plutôt que de la prendre pour un état acquis.
 
 Sur une récompense que le jeu gère, il peut **rendre les points** : une carte trop courte,
-arrivée après la fin, ou au-delà des deux cents de la partie, annule l'échange au lieu de
+arrivée après la fin, ou au-delà du plafond de sécurité, annule l'échange au lieu de
 l'encaisser pour rien.
 
 Tout cela repose sur l'autorisation `channel:manage:redemptions`, accordée **à la connexion
@@ -438,10 +438,41 @@ chaînes affiliées ou partenaires : sur une chaîne qui ne l'est pas, le mode n
 simplement pas, et le reste de la partie continue.
 
 Les garde-fous sont volontairement simples : une carte par spectateur et par lot de quelques
-secondes, **200 cartes au maximum pour toute la partie**, et une insertion mélangée à une
-profondeur aléatoire — personne ne peut chronométrer une proposition pour tomber sur une
-manche précise. Rien n'est conservé : ces cartes ne rejoignent jamais le catalogue officiel
-et disparaissent avec la partie.
+secondes, et une insertion mélangée à une profondeur aléatoire — personne ne peut chronométrer
+une proposition pour tomber sur une manche précise. Un plafond de **5 000 cartes par partie**
+existe côté serveur, mais c'est une soupape : il est posé bien au-dessus de ce qu'un stream
+écrit, personne n'est censé le rencontrer, et il n'est annoncé nulle part dans l'interface. Ces cartes ne rejoignent jamais le catalogue officiel : côté serveur elles
+disparaissent avec la partie, et ce qui en reste ne tient qu'à l'hôte — voir ci-dessous.
+
+### Garder ce que le tchat a écrit
+
+Ce que le tchat propose s'écrit **dans les cases « Vos situations » et « Vos réponses » de
+l'hôte**, une ligne par carte, exactement comme s'il les avait tapées lui-même. Il les relit
+donc au milieu des siennes, et **supprime la ligne** de celles qu'il ne veut pas : le refus
+est retenu — la carte n'est pas réécrite au prochain rafraîchissement, ni après un rechargement
+de page — et la carte quitte le paquet au moment où la modification est appliquée. Les refus
+ne valent que pour cette table ; une autre partie repart d'une feuille blanche.
+
+À partir de là, ce sont des lignes comme les autres : le bouton **💾 Enregistrer** en fait un
+deck du navigateur, au même titre qu'un paquet écrit à la main. Et **✏️ Modifier un deck…**
+fait le chemin inverse pour n'importe quel deck personnalisé : ses cartes reviennent dans les
+cases, où les propositions du stream en cours s'ajoutent à la suite, et **💾 Mettre à jour**
+le réenregistre enrichi. Un deck se nourrit ainsi de stream en stream.
+
+Ouvrir un deck le **décoche** — ses cartes sont dans les cases, c'est le même paquet dit
+autrement —, et l'enregistrer le recoche en vidant les cases : la table est distribuée à
+l'identique de bout en bout, et aucune carte n'est jamais comptée deux fois.
+
+**Supprimer un deck demande confirmation**, en le nommant et en disant ce qu'il contient : il
+ne vit que dans ce navigateur, il n'en existe aucune copie ailleurs, et un clic à côté dans la
+liste déroulante emporterait des cartes ramassées sur plusieurs streams.
+
+Le serveur, lui, tient le registre de ce que les tchats ont écrit et l'envoie **au seul hôte** :
+c'est lui qui compose le paquet, et une proposition qu'il finira par refuser n'a rien à faire
+sur l'écran des autres. Ce registre ne fait que grandir — une carte déjà piochée, jouée ou
+distribuée y reste lisible —, ce qui permet de la garder jusqu'à la fin de la partie et fait
+que le plafond de sécurité porte bien sur ce que le tchat a écrit, pas sur ce qui attend
+encore dans la pioche.
 
 ### L'extension Twitch
 

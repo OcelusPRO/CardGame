@@ -169,9 +169,7 @@
         notice() +
         '<p class="muted small">' +
         game.written +
-        ' carte(s) déjà écrite(s) par le tchat, sur ' +
-        game.limit +
-        '.</p>',
+        ' carte(s) déjà écrite(s) par le tchat.</p>',
     )
     wire(node, game)
     return node

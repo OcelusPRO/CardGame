@@ -22,7 +22,9 @@ export function useSavedDecks() {
 
   const update = useCallback(
     (id: string, name: string, situations: string[], punchlines: string[]) => {
-      setDecks(decks.map((deck) => (deck.id === id ? { id, name, situations, punchlines } : deck)))
+      const deck: SavedDeck = { id, name, situations, punchlines }
+      setDecks(decks.map((existing) => (existing.id === id ? deck : existing)))
+      return deck
     },
     [decks, setDecks],
   )

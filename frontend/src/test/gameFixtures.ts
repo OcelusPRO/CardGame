@@ -50,6 +50,7 @@ export function aGame(overrides: Partial<GameView> = {}): GameView {
     deck: { situationsLeft: 12, punchlinesLeft: 80 },
     serverTimeMillis: 1_000_000,
     chatChannels: [],
+    chatCardLog: { situations: [], punchlines: [] },
     ...overrides,
   }
 }

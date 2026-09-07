@@ -113,10 +113,13 @@ data class ChatCardSettings(
         const val MAX_MIN_BITS = 100_000
 
         /**
-         * How many cards one chat may push into a single game. A snapshot is written on
-         * every command, so the pile a chat can grow has to have a ceiling — and a table
-         * that has taken two hundred ideas from its viewers has had its fill anyway.
+         * How many cards one chat may push into a single game.
+         *
+         * A safety valve, and nothing more: a snapshot is written on every command, so the
+         * pile a chat can grow needs *a* ceiling or a bot could grow it without end. It is
+         * set far above what any stream writes on purpose — nobody is meant to meet it, and
+         * it is therefore never spelled out to the viewers or to the host.
          */
-        const val MAX_CARDS_PER_GAME = 200
+        const val MAX_CARDS_PER_GAME = 5_000
     }
 }

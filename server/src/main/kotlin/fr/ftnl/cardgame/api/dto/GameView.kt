@@ -20,4 +20,6 @@ data class GameView(
     val serverTimeMillis: Long,
     /** The Twitch channels whose chat votes on this table; empty when nobody's does. */
     val chatChannels: List<String> = emptyList(),
+    /** What the chats wrote into the paquet. Empty for everyone but the host. */
+    val chatCardLog: ChatCardLogView = ChatCardLogView(),
 )
