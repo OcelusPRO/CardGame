@@ -25,5 +25,23 @@ fun Route.gameSocketRoute(games: GameService, handler: GameSocketHandler) {
     }
 }
 
+/**
+ * The stream feed of a table: same game, no seat.
+ *
+ * There is no session check here, and that is the point. The page behind it is opened by a
+ * browser source in OBS and by whoever the streamer sent the link to — neither has a
+ * cookie, and asking them to sign in to watch a stream would make the feature unusable.
+ * The game code is the credential, exactly as it is for the invitation link, and what
+ * comes back is projected by [GameViewFactory.spectate]: no hand, no seat, no commands.
+ */
+fun Route.spectatorSocketRoute(games: GameService, handler: SpectatorSocketHandler) {
+    webSocket("/ws/spectate/{code}") {
+        val code = GameCode.ofOrNull(call.parameters["code"].orEmpty())
+            ?: return@webSocket reject("Code de partie invalide")
+        games.find(code) ?: return@webSocket reject("Partie introuvable")
+        handler.serve(this, code)
+    }
+}
+
 private suspend fun io.ktor.websocket.WebSocketSession.reject(reason: String) =
     close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, reason))

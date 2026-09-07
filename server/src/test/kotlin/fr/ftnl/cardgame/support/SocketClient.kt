@@ -39,6 +39,18 @@ suspend fun DefaultClientWebSocketSession.awaitFailure(timeoutMillis: Long = 10_
         error("unreachable")
     }
 
+/**
+ * Reads frames until the pong comes back. Frames are answered in order on one socket, so
+ * a pong is also the proof that everything sent before it has been dealt with — which is
+ * how a test waits for a message the server is meant to ignore.
+ */
+suspend fun DefaultClientWebSocketSession.awaitPong(timeoutMillis: Long = 10_000) =
+    withTimeout(timeoutMillis) {
+        while (true) {
+            if (nextMessage() is ServerMessage.Pong) return@withTimeout
+        }
+    }
+
 private suspend fun DefaultClientWebSocketSession.nextMessage(): ServerMessage? {
     val frame = incoming.receive() as? Frame.Text ?: return null
     return runCatching { ApiJson.decodeFromString(ServerMessage.serializer(), frame.readText()) }.getOrNull()

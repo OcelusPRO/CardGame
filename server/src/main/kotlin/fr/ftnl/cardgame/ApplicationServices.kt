@@ -69,6 +69,7 @@ import fr.ftnl.cardgame.ws.GameBroadcaster
 import fr.ftnl.cardgame.ws.GameCommandTranslator
 import fr.ftnl.cardgame.ws.GameConnections
 import fr.ftnl.cardgame.ws.GameSocketHandler
+import fr.ftnl.cardgame.ws.SpectatorSocketHandler
 import io.ktor.client.HttpClient
 import io.micrometer.core.instrument.Gauge
 import kotlinx.coroutines.CoroutineScope
@@ -152,6 +153,14 @@ class ApplicationServices(
         translator = GameCommandTranslator(deckResolver, CustomCardFactory(), appliedDecks),
         adultAccess = adultAccessGuard,
         scope = scope,
+        json = ApiJson,
+    )
+
+    /** The stream feed of a table: the same games, projected without anybody's hand. */
+    val spectatorHandler = SpectatorSocketHandler(
+        games = games,
+        connections = connections,
+        views = views,
         json = ApiJson,
     )
 

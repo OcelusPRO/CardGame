@@ -185,7 +185,7 @@ export function SettingsForm({
 
       {czar && (
         <Toggle
-          label="Le maître du jeu répond aussi"
+          label="Le maître du jeu répond aussi (et peut choisir sa carte)"
           checked={settings.czarAnswers}
           lockedBecause={lockedBecause}
           onChange={(czarAnswers) => onChange({ czarAnswers })}
@@ -198,7 +198,7 @@ export function SettingsForm({
           : chatVotes
           ? `Personne à la table ne vote : la réponse que les spectateurs ont le plus choisie remporte la manche, et une manche vaut 1 point — une communauté de trois mille personnes ne rapporte pas plus qu'une de trente. La manche va au bout de son chrono pour laisser aux tchats le temps de répondre. ${settings.rounds} manches, et le meilleur score l'emporte.`
           : czar
-            ? `Le maître du jeu choisit, et la réponse retenue rapporte ${settings.pointsPerVote} point(s). ${settings.rounds} manches, et le meilleur score l'emporte.`
+            ? `Le maître du jeu choisit, et la réponse retenue rapporte ${settings.pointsPerVote} point(s).${settings.czarAnswers ? ' Il pose une carte comme tout le monde et peut retenir la sienne : il est seul à voter, la lui interdire reviendrait à ne pas le faire jouer.' : ''} ${settings.rounds} manches, et le meilleur score l'emporte.`
             : `Chaque voix reçue rapporte ${settings.pointsPerVote} point(s). Une réponse choisie par tous ceux qui pouvaient la choisir gagne ${settings.unanimityBonus} point(s) de plus ; une seule voix ailleurs et le bonus tombe à zéro. ${settings.rounds} manches, et le meilleur score l'emporte.`}
       </p>
     </div>

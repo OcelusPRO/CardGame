@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { AnswerView, ChatVotesView, GameView } from '../../api/types'
 import type { LiveChatVotes } from '../../game/gameStore'
+import { canVoteOwnAnswer } from '../../game/selfVote'
 import { playSound } from '../../audio/engine'
 import { SituationCard } from '../cards/SituationCard'
 import { AnswerCard } from './AnswerCard'
@@ -32,8 +33,7 @@ export function VotePanel({ game, onChoose, liveChatVotes = {} }: Props) {
   // The chat judges alone: nobody at the table gets a say this round.
   const chatMode = game.settings.selectionMode === 'CHAT'
   const canChoose = game.you.mustVote
-  // The host can allow voting for one's own answer, but only in the everybody-votes mode.
-  const canVoteOwn = !czarMode && game.settings.allowSelfVote
+  const canVoteOwn = canVoteOwnAnswer(game)
   // The server only fills the channels in once a chat is actually being read.
   const chatVoting = game.chatChannels.length > 0
 
@@ -55,15 +55,7 @@ export function VotePanel({ game, onChoose, liveChatVotes = {} }: Props) {
     >
       <div className="flex flex-col gap-4">
         <p className="text-center font-display text-lg text-ink/75">
-          {chatMode
-            ? 'Le tchat tranche : regardez les votes tomber.'
-            : canChoose
-              ? czarMode
-                ? 'À vous de trancher.'
-                : 'Votez pour la meilleure réponse.'
-              : czarMode
-                ? 'Le maître du jeu délibère…'
-                : 'Vote enregistré, on attend les autres.'}
+          {prompt(chatMode, czarMode, canChoose, Boolean(game.spectator))}
         </p>
 
         {chatVoting && (
@@ -104,6 +96,23 @@ export function VotePanel({ game, onChoose, liveChatVotes = {} }: Props) {
       </div>
     </RoundStage>
   )
+}
+
+/**
+ * What the screen says it is waiting for. The stream page is its own case: nobody there
+ * has a vote to have cast, so "on attend les autres" would be addressed to no one.
+ */
+function prompt(
+  chatMode: boolean,
+  czarMode: boolean,
+  canChoose: boolean,
+  spectator: boolean,
+): string {
+  if (chatMode) return 'Le tchat tranche : regardez les votes tomber.'
+  if (canChoose) return czarMode ? 'À vous de trancher.' : 'Votez pour la meilleure réponse.'
+  if (czarMode) return 'Le maître du jeu délibère…'
+  if (spectator) return 'La table vote…'
+  return 'Vote enregistré, on attend les autres.'
 }
 
 function answerOf(answers: AnswerView[], id: number | null): AnswerView | undefined {

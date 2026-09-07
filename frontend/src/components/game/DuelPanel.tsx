@@ -2,6 +2,7 @@ import { Fragment, useEffect, useState } from 'react'
 import type { AnswerView, ChatVotesView, GameView } from '../../api/types'
 import { playSound } from '../../audio/engine'
 import type { LiveChatVotes } from '../../game/gameStore'
+import { canVoteOwnAnswer } from '../../game/selfVote'
 import { SituationCard } from '../cards/SituationCard'
 import { AnswerCard } from './AnswerCard'
 import { ChatVoteNotice } from './ChatVoteNotice'
@@ -43,7 +44,7 @@ export function DuelPanel({ game, onChoose, liveChatVotes = {} }: Props) {
   const right = answerOf(round.answers, bracket.right)
   const facing = [left, right].filter((answer): answer is AnswerView => answer !== undefined)
   const canChoose = game.you.mustVote
-  const canVoteOwn = !czarMode && game.settings.allowSelfVote
+  const canVoteOwn = canVoteOwnAnswer(game)
   const shown = answerOf(round.answers, previewId ?? round.myVote ?? null)
 
   return (
@@ -58,7 +59,9 @@ export function DuelPanel({ game, onChoose, liveChatVotes = {} }: Props) {
     >
       <div className="flex flex-col gap-4">
         <div className="text-center">
-          <p className="font-display text-lg text-ink/75">{prompt(chatMode, czarMode, canChoose)}</p>
+          <p className="font-display text-lg text-ink/75">
+            {prompt(chatMode, czarMode, canChoose, Boolean(game.spectator))}
+          </p>
           <p className="text-xs font-semibold uppercase tracking-wider text-ink/55">
             {tierLabel(bracket.tier, bracket.duelCount)} · duel {bracket.duelNumber} / {bracket.duelCount}
           </p>
@@ -121,10 +124,18 @@ export function DuelPanel({ game, onChoose, liveChatVotes = {} }: Props) {
   )
 }
 
-function prompt(chatMode: boolean, czarMode: boolean, canChoose: boolean): string {
+function prompt(
+  chatMode: boolean,
+  czarMode: boolean,
+  canChoose: boolean,
+  spectator: boolean,
+): string {
   if (chatMode) return 'Le tchat départage les deux.'
   if (canChoose) return czarMode ? 'À vous de trancher : laquelle des deux ?' : 'Laquelle des deux ?'
-  return czarMode ? 'Le maître du jeu délibère…' : 'Duel tranché, on attend les autres.'
+  if (czarMode) return 'Le maître du jeu délibère…'
+  // The stream page has no duel to have settled; it is watching the table settle it.
+  if (spectator) return 'La table départage les deux…'
+  return 'Duel tranché, on attend les autres.'
 }
 
 /** The last tier of a ladder is the final, whatever number it happens to carry. */

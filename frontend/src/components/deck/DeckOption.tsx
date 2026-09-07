@@ -20,7 +20,7 @@ export function DeckOption({ name, detail, official, selected, disabled, adult, 
       aria-pressed={selected}
       onClick={onToggle}
       className={`sketch-alt flex min-w-40 flex-col px-4 py-2 text-left text-sm transition disabled:opacity-40 ${
-        selected ? 'bg-mint text-ink' : 'bg-ink/5 hover:bg-ink/10'
+        selected ? 'bg-mint text-on-accent' : 'bg-ink/5 hover:bg-ink/10'
       }`}
     >
       <span className="flex items-center gap-1.5 font-bold">

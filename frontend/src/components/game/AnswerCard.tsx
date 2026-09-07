@@ -89,7 +89,7 @@ export function AnswerCard({
           <motion.span
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className="absolute -right-2 -top-2 rounded-full bg-zap px-3 py-1 font-display text-sm font-black text-ink"
+            className="absolute -right-2 -top-2 rounded-full bg-zap px-3 py-1 font-display text-sm font-black text-on-accent"
           >
             🏆
           </motion.span>

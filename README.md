@@ -19,6 +19,7 @@ Tout se joue dans le navigateur, sans installation : l'hôte crée une table, pa
 - [Connexion Discord et administration](#connexion-discord-et-administration)
 - [Connexion Twitch et vote du tchat](#connexion-twitch-et-vote-du-tchat)
 - [Le tchat écrit des cartes](#le-tchat-écrit-des-cartes)
+- [Mode streameur : la vue spectateur](#mode-streameur--la-vue-spectateur)
 - [Exploitation](#exploitation)
 - [Tests](#tests)
 - [Surface HTTP et WebSocket](#surface-http-et-websocket)
@@ -43,6 +44,7 @@ Tout se joue dans le navigateur, sans installation : l'hôte crée une table, pa
 | Fin de partie | Podium pour les trois premiers, classement simple pour la suite |
 | Vote du tchat Twitch | Un mode de plus : les joueurs répondent, et c'est le tchat de l'hôte — plus, s'il le veut, celui des autres joueurs streamers — qui désigne la meilleure réponse au numéro de la carte |
 | Le tchat écrit des cartes | Les spectateurs proposent situations et réponses, gratuitement, contre des points de chaîne ou contre des bits, depuis le tchat ou depuis l'extension Twitch |
+| Mode streameur | Une seconde adresse pour la même table, `/spec/CODE` : le jeu sans aucune main, à mettre sur le stream. Une variante incrustation retire l'en-tête et le fond pour une source navigateur OBS |
 | Bruitages | Clics, sélection de carte, vote, révélation et derniers battements du chrono, coupables d'un seul bouton |
 
 Les deux modes se cumulent : un paquet de situations maison avec des réponses écrites à la volée
@@ -63,6 +65,9 @@ Chaque temps a un chronomètre, et se ferme tout seul dès que tout le monde a j
 
 **Mode maître du jeu** — un joueur différent tranche à chaque manche et ne joue pas :
 son choix vaut une voix, donc la réponse retenue rapporte le même **`pointsPerVote`**.
+Le réglage **« le maître du jeu répond aussi »** le remet dans la partie : il pose une carte
+comme les autres et peut retenir la sienne. Il est seul à voter — la lui interdire
+reviendrait à lui faire jouer une carte qui ne peut pas gagner.
 
 **Mode tchat** — les joueurs répondent et ne votent plus : **chaque spectateur compte pour une
 voix** sur la carte qu'il choisit, et la réponse qui en récolte le plus **remporte la manche,
@@ -97,9 +102,10 @@ et un tchat de quatre mille personnes peut choisir entre deux cartes au lieu de 
 - ni un passage sans adversaire (une table impaire laisse passer sa réponse en trop) ni une
   égalité ne comptent : personne n'y a été battu. En cas d'égalité, c'est la réponse révélée
   la première qui monte, sans point ;
-- les deux auteurs du duel ne le jugent pas. Celui qui tient la carte ne vote jamais pour
+- les deux auteurs du duel ne le jugent pas. Celui qui tient la carte ne vote pas pour
   lui-même, et l'autre n'aurait à choisir que la carte qui le bat — ce n'est pas un vote,
-  c'est une formalité ;
+  c'est une formalité. Un maître du jeu qui répond fait exception : il est le seul votant,
+  le duel doit bien être tranché, sa propre carte comprise ;
 - chaque duel a son propre chronomètre, **`duelSeconds`**, 20 secondes par défaut ;
 - quand c'est le tchat qui juge, les spectateurs tapent **`1` ou `2`** : ce sont des
   positions à l'écran, pas des numéros de carte, et le compte repart de zéro à chaque duel.
@@ -153,12 +159,16 @@ séparément plutôt que d'énumérer leurs combinaisons.
 - `GameService` sérialise les commandes d'une même partie derrière un verrou, puis prévient
   ses `GameListener` : diffusion WebSocket, statistiques, et minuteurs de phase.
 - `GameViewFactory` est le seul endroit qui décide **qui voit quoi**. Une main n'est jamais
-  envoyée à un autre joueur, et les auteurs des réponses restent masqués jusqu'à la révélation.
+  envoyée à un autre joueur, les auteurs des réponses restent masqués jusqu'à la révélation,
+  et la vue spectateur (`spectate`) est la même projection privée de tout ce qui appartient
+  à quelqu'un.
 
 ### `frontend` — l'interface
 
-Une partie a une adresse et une seule, `/game/CODE` : c'est la page où l'on joue, et celle où
-un nouveau venu prend sa place. Copier le lien de la page, c'est copier l'invitation.
+Une partie a une adresse pour y jouer, `/game/CODE` : c'est la page où l'on joue, et celle où
+un nouveau venu prend sa place. Copier le lien de la page, c'est copier l'invitation. Elle en
+a une seconde pour la regarder, `/spec/CODE`, qui montre la même table sans jamais montrer
+une main — voir [Mode streameur](#mode-streameur--la-vue-spectateur).
 
 Le bundle compilé est servi par le module `singlePageApplication` de Ktor : un fichier réel
 garde son type, et tout le reste retombe sur `index.html` pour qu'un lien profond survive à un
@@ -491,6 +501,44 @@ Le montage complet (console développeur, produits bits, CORS, envoi de l'archiv
 
 ---
 
+## Mode streameur : la vue spectateur
+
+Un streameur qui partage son écran partage sa main. Le jeu répond par une seconde adresse
+pour la même table :
+
+| Adresse | Pour qui | Ce qu'on y voit |
+| --- | --- | --- |
+| `/game/CODE` | Les joueurs | La table, et la main de celui qui regarde |
+| `/spec/CODE` | Le stream | La table, et aucune main |
+| `/spec/CODE?overlay=1` | OBS | La même chose, sans en-tête ni fond, en plus gros |
+
+« Copier la vue spectateur » se trouve dans le salon, à côté du lien d'invitation. La variante
+incrustation n'y est pas proposée : elle s'obtient en ajoutant `?overlay=1` à l'adresse. Le
+salon est lu par tous les hôtes et une poignée d'entre eux streament — un second bouton et son
+paragraphe d'explication coûteraient à tout le monde la place qu'ils font gagner à quelques-uns.
+
+**Ce qui est retiré, et où.** Rien n'est caché par le navigateur : le tri est fait par le
+serveur, dans `GameViewFactory.spectate`. L'instantané envoyé à `/ws/spectate/CODE` ne
+contient ni main, ni siège, ni journal des cartes du tchat, et aucune réponse n'y est
+marquée « la vôtre ». Les auteurs y apparaissent au même moment que pour les joueurs :
+jamais pendant le vote, tous à la révélation. Il n'y a donc pas de secret dans la charge
+utile qu'un spectateur curieux pourrait aller relire dans les outils de développement.
+
+Le code de la partie, lui, n'est jamais dessiné sur cette page — c'est la seule chose qui
+ouvre une place, et elle est à l'écran devant tout un tchat.
+
+**Pas de session.** La vue spectateur ne demande aucun cookie : une source navigateur OBS
+n'en a pas, et demander à un spectateur de se connecter pour regarder un stream n'aurait
+pas de sens. Le code de la partie est le seul sésame, exactement comme pour le lien
+d'invitation. Regarder ne prend aucune place et ne garde aucune table en vie : une partie
+que plus aucun joueur ne regarde est oubliée, et les pages spectateur sont alors fermées.
+
+**Le maître du jeu qui joue.** À rapprocher du réglage « le maître du jeu répond aussi » :
+quand il est actif, le maître peut retenir sa propre carte. Il est le seul à voter — la lui
+interdire reviendrait à lui faire poser une carte qui ne peut pas gagner.
+
+---
+
 ## Exploitation
 
 `GET /metrics` sert des compteurs Prometheus : la JVM, les requêtes HTTP, et surtout les
@@ -561,6 +609,7 @@ c'est ce qui évite un serveur qui démarre puis échoue à la première requêt
 | `GET` | `/auth/discord` | Démarrer la connexion Discord |
 | `GET` | `/auth/twitch` | Démarrer la connexion Twitch |
 | `WS` | `/ws/game/{code}` | La partie elle-même |
+| `WS` | `/ws/spectate/{code}` | La même partie, en lecture seule et sans aucune main (vue streameur) |
 | `GET` | `/metrics` | Compteurs Prometheus ; ouvert, sauf si `METRICS_TOKEN` est renseigné |
 
 ### Extension Twitch (jeton signé par Twitch)
@@ -590,7 +639,12 @@ l'origine de l'extension.
 Chaque message porte un champ `type`.
 
 - **Client vers serveur** : `play`, `write`, `choose`, `settings`, `deck`, `kick`, `start`, `next`, `leave`, `ping`
-- **Serveur vers client** : `state` (l'état complet vu par ce joueur), `error` (un code de refus), `pong`
+- **Serveur vers client** : `state` (l'état complet vu par ce joueur), `chat_votes` (le compte
+  du tchat en direct, sur sa propre trame), `error` (un code de refus), `pong`
+
+Sur `/ws/spectate/{code}`, le même protocole, amputé : seul `ping` est écouté, tout le reste
+est jeté sans réponse. Une page dont le principe est de ne pas voir la main n'a rien à
+commander.
 
 Le client n'a aucune logique de règles : il envoie une intention, et redessine ce que le
 serveur lui renvoie.

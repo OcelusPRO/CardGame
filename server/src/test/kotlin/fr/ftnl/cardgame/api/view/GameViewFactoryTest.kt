@@ -132,6 +132,37 @@ class GameViewFactoryTest {
         assertTrue(view.chatCardLog.punchlines.isEmpty())
     }
 
+    // --- the stream page ---------------------------------------------------------------
+
+    @Test
+    fun `the stream page is dealt no hand and owns no answer`() {
+        val voting = everybodyAnswers()
+
+        val view = factory.spectate(voting)
+
+        assertTrue(view.spectator)
+        assertEquals("", view.you.id)
+        assertTrue(view.you.hand.isEmpty())
+        assertFalse(view.you.isHost)
+        assertEquals(3, view.round?.answers?.size)
+        assertTrue(view.round?.answers.orEmpty().none { it.isMine })
+        assertNull(view.round?.myVote)
+    }
+
+    @Test
+    fun `the stream page hides the authors exactly as long as the table does`() {
+        assertTrue(factory.spectate(everybodyAnswers()).round?.answers.orEmpty().all { it.authorId == null })
+        assertTrue(factory.spectate(everybodyVotes()).round?.answers.orEmpty().all { it.authorId != null })
+    }
+
+    @Test
+    fun `what the chats wrote stays with the host, never on the stream`() {
+        val view = factory.spectate(withChatCards())
+
+        assertTrue(view.chatCardLog.situations.isEmpty())
+        assertTrue(view.chatCardLog.punchlines.isEmpty())
+    }
+
     @Test
     fun `the lobby carries no round at all`() {
         assertNull(factory.create(lobby(), alice.id).round)

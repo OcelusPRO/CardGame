@@ -28,7 +28,8 @@ data class GameSettings(
     val allowSelfVote: Boolean = false,
     /**
      * In [SelectionMode.CZAR], lets the rotating czar also submit an answer for the round.
-     * They still make the pick, and simply cannot choose their own answer. Ignored in
+     * They still make the pick, their own answer included — being the sole voter, a czar
+     * barred from their own card would be playing a card that cannot win. Ignored in
      * [SelectionMode.VOTE], where everybody answers already.
      */
     val czarAnswers: Boolean = false,

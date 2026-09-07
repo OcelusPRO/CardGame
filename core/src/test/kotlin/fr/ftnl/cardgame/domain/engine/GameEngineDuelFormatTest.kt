@@ -61,25 +61,22 @@ class GameEngineDuelFormatTest {
     }
 
     @Test
-    fun `a czar ruling on duels still never picks their own answer`() {
-        val settings = duelSettings(SelectionMode.CZAR).copy(czarAnswers = true, allowSelfVote = true)
+    fun `a czar who answers rules on the duel their own card is in`() {
+        val settings = duelSettings(SelectionMode.CZAR).copy(czarAnswers = true)
         val open = duelling(settings = settings)
         val round = assertNotNull(open.round)
         val czar = assertNotNull(round.czarId)
         val own = assertNotNull(round.handleOf(czar))
         val duel = assertNotNull(round.bracket?.current)
 
-        // A czar who answers can end up facing their own card. Self voting is on for this
-        // table, and it still does not buy them the right to crown themselves.
-        if (duel.holds(own)) {
-            assertEquals(
-                GameError.CANNOT_VOTE_OWN_ANSWER,
-                engine.refusal(open, GameCommand.Choose(czar, own)),
-            )
-        } else {
-            assertEquals(1, engine.perform(open, GameCommand.Choose(czar, duel.left)).round
-                ?.bracket?.winsOf(duel.left))
-        }
+        // A czar who answers can end up facing their own card. They are the only voter
+        // there is, so the duel is theirs to settle — their own side included, otherwise
+        // the card they played could not survive the first pairing.
+        val pick = if (duel.holds(own)) own else duel.left
+        assertEquals(
+            1,
+            engine.perform(open, GameCommand.Choose(czar, pick)).round?.bracket?.winsOf(pick),
+        )
     }
 
     // --- the Twitch chat, two answers at a time ----------------------------------------

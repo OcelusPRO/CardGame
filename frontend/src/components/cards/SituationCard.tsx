@@ -70,8 +70,8 @@ function Blank({ answer, celebrate }: { answer?: string; celebrate: boolean }) {
     <span
       lang="fr"
       style={{ fontSize: celebrate ? celebratedAnswerFontSize(answer) : punchlineFontSize(answer) }}
-      className={`mx-1 font-hand leading-none text-zap ${WRAP_CLASSES} ${
-        celebrate ? 'drop-shadow-[0_0_18px_rgba(255,210,63,0.55)]' : ''
+      className={`mx-1 font-hand leading-none text-quip ${WRAP_CLASSES} ${
+        celebrate ? 'drop-shadow-[0_0_18px_var(--quip-glow)]' : ''
       }`}
     >
       {lines.map((words, line) => (

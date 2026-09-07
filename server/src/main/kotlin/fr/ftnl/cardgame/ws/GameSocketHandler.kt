@@ -72,9 +72,13 @@ class GameSocketHandler(
         }
     }
 
-    /** Once the last watcher is gone and nobody is left online, the table can go. */
+    /**
+     * Once the last player is gone and nobody is left online, the table can go. Spectators
+     * are not counted: a stream page left open all night is not somebody playing, and a
+     * table it kept alive would outlive the game by hours.
+     */
     private suspend fun forgetIfDeserted(code: GameCode) {
-        if (connections.of(code).isNotEmpty()) return
+        if (connections.playersOf(code).isNotEmpty()) return
         val state = games.find(code) ?: return
         if (games.isAbandoned(state)) games.forget(code)
     }

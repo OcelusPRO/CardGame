@@ -140,6 +140,18 @@ data class GameState(
     val czarAnswers: Boolean
         get() = settings.selectionMode == SelectionMode.CZAR && settings.czarAnswers
 
+    /**
+     * Whether [voter] may pick their own answer.
+     *
+     * Ordinarily that is the table-wide [GameSettings.allowSelfVote]. A czar who also
+     * answers is the exception, and not an optional one: they are the only voter of the
+     * round, so barring them from their own card means the card they wrote could never
+     * win — they would be dealing themselves out of the game they just joined.
+     */
+    fun allowsSelfVote(voter: PlayerId): Boolean =
+        if (settings.selectionMode == SelectionMode.CZAR) czarAnswers && round?.czarId == voter
+        else settings.allowSelfVote
+
     /** Players expected to answer this round, which excludes the card czar unless [czarAnswers]. */
     val answeringPlayers: List<Player>
         get() = if (czarAnswers) connectedPlayers

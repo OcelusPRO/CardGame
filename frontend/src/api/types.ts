@@ -227,6 +227,11 @@ export interface GameView {
   chatChannels: string[]
   /** What the chats wrote into the paquet, for the host to keep or refuse. */
   chatCardLog: ChatCardLogView
+  /**
+   * True when the server projected this for the stream page rather than for a seat: `you`
+   * is empty and nothing on screen may act. Absent on a player's snapshot.
+   */
+  spectator?: boolean
 }
 
 export interface GameTicket {

@@ -23,10 +23,15 @@ import fr.ftnl.cardgame.domain.player.PlayerId
 /**
  * Projects the current round. Answers stay hidden while players write them, appear
  * anonymously during the vote, and are only tied back to their author at the reveal.
+ *
+ * A null [viewer] is the stream page: somebody watching without a seat. They get exactly
+ * what a player gets minus the two things that are personal — which answer is theirs, and
+ * what they voted for — because a screen a whole chat is looking at must not be the place
+ * where a card is traced back to the person who played it.
  */
 class RoundViewFactory {
 
-    fun create(state: GameState, viewer: PlayerId): RoundView? {
+    fun create(state: GameState, viewer: PlayerId?): RoundView? {
         val round = state.round ?: return null
         return RoundView(
             number = round.number,
@@ -34,13 +39,13 @@ class RoundViewFactory {
             expectedAnswers = state.expectedAnswers,
             czarId = round.czarId?.value,
             answers = answers(state, round, viewer),
-            myVote = state.voteOf(viewer)?.index,
+            myVote = viewer?.let(state::voteOf)?.index,
             bracket = round.bracket?.let(::bracketView),
             outcome = round.outcome?.let(::outcomeView),
         )
     }
 
-    private fun answers(state: GameState, round: Round, viewer: PlayerId): List<AnswerView> {
+    private fun answers(state: GameState, round: Round, viewer: PlayerId?): List<AnswerView> {
         if (state.phase == GamePhase.LOBBY || state.phase == GamePhase.SUBMITTING) return emptyList()
         val revealAuthors = state.phase != GamePhase.SELECTING
         return round.revealed.map { (id, submission) ->
@@ -52,7 +57,7 @@ class RoundViewFactory {
         round: Round,
         id: SubmissionId,
         submission: Submission,
-        viewer: PlayerId,
+        viewer: PlayerId?,
         revealAuthors: Boolean,
     ) = AnswerView(
         id = id.index,
@@ -60,7 +65,7 @@ class RoundViewFactory {
         filledText = round.situation.text.fill(submission.answers),
         authorId = submission.playerId.value.takeIf { revealAuthors },
         votes = round.outcome?.voteCounts?.get(id).takeIf { revealAuthors },
-        isMine = submission.playerId == viewer,
+        isMine = viewer != null && submission.playerId == viewer,
         chatVotes = round.chatVotes[id]?.let(::chatVotesView),
     )
 

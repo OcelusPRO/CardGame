@@ -60,11 +60,13 @@ object RoundProgress {
      * is only ever the two of the open duel when the round runs as a ladder.
      *
      * Nobody judges a duel their own card is in, neither for it nor against it: the author
-     * cannot vote for themselves in any mode, and their opponent would be left with nothing
-     * to choose but the card beating theirs, which is a formality rather than a vote.
+     * cannot vote for themselves, and their opponent would be left with nothing to choose
+     * but the card beating theirs, which is a formality rather than a vote. A czar who
+     * answers is the exception — they are the only voter there is, so a duel holding their
+     * card still has to be judged, by them, their own card included.
      */
     private fun hasSomethingToPick(state: GameState, round: Round, voter: PlayerId): Boolean {
-        if (state.settings.allowSelfVote) return true
+        if (state.allowsSelfVote(voter)) return true
         if (state.settings.runsBracket) {
             val duel = round.bracket?.current ?: return false
             return voter !in round.authorsOf(duel)

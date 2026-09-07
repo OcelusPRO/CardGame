@@ -2,6 +2,7 @@ package fr.ftnl.cardgame.ws
 
 import fr.ftnl.cardgame.api.view.GameViewFactory
 import fr.ftnl.cardgame.domain.engine.GameEvent
+import fr.ftnl.cardgame.domain.game.GameCode
 import fr.ftnl.cardgame.domain.game.GameState
 import fr.ftnl.cardgame.game.GameListener
 import kotlinx.coroutines.coroutineScope
@@ -15,6 +16,10 @@ class GameBroadcaster(
 
     override suspend fun onGameChanged(state: GameState, events: List<GameEvent>) = broadcast(state)
 
+    /** A dropped table takes its stream pages with it; the seats close on their own. */
+    override suspend fun onGameForgotten(code: GameCode) =
+        connections.closeSpectators(code, "Cette partie est terminée")
+
     /**
      * Every socket is written to in parallel. Sending suspends until the client actually
      * takes the frame, so a phone on a struggling network would otherwise hold the whole
@@ -23,7 +28,12 @@ class GameBroadcaster(
      */
     suspend fun broadcast(state: GameState): Unit = coroutineScope {
         connections.of(state.code).forEach { connection ->
-            launch { connection.send(ServerMessage.State(views.create(state, connection.playerId))) }
+            launch { connection.send(ServerMessage.State(snapshotFor(connection, state))) }
         }
+    }
+
+    private fun snapshotFor(connection: TableConnection, state: GameState) = when (connection) {
+        is GameConnection -> views.create(state, connection.playerId)
+        is SpectatorConnection -> views.spectate(state)
     }
 }

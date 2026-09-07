@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { gameSocketUrl } from './socketUrl'
+import { gameSocketUrl, spectatorSocketUrl } from './socketUrl'
 
 describe('gameSocketUrl', () => {
   it('uses ws on a plain origin', () => {
@@ -12,5 +12,13 @@ describe('gameSocketUrl', () => {
 
   it('drops any query string of the page', () => {
     expect(gameSocketUrl('ABCDE', 'https://jeu.example')).not.toContain('?')
+  })
+})
+
+describe('spectatorSocketUrl', () => {
+  it('points at the read-only feed of the same table', () => {
+    expect(spectatorSocketUrl('ABCDE', 'https://jeu.example')).toBe(
+      'wss://jeu.example/ws/spectate/ABCDE',
+    )
   })
 })

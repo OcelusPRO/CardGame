@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { gameUrl } from '../../lib/gameLinks'
+import { gameUrl, spectateUrl } from '../../lib/gameLinks'
 import { Button } from '../ui/Button'
 import { CopyButton } from '../ui/CopyButton'
 import { Panel } from '../ui/Panel'
@@ -10,8 +10,14 @@ interface Props {
 }
 
 /**
- * The invitation, which belongs to the host alone — the lobby leaves it out entirely for
- * everybody else, rather than handing a guest a half-empty panel.
+ * The links to this table, which belong to the host alone — the lobby leaves the panel out
+ * entirely for everybody else, rather than handing a guest a half-empty one.
+ *
+ * Two of them lead here. The invitation opens a seat; the stream view opens the same table
+ * with nobody's hand in it, which is what a streamer puts on screen so their chat can
+ * follow the game without reading the cards being held. It sits in the same row as the
+ * rest, unexplained: a lobby is read by everyone who opens a table, and only a handful of
+ * them stream — a paragraph about OBS would cost every host the space it saves one.
  *
  * The code and the QR stay out of sight until asked for, because a lobby is often on a
  * screen other people can see. The block keeps its footprint whether it shows or not:
@@ -32,6 +38,7 @@ export function SharePanel({ code }: Props) {
           </p>
           <div className="mt-3 flex flex-wrap justify-center gap-2 sm:justify-start">
             <CopyButton value={url} />
+            <CopyButton value={spectateUrl(code)} label="Copier la vue spectateur" />
             <Button variant="ghost" onClick={() => setRevealed(!revealed)}>
               {revealed ? '🙈 Masquer le code' : '👁️ Afficher le code et le QR'}
             </Button>

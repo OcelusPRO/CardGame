@@ -1,6 +1,5 @@
 import { parseServerMessage, type ServerMessage } from './serverMessages'
 import type { ClientMessage } from './messages'
-import { gameSocketUrl } from './socketUrl'
 
 export type SocketStatus = 'connecting' | 'open' | 'closed' | 'rejected'
 
@@ -22,6 +21,10 @@ const POLICY_VIOLATION = 1008
 /**
  * The link to a game. It reconnects on its own with a growing delay, and pings so a
  * phone waking up from sleep notices a dead link instead of showing a frozen table.
+ *
+ * It is given the address rather than the code, because there are two of them: the seat
+ * socket a player holds, and the read-only feed the stream page watches. Everything below
+ * — the retries, the ping, the final refusal — is the same for both.
  */
 export class GameSocket {
   private socket: WebSocket | null = null
@@ -31,14 +34,14 @@ export class GameSocket {
   private closedByUs = false
 
   constructor(
-    private readonly code: string,
+    private readonly url: string,
     private readonly handlers: Handlers,
   ) {}
 
   open(): void {
     this.closedByUs = false
     this.handlers.onStatus('connecting')
-    const socket = new WebSocket(gameSocketUrl(this.code))
+    const socket = new WebSocket(this.url)
     this.socket = socket
     socket.onopen = () => this.onOpen()
     socket.onmessage = (event) => this.onMessage(event)

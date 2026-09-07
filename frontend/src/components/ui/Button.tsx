@@ -15,7 +15,7 @@ interface Props extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'ref' | 'o
 
 const VARIANTS: Record<Variant, string> = {
   primary: 'bg-punch text-paper hover:brightness-105',
-  zap: 'bg-zap text-ink hover:brightness-105',
+  zap: 'bg-zap text-on-accent hover:brightness-105',
   ghost: 'bg-paper text-ink hover:bg-ink/8',
   danger: 'bg-red-500 text-paper hover:brightness-105',
 }

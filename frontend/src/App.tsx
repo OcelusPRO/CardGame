@@ -1,11 +1,12 @@
 import { Suspense, lazy, useEffect } from 'react'
 import { MotionConfig } from 'motion/react'
-import { Link, Route, Routes, useNavigate } from 'react-router-dom'
+import { Link, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { CreatePage } from './pages/CreatePage'
 import { GamePage } from './pages/GamePage'
 import { HomePage } from './pages/HomePage'
 import { JoinPage } from './pages/JoinPage'
 import { NotFoundPage } from './pages/NotFoundPage'
+import { SpectatorPage } from './pages/SpectatorPage'
 import { AnimationToggle } from './components/ui/AnimationToggle'
 import { ThemeToggle } from './components/ui/ThemeToggle'
 import { SoundToggle } from './components/ui/SoundToggle'
@@ -16,6 +17,7 @@ import { useThemePref } from './session/useThemePref'
 import { useSoundPref } from './audio/useSoundPref'
 import { useSession } from './session/useSession'
 import { takeReturnPath } from './session/authReturn'
+import { isOverlay } from './lib/gameLinks'
 import logo from './assets/logo.png'
 
 // The dashboard pulls in the charting library; players never download it.
@@ -25,6 +27,12 @@ const AdminPage = lazy(() => import('./pages/AdminPage').then((module) => ({ def
 export function App() {
   const { me } = useSession()
   const navigate = useNavigate()
+  // A browser source in OBS captures the page whole. The site header — logo, account, the
+  // four switches — is furniture for somebody using the site, and it has no business
+  // being composited over a stream, so the overlay link drops it. Only the stream page
+  // may ask for that: `?overlay=1` on any other address is a query string like any other.
+  const location = useLocation()
+  const overlay = location.pathname.startsWith('/spec/') && isOverlay(location.search)
   const { enabled: animate, toggle: toggleAnimations } = useAnimationPref()
   const { enabled: sound, toggle: toggleSound } = useSoundPref()
   const { dark, toggle: toggleTheme } = useThemePref()
@@ -54,31 +62,33 @@ export function App() {
   return (
     <MotionConfig reducedMotion={animate ? 'never' : 'always'}>
       <div className="min-h-dvh">
-        <header className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4">
-          <Link to="/" className="flex items-center gap-2 font-display text-xl font-black tracking-tight">
-            <img src={logo} alt="" className="h-9 w-auto" />
-            Sans<span className="text-punch">Filtres</span>
-          </Link>
-          {/* Wide enough for the row, the four controls sit in the header; on a phone they
-              fold into one trigger so the site name keeps its width. */}
-          <div className="hidden items-center gap-2 sm:flex">
-            <SoundToggle enabled={sound} onToggle={toggleSound} />
-            <ThemeToggle dark={dark} onToggle={toggleTheme} />
-            <AnimationToggle enabled={animate} onToggle={toggleAnimations} />
-            <AccountMenu me={me} />
-          </div>
-          <div className="sm:hidden">
-            <HeaderMenu
-              me={me}
-              sound={sound}
-              onToggleSound={toggleSound}
-              dark={dark}
-              onToggleTheme={toggleTheme}
-              animate={animate}
-              onToggleAnimations={toggleAnimations}
-            />
-          </div>
-        </header>
+        {!overlay && (
+          <header className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4">
+            <Link to="/" className="flex items-center gap-2 font-display text-xl font-black tracking-tight">
+              <img src={logo} alt="" className="h-9 w-auto" />
+              Sans<span className="text-punch">Filtres</span>
+            </Link>
+            {/* Wide enough for the row, the four controls sit in the header; on a phone they
+                fold into one trigger so the site name keeps its width. */}
+            <div className="hidden items-center gap-2 sm:flex">
+              <SoundToggle enabled={sound} onToggle={toggleSound} />
+              <ThemeToggle dark={dark} onToggle={toggleTheme} />
+              <AnimationToggle enabled={animate} onToggle={toggleAnimations} />
+              <AccountMenu me={me} />
+            </div>
+            <div className="sm:hidden">
+              <HeaderMenu
+                me={me}
+                sound={sound}
+                onToggleSound={toggleSound}
+                dark={dark}
+                onToggleTheme={toggleTheme}
+                animate={animate}
+                onToggleAnimations={toggleAnimations}
+              />
+            </div>
+          </header>
+        )}
 
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -86,6 +96,8 @@ export function App() {
           <Route path="/join" element={<JoinPage />} />
           <Route path="/game/:code" element={<GamePage />} />
           <Route path="/game" element={<GamePage />} />
+          {/* The same table, watched rather than played: no hand, no seat, no session. */}
+          <Route path="/spec/:code" element={<SpectatorPage />} />
           <Route
             path="/admin"
             element={

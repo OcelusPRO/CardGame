@@ -57,13 +57,14 @@ describe('VotePanel', () => {
     expect(onChoose).toHaveBeenCalledWith(0)
   })
 
-  it('still blocks self-vote in czar mode even if the flag is on', async () => {
+  it('ignores the self-vote flag in czar mode: the judge is not a candidate', async () => {
     const onChoose = vi.fn()
     const game = votingGame()
     render(
       <VotePanel
         game={{
           ...game,
+          you: { ...game.you, isCzar: true },
           settings: { ...game.settings, allowSelfVote: true, selectionMode: 'CZAR' },
         }}
         onChoose={onChoose}
@@ -73,6 +74,25 @@ describe('VotePanel', () => {
     await userEvent.click(screen.getByText('un chat mouillé'))
 
     expect(onChoose).not.toHaveBeenCalled()
+  })
+
+  it('lets a czar who also answers crown their own card', async () => {
+    const onChoose = vi.fn()
+    const game = votingGame()
+    render(
+      <VotePanel
+        game={{
+          ...game,
+          you: { ...game.you, isCzar: true },
+          settings: { ...game.settings, selectionMode: 'CZAR', czarAnswers: true },
+        }}
+        onChoose={onChoose}
+      />,
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: 'un chat mouillé' }))
+
+    expect(onChoose).toHaveBeenCalledWith(0)
   })
 
   it('writes the pointed answer into the situation card', async () => {

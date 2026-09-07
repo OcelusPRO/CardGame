@@ -22,4 +22,11 @@ data class GameView(
     val chatChannels: List<String> = emptyList(),
     /** What the chats wrote into the paquet. Empty for everyone but the host. */
     val chatCardLog: ChatCardLogView = ChatCardLogView(),
+    /**
+     * True when this snapshot was projected for the stream page rather than for a seat:
+     * [you] is empty, and nothing on screen may offer an action. The client could infer it
+     * from the empty `you.id`, but a page that hides a streamer's hand should not hang on
+     * an inference.
+     */
+    val spectator: Boolean = false,
 )

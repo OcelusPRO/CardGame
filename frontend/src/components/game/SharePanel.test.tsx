@@ -52,6 +52,15 @@ describe('SharePanel', () => {
     expect(shown).toContain('h-40 w-80')
   })
 
+  it('offers the stream view in the same row, with no explaining to do', () => {
+    render(<SharePanel code="ABCDE" />)
+
+    expect(screen.getByRole('button', { name: /Copier la vue spectateur/i })).toBeInTheDocument()
+    // The OBS variant exists at `?overlay=1` but is not advertised: a lobby is read by
+    // every host, and almost none of them stream.
+    expect(screen.queryByText(/OBS/i)).not.toBeInTheDocument()
+  })
+
   it('offers the link without revealing anything', () => {
     const { container } = render(<SharePanel code="ABCDE" />)
 

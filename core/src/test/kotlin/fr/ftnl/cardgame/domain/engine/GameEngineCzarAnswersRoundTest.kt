@@ -7,7 +7,6 @@ import fr.ftnl.cardgame.domain.game.GameState
 import fr.ftnl.cardgame.domain.game.SelectionMode
 import fr.ftnl.cardgame.domain.support.GameFixtures
 import fr.ftnl.cardgame.domain.support.perform
-import fr.ftnl.cardgame.domain.support.refusal
 import fr.ftnl.cardgame.domain.support.testEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -43,14 +42,14 @@ class GameEngineCzarAnswersRoundTest {
     }
 
     @Test
-    fun `the czar cannot pick their own answer`() {
+    fun `the czar may crown their own answer, which is the point of playing one`() {
         val answered = everybodyAnswers()
         val ownHandle = assertNotNull(answered.round?.handleOf(alice))
 
-        assertEquals(
-            GameError.CANNOT_VOTE_OWN_ANSWER,
-            engine.refusal(answered, GameCommand.Choose(alice, ownHandle)),
-        )
+        val scored = engine.perform(answered, GameCommand.Choose(alice, ownHandle))
+
+        assertEquals(GamePhase.ROUND_RESULT, scored.phase)
+        assertEquals(scored.settings.scoring.pointsPerVote, scored.scoreboard.pointsOf(alice))
     }
 
     @Test

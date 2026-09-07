@@ -59,10 +59,11 @@ internal class ChoiceHandler(private val roundFlow: RoundFlow) {
     }
 
     /**
-     * Settled by the format, plus the one rule both formats share: your own card is never
-     * yours to pick. A ladder adds that only the two answers currently facing off are on
-     * the table at all, and that a vote is spent per duel rather than per round — so the
-     * same player votes again, on the next pair, a few seconds later.
+     * Settled by the format, plus the rule both formats share: your own card is not yours
+     * to pick unless the table says otherwise. A ladder adds that only the two answers
+     * currently facing off are on the table at all, and that a vote is spent per duel
+     * rather than per round — so the same player votes again, on the next pair, a few
+     * seconds later.
      */
     private fun whatMayBeVotedOn(
         state: GameState,
@@ -78,11 +79,9 @@ internal class ChoiceHandler(private val roundFlow: RoundFlow) {
             null
         }
         if (duel != null && !duel.holds(choice)) return GameError.NOT_IN_THIS_DUEL
-        // A czar picking their own answer is refused even on a table that allows self
-        // voting: the whole point of a single judge is that they are not a candidate.
-        val selfVoteAllowed =
-            state.settings.allowSelfVote && state.settings.selectionMode != SelectionMode.CZAR
-        if (selfVoteAllowed) return null
+        // Who may crown their own card is settled by the state, because it is not the same
+        // answer for a czar as for the table — see [GameState.allowsSelfVote].
+        if (state.allowsSelfVote(voter)) return null
         if (author == voter) return GameError.CANNOT_VOTE_OWN_ANSWER
         if (duel != null && voter in round.authorsOf(duel)) return GameError.CANNOT_JUDGE_OWN_DUEL
         return null

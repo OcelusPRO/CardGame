@@ -18,6 +18,7 @@ import fr.ftnl.cardgame.api.twitchAuthRoutes
 import fr.ftnl.cardgame.api.twitchExtensionRoutes
 import fr.ftnl.cardgame.api.twitchRewardRoutes
 import fr.ftnl.cardgame.ws.gameSocketRoute
+import fr.ftnl.cardgame.ws.spectatorSocketRoute
 import io.ktor.server.application.Application
 import io.ktor.server.routing.routing
 
@@ -55,6 +56,7 @@ fun Application.configureRouting(services: ApplicationServices) {
         adminStatsRoutes(services.statsService)
         adminStatsSocket(services.statsService, ApiJson)
         gameSocketRoute(services.games, services.socketHandler)
+        spectatorSocketRoute(services.games, services.spectatorHandler)
         spaRoutes()
     }
 }

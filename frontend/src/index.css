@@ -25,6 +25,17 @@
      `--color-ink` flips. */
   --color-scrim: #150726;
 
+  /* What is written *on* a bright accent — a mint chip, a yellow button. `--color-ink`
+     cannot serve here: it flips to near white at night, and the accents do not flip with
+     it, so ink on mint went from readable to invisible. This one stays dark, always. */
+  --color-on-accent: #2b1e3f;
+
+  /* The answer handwritten into a situation card. It is not a page colour: the situation
+     card is the inverse of the page, so this has to be read against a *dark* ground in
+     daylight and a *light* one at night — the one token in the palette that flips the
+     opposite way from everything else. */
+  --color-quip: #f5bd1f;
+
   --font-display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
   --font-body: "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-hand: "Caveat", "Segoe Script", cursive;
@@ -60,6 +71,10 @@
   --glow-1: rgb(255 205 224 / 0.55);
   --glow-2: rgb(255 233 176 / 0.5);
   --glow-3: rgb(186 232 214 / 0.45);
+
+  /* The halo behind a winning answer, which has to follow `--color-quip` rather than the
+     other way round: a bright yellow blur under dark handwriting is a smudge, not a glow. */
+  --quip-glow: rgb(255 210 63 / 0.55);
 }
 
 /*
@@ -95,9 +110,15 @@ html[data-theme='dark'] {
   --color-sky: #56bce8;
   --color-grape: #9d72ee;
 
+  /* The situation card turned pale at night, and a pale yellow on it read as nothing at
+     all. The handwriting goes dark amber instead — the same hue, the other side of the
+     ground it is written on. */
+  --color-quip: #8a5300;
+
   --glow-1: rgb(229 50 110 / 0.16);
   --glow-2: rgb(245 189 31 / 0.1);
   --glow-3: rgb(18 169 124 / 0.12);
+  --quip-glow: rgb(138 83 0 / 0.3);
 
   /* Ink-coloured shadows vanish on a dark ground; the drop has to be real black, and
      the offset pass leans on the pale ink instead of the dark one. */
@@ -121,6 +142,23 @@ body {
     var(--color-cream);
   background-attachment: fixed;
   -webkit-tap-highlight-color: transparent;
+}
+
+/*
+ * The stream overlay.
+ *
+ * `/spec/CODE?overlay=1` is captured by OBS as a browser source and composited on top of
+ * the video, so the page must stop being a page: no ground of its own — the paper and its
+ * three glows would paint over the stream — and a type scale lifted a notch, because what
+ * is read at arm's length on a laptop is read across a room on a stream. Everything is in
+ * `rem` or `cqi`, so the one declaration carries the whole interface up with it.
+ */
+html[data-overlay='on'] {
+  font-size: 20px;
+}
+
+html[data-overlay='on'] body {
+  background: none;
 }
 
 /*

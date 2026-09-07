@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { gamesApi } from '../api/games'
 import { useGameSounds } from '../audio/useGameSounds'
-import type { GamePreview, GameSettingsView } from '../api/types'
+import type { GamePreview } from '../api/types'
 import { ConnectionBadge } from '../components/game/ConnectionBadge'
 import { GameBoard } from '../components/game/GameBoard'
 import { GameJoinCard } from '../components/game/GameJoinCard'
@@ -11,6 +11,7 @@ import { PlayerList } from '../components/game/PlayerList'
 import { StartGameBar } from '../components/game/StartGameBar'
 import { Toast } from '../components/ui/Toast'
 import { useGameStore } from '../game/gameStore'
+import { phaseLengthSeconds } from '../game/phaseLength'
 import { messages } from '../game/messages'
 import { errorMessage } from '../lib/errorMessages'
 import { gamePath } from '../lib/gameLinks'
@@ -182,7 +183,7 @@ export function GamePage() {
         <PhaseTimer
           deadlineMillis={game.deadlineMillis}
           serverTimeMillis={game.serverTimeMillis}
-          totalSeconds={timerLength(game.phase, game.settings)}
+          totalSeconds={phaseLengthSeconds(game.phase, game.settings)}
           label="Temps restant"
           chime={game.phase === 'SUBMITTING' || game.phase === 'SELECTING'}
         />
@@ -219,13 +220,4 @@ function Centered({ children }: { children: React.ReactNode }) {
   return (
     <div className="mx-auto max-w-md px-4 py-24 text-center font-display text-2xl">{children}</div>
   )
-}
-
-function timerLength(phase: string, settings: GameSettingsView): number {
-  if (phase === 'SUBMITTING') return settings.submitSeconds
-  // A ladder runs one clock per duel, so the bar has to measure a duel.
-  if (phase === 'SELECTING') {
-    return settings.selectionFormat === 'DUELS' ? settings.duelSeconds : settings.selectSeconds
-  }
-  return settings.resultSeconds
 }
