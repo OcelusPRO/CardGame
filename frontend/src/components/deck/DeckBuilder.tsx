@@ -7,6 +7,26 @@ import type { SavedDeck } from './SavedDeck'
 import { useChatCardInbox } from './useChatCardInbox'
 import { useSavedDecks } from './useSavedDecks'
 
+const LAST_PACKS_KEY = 'cardgame.lastSelectedPackIds'
+const LAST_DECKS_KEY = 'cardgame.lastSelectedDeckIds'
+
+/** A private window, or blocked site data, makes localStorage throw — read/write guarded. */
+function readIds(key: string): string[] {
+  try {
+    const raw = window.localStorage.getItem(key)
+    return raw ? (JSON.parse(raw) as string[]) : []
+  } catch {
+    return []
+  }
+}
+function writeIds(key: string, ids: string[]) {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(ids))
+  } catch {
+    // Storage unavailable: the app keeps working, it just forgets.
+  }
+}
+
 interface Props {
   packs: CardPackView[]
   disabled: boolean
@@ -36,6 +56,10 @@ interface Composition {
  * like any other. That is the whole point of putting them there rather than in a list of
  * their own — a stream's good ideas end up in a deck the host reloads next time and grows
  * again, and every custom deck is opened and edited the same way, whoever wrote it.
+ *
+ * Nothing is ticked on a brand new table: the host picks the packs and decks for this
+ * game. What gets picked is remembered in this browser, so chaining another game right
+ * after does not mean re-ticking everything from scratch.
  */
 export function DeckBuilder({ packs, disabled, gameCode, chatCards, onApply }: Props) {
   const { decks, save, update, remove } = useSavedDecks()
@@ -47,9 +71,6 @@ export function DeckBuilder({ packs, disabled, gameCode, chatCards, onApply }: P
   const [deckName, setDeckName] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [removingId, setRemovingId] = useState<string | null>(null)
-
-  // A brand new table plays with everything the site offers, exactly like the server default.
-  useEffect(() => setSelectedPacks(packs.map((pack) => pack.id)), [packs])
 
   const build = (it: Composition, from: SavedDeck[] = decks): DeckInput => {
     const chosen = from.filter((deck) => it.deckIds.includes(deck.id))
@@ -85,6 +106,48 @@ export function DeckBuilder({ packs, disabled, gameCode, chatCards, onApply }: P
     clearTimeout(debounce.current)
     debounce.current = setTimeout(() => push(build(latest.current)), 500)
   }
+
+  /**
+   * A guest's `packs` prop already *is* the host's live pool (see `LobbyPanel`), so a
+   * guest simply mirrors it, read-only. The host has their own choice to make: nothing is
+   * ticked on a brand new table — a fresh server-side game starts on every pack, but the
+   * lobby overrides that the moment it opens — except what this browser remembered from
+   * the host's last table, restored once and pushed so what is actually dealt matches
+   * what the paquet editor shows. After that, a `packs` change (the answer mode switching)
+   * only drops an id that stopped existing; it never re-reads storage over a live choice.
+   */
+  const restoredSelection = useRef(false)
+  useEffect(() => {
+    if (disabled) {
+      setSelectedPacks(packs.map((pack) => pack.id))
+      return
+    }
+    if (packs.length === 0) return
+    const validPackIds = new Set(packs.map((pack) => pack.id))
+    if (!restoredSelection.current) {
+      restoredSelection.current = true
+      const validDeckIds = new Set(decks.map((deck) => deck.id))
+      const restoredPacks = readIds(LAST_PACKS_KEY).filter((id) => validPackIds.has(id))
+      const restoredDecks = readIds(LAST_DECKS_KEY).filter((id) => validDeckIds.has(id))
+      setSelectedPacks(restoredPacks)
+      setSelectedDecks(restoredDecks)
+      push(build({ packIds: restoredPacks, deckIds: restoredDecks, situations, punchlines }))
+      return
+    }
+    setSelectedPacks((current) => current.filter((id) => validPackIds.has(id)))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [packs, disabled])
+
+  // Remembered for the next table — never for a guest, whose selection above is only ever
+  // a mirror of somebody else's table, not a choice of their own to keep.
+  useEffect(() => {
+    if (disabled || !restoredSelection.current) return
+    writeIds(LAST_PACKS_KEY, selectedPacks)
+  }, [disabled, selectedPacks])
+  useEffect(() => {
+    if (disabled || !restoredSelection.current) return
+    writeIds(LAST_DECKS_KEY, selectedDecks)
+  }, [disabled, selectedDecks])
 
   /**
    * The cards the chat wrote, written into the boxes as they come.

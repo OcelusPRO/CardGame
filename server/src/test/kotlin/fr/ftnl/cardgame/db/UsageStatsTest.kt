@@ -17,7 +17,7 @@ class UsageStatsTest {
 
     private val today = DayProvider { "2026-08-31" }
     private val writer = ExposedUsageStatsWriter(today)
-    private val reader = ExposedUsageStatsReader()
+    private val reader = ExposedUsageStatsReader(today)
 
     @BeforeTest
     fun setUp() {
@@ -73,12 +73,34 @@ class UsageStatsTest {
         writer.recordRound(round(votes = 1, won = true))
         writer.recordRound(round(votes = 1, won = false))
 
-        val day = reader.activity(days = 7).single()
+        val activity = reader.activity(days = 7)
+        val day = activity.last()
 
+        assertEquals(7, activity.size)
         assertEquals("2026-08-31", day.day)
         assertEquals(1, day.gamesCreated)
         assertEquals(2, day.roundsPlayed)
         assertEquals(2, day.answersPlayed)
+    }
+
+    @Test
+    fun `days with no activity between two active days are filled with zero`() = runBlocking {
+        ExposedUsageStatsWriter(DayProvider { "2026-08-25" }).recordGameCreated()
+        writer.recordGameCreated()
+
+        val activity = reader.activity(days = 7)
+
+        assertEquals(
+            listOf(
+                "2026-08-25", "2026-08-26", "2026-08-27", "2026-08-28",
+                "2026-08-29", "2026-08-30", "2026-08-31",
+            ),
+            activity.map { it.day },
+        )
+        assertEquals(1, activity.first().gamesCreated)
+        assertEquals(0, activity[1].gamesCreated)
+        assertEquals(0, activity[3].roundsPlayed)
+        assertEquals(1, activity.last().gamesCreated)
     }
 
     @Test

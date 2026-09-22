@@ -95,6 +95,15 @@ function ImportDeck({ packs, onImport }: Pick<Props, 'packs' | 'onImport'>) {
     }
   }
 
+  const handleTextChange = (value: string) => {
+    setText(value)
+    const parsed = parseDeckText(value)
+    if (parsed.name !== undefined) setName(parsed.name)
+    if (parsed.description !== undefined) setDescription(parsed.description)
+    if (parsed.answerModeCards !== undefined) setCards(parsed.answerModeCards)
+    if (parsed.answerModeFreeText !== undefined) setFreeText(parsed.answerModeFreeText)
+  }
+
   const run = async () => {
     setError(null)
     setMessage(null)
@@ -193,7 +202,7 @@ function ImportDeck({ packs, onImport }: Pick<Props, 'packs' | 'onImport'>) {
 
       <textarea
         value={text}
-        onChange={(event) => setText(event.target.value)}
+        onChange={(event) => handleTextChange(event.target.value)}
         rows={12}
         aria-label="Deck à importer"
         placeholder={'## Situations\nLe pire cadeau, c’est ____.\n\n## Réponses\nun chat mouillé'}

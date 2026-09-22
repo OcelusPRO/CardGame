@@ -1,0 +1,225 @@
+# Nom: Soirée Classique
+# Description: Le pack tout-terrain pour lancer une partie : universel, taquin, jamais bien méchant. Marche aussi bien en famille (élargie) qu'entre potes.
+# Modes: cartes, sans-limites
+
+## Situations
+Le pire cadeau d'anniversaire que j'aie jamais reçu : ____.
+Ce qu'on ne dit jamais à un premier rendez-vous : ____.
+J'ai enfin compris pourquoi le chat me regarde comme ça : ____.
+Sur mon CV, dans la case "compétences", j'ai discrètement ajouté ____.
+Le vrai motif de la dispute familiale à Noël : ____.
+Ce qui explique le silence gênant dans l'ascenseur : ____.
+La vraie raison pour laquelle je suis arrivé en retard ce matin : ____.
+Ce que mes parents ne savent toujours pas sur mon adolescence : ____.
+Le secret d'un bon mariage, selon mon oncle : ____.
+Ce que j'ai répondu quand mon patron m'a demandé "des questions ?" : ____.
+Le nouvel intitulé de poste que je vais mettre sur LinkedIn : ____.
+Ce qui a vraiment mis fin à la réunion d'équipe : ____.
+La chose que je regrette le plus d'avoir dite à un mariage : ____.
+Ce que contenait vraiment le colis "fragile" du voisin : ____.
+Le titre de mon autobiographie sera : ____.
+Ce que j'ai crié en dormant, d'après mon/ma partenaire : ____.
+La vraie raison pour laquelle le chien n'aime pas le facteur : ____.
+Ce qui figure en toutes lettres sur mon testament : ____.
+Le prétexte que j'ai donné pour partir plus tôt du travail : ____.
+Ce que j'ai trouvé en fouillant dans les affaires de mon coloc : ____.
+La question piège que ma grand-mère pose à chaque repas : ____.
+Ce qui explique pourquoi le GPS a soudainement changé d'itinéraire : ____.
+Le vrai contenu de la boîte marquée "souvenirs" au grenier : ____.
+Ce que j'ai répondu à l'entretien quand on m'a demandé mon défaut : ____.
+La véritable raison de la panne d'oreiller ce matin : ____.
+Ce que le prof n'a jamais découvert à propos de ma dissertation : ____.
+Le cadeau que j'ai offert à ma belle-mère par pure vengeance : ____.
+Ce qui s'est vraiment passé pendant l'enterrement de vie de garçon : ____.
+La chose la plus étrange trouvée dans le tiroir de la table de nuit d'un ami : ____.
+Ce que j'ai marmonné en sortant du cabinet du dentiste : ____.
+Le vrai plan de mon meilleur ami pour "arrondir les fins de mois" : ____.
+Ce que révèle vraiment mon historique de recherche : ____.
+La raison officielle donnée à l'école pour mon absence : ____.
+Ce qui a fait fuir tous les invités de la soirée avant minuit : ____.
+Le secret que toute la famille connaît sauf grand-père : ____.
+Ce que j'ai trouvé écrit sur le tableau blanc en arrivant au bureau : ____.
+La véritable explication du bruit venant du garage : ____.
+Ce que mon horoscope du jour m'a conseillé d'éviter : ____.
+Le sujet de conversation qu'il vaut mieux éviter en famille : ____.
+Ce que j'ai répondu quand on m'a demandé "tu penses à quoi ?" : ____.
+La vraie raison pour laquelle le mariage a duré trois heures de plus que prévu : ____.
+Ce que contient la valise que personne n'a le droit d'ouvrir : ____.
+Le compliment le plus mal formulé que j'aie jamais fait : ____.
+Ce qui a été annoncé au micro pendant le mariage, par erreur : ____.
+La chose que j'ai promis de ne jamais révéler à ma sœur : ____.
+Ce que j'ai vraiment pensé en essayant sa nouvelle coupe de cheveux : ____.
+Le vrai résultat de mon "petit projet de bricolage du week-end" : ____.
+Ce que le médecin a noté dans mon dossier sans me le dire : ____.
+La véritable raison pour laquelle on a annulé la fête surprise : ____.
+Ce que j'ai fait semblant de ne pas voir dans le frigo du bureau : ____.
+Le prétexte parfait pour rater un enterrement de vie de jeune fille : ____.
+Ce qui figurait sur la liste de courses écrite par mon enfant : ____.
+La chose que j'ai découverte trop tard sur mon colocataire : ____.
+Ce que contenait vraiment le "cadeau surprise" du secret santa : ____.
+Le vrai sujet du groupe WhatsApp familial silencieux depuis un an : ____.
+Ce que j'ai improvisé quand on m'a demandé un discours sans prévenir : ____.
+La raison pour laquelle personne ne veut faire équipe avec tonton au Trivial Pursuit : ____.
+Ce que j'ai vu passer sur le tapis roulant de l'aéroport et jamais réclamé : ____.
+Le secret professionnel que le coiffeur connaît sur tout le quartier : ____.
+Ce qui a vraiment motivé ma reconversion professionnelle : ____.
+La véritable raison de l'odeur bizarre dans la salle de réunion : ____.
+Ce que j'ai laissé sous-entendre pour éviter d'aider au déménagement : ____.
+Le pire souvenir de colonie de vacances : ____.
+Ce que j'ai répondu à "et sinon, les enfants, c'est pour quand ?" : ____.
+La vraie raison pour laquelle le karaoké s'est arrêté brutalement : ____.
+Ce que contient le dossier caché nommé "ne pas ouvrir" sur l'ordinateur familial : ____.
+Le sujet que mon/ma partenaire refuse d'aborder pendant les repas : ____.
+Ce qui a été gravé, sans autorisation, dans le banc du parc : ____.
+La véritable raison du retard de trois heures à l'aéroport : ____.
+Ce que j'ai dit pour détourner l'attention pendant l'inspection surprise : ____.
+Le vrai motif du licenciement, jamais écrit noir sur blanc : ____.
+Ce que ma voisine a vu par la fenêtre et n'a jamais oublié : ____.
+La chose que j'ai jurée sur la tête de mon poisson rouge : ____.
+Ce que contient réellement le tiroir "à trier plus tard" depuis cinq ans : ____.
+Le vrai plan derrière "je gère, fais-moi confiance" : ____.
+Ce qui explique pourquoi le camping-car est revenu avec une bosse : ____.
+La raison pour laquelle je n'ai pas répondu au message depuis trois jours : ____.
+Ce que j'ai dit au médecin du travail pour obtenir un mi-temps : ____.
+Le vrai contenu du discours de mariage qu'on m'a interdit de prononcer : ____.
+Ce qui a fait capoter l'entretien d'embauche en trente secondes : ____.
+La véritable raison pour laquelle mamie ne prend plus l'avion : ____.
+Ce que j'ai fait croire à mes collègues pour éviter l'apéro d'entreprise : ____.
+Le secret de famille révélé accidentellement pendant la partie de cartes : ____.
+Ce que contenait la lettre jamais envoyée à mon premier amour : ____.
+La raison pour laquelle le professeur a soudainement changé de sujet : ____.
+Ce qui a été retrouvé dans la poche du costume loué pour le mariage : ____.
+Le vrai motif de la brouille entre les deux témoins du mariage : ____.
+Ce que j'ai répondu quand la police m'a demandé où j'allais si vite : ____.
+La chose la plus embarrassante criée pendant l'accouchement : ____.
+Ce que contient vraiment le sac de sport que je ne montre à personne : ____.
+Le vrai sujet de la thèse jamais terminée de mon cousin : ____.
+Ce qui a provoqué l'évacuation surprise du bureau un mardi après-midi : ____.
+La raison officielle du retard du train, version non censurée : ____.
+Ce que j'ai vraiment noté dans le livre d'or du mariage : ____.
+Le secret que le majordome du mariage a fini par lâcher au dessert : ____.
+Ce qui explique la nouvelle allergie soudaine de mon frère aux réunions de famille : ____.
+La vraie raison pour laquelle on ne joue plus jamais aux charades chez tata : ____.
+Ce que contient l'enveloppe que papi garde "pour plus tard" : ____.
+Le mensonge que toute la famille répète depuis vingt ans sans y croire : ____.
+Ce qui a été découvert en vidant le grenier des grands-parents : ____.
+La véritable raison pour laquelle le chat a été banni du salon : ____.
+Ce que j'ai promis d'arrêter, encore une fois, à partir de lundi : ____.
+Le vrai contenu du "petit mot doux" trouvé dans la boîte aux lettres : ____.
+Ce qui a mis fin, une bonne fois pour toutes, à la tradition du barbecue annuel : ____.
+La chose que je n'ai toujours pas rendue à mon meilleur ami depuis dix ans : ____.
+Ce que le videur a vraiment dit avant de me laisser entrer en boîte : ____.
+Le vrai secret derrière le sourire figé sur la photo de classe : ____.
+Ce qui explique pourquoi personne ne veut plus organiser le Nouvel An chez moi : ____.
+La raison pour laquelle j'ai supprimé l'application juste après l'avoir installée : ____.
+Ce que contenait vraiment le carton "dons" déposé devant l'immeuble : ____.
+Le vrai sujet de la dispute qui a duré tout le trajet retour de vacances : ____.
+
+## Réponses
+une gueule de bois carabinée et zéro souvenir
+trois excuses bidon enchaînées sans respirer
+le sourire crispé de ma belle-mère
+un mensonge tellement énorme que ça a marché
+mon égo, en miettes
+une facture que personne ne veut payer
+le silence le plus long de l'histoire de la famille
+un malentendu qui a duré quinze ans
+la honte de ma vie, format familial
+un plan B improvisé en trente secondes
+un selfie qu'il ne fallait surtout pas envoyer
+la vérité, un peu trop tard
+un chèque en bois et un sourire innocent
+une dispute pour une histoire de télécommande
+un secret gardé depuis trois générations
+mon chat, complice depuis le début
+un déguisement de dernière minute mal pensé
+deux heures de retard et aucune excuse valable
+un remboursement que je n'aurai jamais
+une promesse que je n'ai jamais eu l'intention de tenir
+la pire idée de toute ma vie
+un simple malentendu devenu incident diplomatique
+une réputation à reconstruire de zéro
+le playlist karaoké la plus embarrassante possible
+un mot d'excuse rédigé à la va-vite
+la version officielle, très éloignée de la vraie
+un cadeau réutilisé trois fois de suite
+une allergie totalement inventée
+le mauvais numéro, appelé au pire moment
+un pari stupide entre cousins
+une leçon de vie apprise trop tard
+la pire décision prise après trois verres
+un costume loué jamais rendu au pressing
+un discours improvisé qui a mal vieilli
+le regard noir de toute la table
+une valise jamais vraiment défaite depuis le divorce
+un compliment qui sonnait comme une insulte
+trois générations de rancune non résolue
+une blague qui n'a fait rire que moi
+un mensonge blanc devenu montagne
+le pire karaoké jamais entendu dans ce quartier
+une carte de vœux écrite au dernier moment
+un budget mariage explosé en deux week-ends
+la honte devant toute la belle-famille
+un jeu de mots qui n'aurait jamais dû exister
+un carton de déménagement jamais ouvert depuis cinq ans
+la seule excuse crédible qu'il me restait
+un pacte de silence signé entre frères et sœurs
+une danse qu'il valait mieux ne jamais filmer
+le pire discours de mariage jamais entendu
+un mystère familial jamais résolu
+une dette de trente euros qui a détruit une amitié
+le prétexte parfait pour partir plus tôt
+un souvenir que tout le monde préfère oublier
+une tradition familiale qu'on regrette d'avoir commencée
+le pire moment pour recevoir cette nouvelle
+un plan foireux monté en cinq minutes
+la seule chose qui pouvait sauver la soirée
+un rire nerveux qui a tout aggravé
+une explication tellement compliquée que ça sonnait faux
+un cadeau clairement acheté à la dernière minute
+la vérité qui aurait dû rester cachée
+un enterrement de vie de garçon parti en vrille
+un mensonge raconté avec beaucoup trop de détails
+une gêne palpable pendant tout le dîner
+un exploit dont je ne suis pas franchement fier
+le seul moyen d'éviter une crise familiale
+un pari perdu d'avance
+une excuse tellement mauvaise qu'elle en devenait drôle
+la version édulcorée destinée aux enfants
+un secret confié après trop de vin
+une réponse tellement honnête que ça a jeté un froid
+le pire cadeau de mariage jamais reçu
+un incident qu'on n'évoquera plus jamais
+un fou rire au pire moment possible
+la stratégie de fuite préparée d'avance
+un compliment maladroit sur la nouvelle coiffure
+une dispute qui a duré tout le trajet retour
+le seul témoin de toute cette histoire
+un mensonge répété si souvent qu'il est devenu vrai
+la pire idée de cadeau de la décennie
+un malaise général autour de la table
+une confession chuchotée dans la cuisine
+le prix à payer pour avoir trop parlé
+un rebondissement que personne n'avait vu venir
+la honte absolue devant les beaux-parents
+un plan de secours qui a fait pire que le problème
+une vieille rancune ravivée au dessert
+le seul sujet à ne jamais aborder à Noël
+un cadeau qui en disait beaucoup trop sur nos rapports
+une réputation ruinée en une seule soirée
+le pire moment pour un appel manqué
+un aveu qui aurait mieux valu rester secret
+la seule explication qui tenait à peu près la route
+un souvenir gênant ressorti chaque année
+un pacte familial jamais officiellement rompu
+la pire excuse jamais inventée pour un retard
+un fiasco organisé avec les meilleures intentions du monde
+une soirée qui a viré au règlement de comptes
+le mensonge le plus élaboré de toute la famille
+un cadeau qu'il fallait absolument échanger
+la seule fois où grand-mère a dit la vérité
+un incident diplomatique autour du plat principal
+une gaffe monumentale devant tout le monde
+le secret le mieux gardé de la famille, jusqu'à maintenant
+un remords qui dure depuis des années
+la pire soirée jeux de société de l'histoire familiale

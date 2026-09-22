@@ -11,9 +11,10 @@ import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.greaterEq
 import org.jetbrains.exposed.v1.jdbc.selectAll
+import java.time.LocalDate
 
 /** Reads the aggregated counters, biggest first, for the administration charts. */
-class ExposedUsageStatsReader : UsageStatsReader {
+class ExposedUsageStatsReader(private val clock: DayProvider = DayProvider.UTC) : UsageStatsReader {
 
     override suspend fun topCards(kind: CardKind, limit: Int): List<CardUsageStat> = dbQuery {
         CardUsageTable.selectAll()
@@ -53,11 +54,16 @@ class ExposedUsageStatsReader : UsageStatsReader {
     }
 
     override suspend fun activity(days: Int): List<DailyActivity> = dbQuery {
-        DailyActivityTable.selectAll()
-            .orderBy(DailyActivityTable.day to SortOrder.DESC)
-            .limit(days)
+        val today = LocalDate.parse(clock.today())
+        val start = today.minusDays((days - 1).toLong())
+        val existingByDay = DailyActivityTable.selectAll()
+            .where { DailyActivityTable.day greaterEq start.toString() }
             .map(::toActivity)
-            .reversed()
+            .associateBy { it.day }
+        generateSequence(start) { it.plusDays(1) }
+            .takeWhile { !it.isAfter(today) }
+            .map { date -> existingByDay[date.toString()] ?: DailyActivity(date.toString(), 0, 0, 0) }
+            .toList()
     }
 
     private fun toCardStat(row: ResultRow) = CardUsageStat(

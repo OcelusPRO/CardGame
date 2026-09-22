@@ -1,6 +1,7 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { CardPackView } from '../../api/types'
 import type { SavedDeck } from './SavedDeck'
 import { DeckBuilder } from './DeckBuilder'
 
@@ -10,6 +11,18 @@ function savedDeck(overrides: Partial<SavedDeck> = {}): SavedDeck {
     name: 'Soirée entre amis',
     situations: ['Chez moi, on ne parle jamais de ____.'],
     punchlines: ['la honte de ma vie'],
+    ...overrides,
+  }
+}
+
+function pack(overrides: Partial<CardPackView> = {}): CardPackView {
+  return {
+    id: 'classique',
+    name: 'Soirée Classique',
+    description: '',
+    situationCount: 111,
+    punchlineCount: 107,
+    adultOnly: false,
     ...overrides,
   }
 }
@@ -107,5 +120,57 @@ describe('DeckBuilder', () => {
     expect(screen.getByRole('button', { name: /Enregistrer/ })).toBeInTheDocument()
     const stored = JSON.parse(window.localStorage.getItem('cardgame.decks') ?? '[]') as SavedDeck[]
     expect(stored).toEqual([savedDeck()])
+  })
+
+  it('ticks nothing for a host on a brand new table', async () => {
+    const onApply = vi.fn()
+
+    render(<DeckBuilder packs={[pack()]} disabled={false} onApply={onApply} />)
+
+    expect(screen.getByRole('button', { name: /Soirée Classique/ })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+    expect(
+      screen.getByText('Aucun deck sélectionné : la partie se jouera uniquement sur les cartes écrites ici.'),
+    ).toBeInTheDocument()
+    await waitFor(() =>
+      expect(onApply).toHaveBeenCalledWith({ packIds: [], customSituations: [], customPunchlines: [] }),
+    )
+  })
+
+  it('remembers the host pack choice for the next table', async () => {
+    window.localStorage.setItem('cardgame.lastSelectedPackIds', JSON.stringify(['classique']))
+    const onApply = vi.fn()
+
+    render(<DeckBuilder packs={[pack()]} disabled={false} onApply={onApply} />)
+
+    expect(screen.getByRole('button', { name: /Soirée Classique/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    await waitFor(() =>
+      expect(onApply).toHaveBeenCalledWith({
+        packIds: ['classique'],
+        customSituations: [],
+        customPunchlines: [],
+      }),
+    )
+  })
+
+  it('has a guest mirror the live pool instead of reading or writing its own memory', async () => {
+    window.localStorage.setItem('cardgame.lastSelectedPackIds', JSON.stringify(['someone-elses-pick']))
+
+    render(<DeckBuilder packs={[pack()]} disabled onApply={vi.fn()} />)
+
+    // The pack is ticked because it is the one live pack on this table, not because of
+    // what this browser's own storage says — a guest has nothing of their own to restore.
+    expect(screen.getByRole('button', { name: /Soirée Classique/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(window.localStorage.getItem('cardgame.lastSelectedPackIds')).toBe(
+      JSON.stringify(['someone-elses-pick']),
+    )
   })
 })

@@ -38,6 +38,10 @@ class GameEntryService(
         val state = games.create(host, settings)
         // A brand new table starts on every enabled pack the host is actually allowed to use:
         // adult-only packs are left out unless one of their accounts is cleared for them.
+        // The lobby's paquet editor overrides this with an `UpdateDeck` of its own moments
+        // later — empty on a fresh browser, or whatever it remembered from the host's last
+        // table — but a game created and started purely over the API (tests, tools) still
+        // gets a playable deck without that extra round trip.
         val allowAdult = adultAccess.allows(session)
         val deck = DeckRequest(packIds = decks.enabledPackIds(includeAdult = allowAdult))
         appliedDecks.remember(state.code, deck)
