@@ -29,4 +29,18 @@ data class GameView(
      * an inference.
      */
     val spectator: Boolean = false,
+    /** True when the whole table plays on this one device, passed from hand to hand. */
+    val sharedDevice: Boolean = false,
+    /**
+     * On a shared device, the players the current step still waits for, in seat order:
+     * the phone goes to the first of them next. Empty on an online table, where every
+     * player acts from their own screen and [PlayerView] already tells who is done.
+     */
+    val awaiting: List<String> = emptyList(),
+    /**
+     * On a shared device, the player this snapshot was projected for — the one holding
+     * the phone. Null when it faces the whole table, which is what tells the two apart
+     * when the device's own player is the one holding it.
+     */
+    val seat: String? = null,
 )

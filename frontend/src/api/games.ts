@@ -3,8 +3,9 @@ import type { AvatarInput, GamePreview, GameSettingsInput, GameTicket } from './
 
 /** Everything the lobby screens need before the socket takes over. */
 export const gamesApi = {
-  create: (nickname: string, avatar: AvatarInput, settings?: GameSettingsInput) =>
-    api.post<GameTicket>('/api/games', { nickname, avatar, settings }),
+  /** `sharedDevice` opens a table the whole room plays on this one device. */
+  create: (nickname: string, avatar: AvatarInput, settings?: GameSettingsInput, sharedDevice = false) =>
+    api.post<GameTicket>('/api/games', { nickname, avatar, settings, sharedDevice }),
 
   join: (code: string, nickname: string, avatar: AvatarInput) =>
     api.post<GameTicket>(`/api/games/${code}/players`, { nickname, avatar }),

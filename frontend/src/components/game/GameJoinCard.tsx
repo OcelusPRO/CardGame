@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { ApiError } from '../../api/ApiError'
 import { gamesApi } from '../../api/games'
 import type { GamePreview, MeView } from '../../api/types'
 import { errorMessage } from '../../lib/errorMessages'
+import { spectatePath } from '../../lib/gameLinks'
 import type { Identity } from '../../lib/identity'
 import { Button } from '../ui/Button'
 import { Panel } from '../ui/Panel'
@@ -48,9 +50,19 @@ export function GameJoinCard({ preview, identity, onIdentityChange, me, onJoined
 
       {!preview.canJoin && (
         <p className="sketch bg-zap/20 px-4 py-3 text-sm text-honey">
-          {preview.phase === 'LOBBY'
-            ? 'La table est complète.'
-            : 'La partie a déjà commencé : impossible de prendre une place.'}
+          {preview.sharedDevice ? (
+            <>
+              Cette partie se joue sur un seul appareil : on ne peut pas la rejoindre, seulement{' '}
+              <Link to={spectatePath(preview.code)} className="underline">
+                la regarder
+              </Link>
+              .
+            </>
+          ) : preview.phase === 'LOBBY' ? (
+            'La table est complète.'
+          ) : (
+            'La partie a déjà commencé : impossible de prendre une place.'
+          )}
         </p>
       )}
 

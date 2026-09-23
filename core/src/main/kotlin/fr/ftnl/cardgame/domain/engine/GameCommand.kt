@@ -28,6 +28,19 @@ sealed interface GameCommand {
     data class Kick(val by: PlayerId, val playerId: PlayerId) : GameCommand
 
     /**
+     * Gives up a seat to keep watching from the stream page, in the lobby only. A host
+     * names their [heir]: the crown goes to the device they will play from, rather than
+     * to whoever happened to sit down first. Ignored for everybody else.
+     */
+    data class StepAside(val playerId: PlayerId, val heir: PlayerId? = null) : GameCommand
+
+    /**
+     * Seats one more player on a shared device: somebody sitting on the sofa, who will be
+     * handed the phone when their turn comes. Only the device that opened the table may.
+     */
+    data class AddSeat(val by: PlayerId, val player: Player) : GameCommand
+
+    /**
      * Attaches the Twitch account of a player who signed in, possibly long after taking
      * their seat. A null [login] unlinks them, which is what a sign out amounts to.
      */

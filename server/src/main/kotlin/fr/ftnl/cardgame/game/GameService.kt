@@ -28,8 +28,8 @@ class GameService(
         listeners += listener
     }
 
-    suspend fun create(host: Player, settings: GameSettings): GameState {
-        val state = factory.create(codes.allocate(), host, settings)
+    suspend fun create(host: Player, settings: GameSettings, sharedDevice: Boolean = false): GameState {
+        val state = factory.create(codes.allocate(), host, settings, sharedDevice)
         store.save(state)
         listeners.forEach { it.onGameCreated(state) }
         return state

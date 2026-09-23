@@ -8,13 +8,14 @@ import { GameBoard } from '../components/game/GameBoard'
 import { GameJoinCard } from '../components/game/GameJoinCard'
 import { PhaseTimer } from '../components/game/PhaseTimer'
 import { PlayerList } from '../components/game/PlayerList'
+import { SharedDeviceBoard } from '../components/game/SharedDeviceBoard'
 import { StartGameBar } from '../components/game/StartGameBar'
 import { Toast } from '../components/ui/Toast'
 import { useGameStore } from '../game/gameStore'
 import { phaseLengthSeconds } from '../game/phaseLength'
 import { messages } from '../game/messages'
 import { errorMessage } from '../lib/errorMessages'
-import { gamePath } from '../lib/gameLinks'
+import { gamePath, spectatePath } from '../lib/gameLinks'
 import { forgetActiveGame, readActiveGame, rememberActiveGame } from '../session/activeGame'
 import { useIdentity } from '../session/useIdentity'
 import { useSession } from '../session/useSession'
@@ -103,6 +104,20 @@ export function GamePage() {
     navigate('/', { replace: true })
   }, [send, disconnect, navigate])
 
+  // A host playing from another device: the crown goes to the seat they named, this one is
+  // freed, and the page turns into the stream view of the same table. The message leaves
+  // before the socket closes — a WebSocket delivers its frames in order, close included.
+  const stepAside = useCallback(
+    (heir: string) => {
+      if (!code) return
+      send(messages.stepAside(heir))
+      disconnect()
+      forgetActiveGame()
+      navigate(spectatePath(code), { replace: true })
+    },
+    [code, send, disconnect, navigate],
+  )
+
   // A finished or forgotten game must not be a dead end: whoever followed the stale link
   // gets a fresh table of their own so the invitation still leads somewhere playable.
   // Without a remembered pseudo there is nothing to open a table with, so send them to
@@ -188,7 +203,11 @@ export function GamePage() {
           chime={game.phase === 'SUBMITTING' || game.phase === 'SELECTING'}
         />
 
-        <GameBoard game={game} me={me} send={send} liveChatVotes={chatVotes} />
+        {game.sharedDevice ? (
+          <SharedDeviceBoard game={game} me={me} send={send} liveChatVotes={chatVotes} />
+        ) : (
+          <GameBoard game={game} me={me} send={send} liveChatVotes={chatVotes} onStepAside={stepAside} />
+        )}
       </main>
 
       <aside className="order-2 w-full lg:order-1 lg:w-72 lg:shrink-0 xl:w-80">

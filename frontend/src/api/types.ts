@@ -232,6 +232,18 @@ export interface GameView {
    * is empty and nothing on screen may act. Absent on a player's snapshot.
    */
   spectator?: boolean
+  /** The whole table plays on this one device, passed from hand to hand. */
+  sharedDevice?: boolean
+  /**
+   * On a shared device, who the current step still waits for, in seat order: the phone
+   * goes to one of them next. Empty online, and between two steps.
+   */
+  awaiting?: string[]
+  /**
+   * On a shared device, the player this snapshot was projected for — whoever holds the
+   * phone. Absent when the screen faces the whole table and shows nobody's cards.
+   */
+  seat?: string
 }
 
 export interface GameTicket {
@@ -250,6 +262,8 @@ export interface GamePreview {
   canJoin: boolean
   /** What lets a single address serve both the table and the form to join it. */
   youArePlaying: boolean
+  /** The table plays on a single device: its link can watch it, never join it. */
+  sharedDevice?: boolean
 }
 
 export interface MeView {

@@ -4,6 +4,7 @@ import fr.ftnl.cardgame.api.view.GameViewFactory
 import fr.ftnl.cardgame.auth.AdultAccessGuard
 import fr.ftnl.cardgame.auth.PlayerSession
 import fr.ftnl.cardgame.domain.engine.GameCommand
+import fr.ftnl.cardgame.domain.engine.GameError
 import fr.ftnl.cardgame.domain.game.GameCode
 import fr.ftnl.cardgame.domain.game.GameState
 import fr.ftnl.cardgame.domain.player.PlayerId
@@ -85,14 +86,34 @@ class GameSocketHandler(
 
     private suspend fun sendCurrentState(connection: GameConnection) {
         val state = games.find(connection.code) ?: return
-        connection.send(ServerMessage.State(views.create(state, connection.playerId)))
+        connection.send(ServerMessage.State(views.forDevice(state, connection.playerId, connection.seat)))
     }
 
     private suspend fun onFrame(connection: GameConnection, frame: Frame, allowAdult: Boolean) {
         val text = (frame as? Frame.Text)?.readText() ?: return
         val message = decode(text) ?: return connection.send(ServerMessage.Failure(BAD_MESSAGE))
         if (message is ClientMessage.Ping) return connection.send(ServerMessage.Pong)
+        if (message is ClientMessage.Seat) return takeSeat(connection, message)
         run(connection, message, allowAdult)
+    }
+
+    /**
+     * Passes a shared device to another player, or turns it back to the table. Only the
+     * device that owns every seat may, and only to a seat that is actually there: on an
+     * online table this would be a way to read somebody else's hand.
+     */
+    private suspend fun takeSeat(connection: GameConnection, message: ClientMessage.Seat) {
+        val state = games.find(connection.code)
+            ?: return connection.send(ServerMessage.Failure(GAME_NOT_FOUND))
+        if (state.deviceOwner != connection.playerId) {
+            return connection.send(ServerMessage.Failure(GameError.NOT_THE_HOST.name))
+        }
+        val seat = message.playerId?.let(::PlayerId)
+        if (seat != null && !state.contains(seat)) {
+            return connection.send(ServerMessage.Failure(GameError.UNKNOWN_PLAYER.name))
+        }
+        connection.seat = seat
+        sendCurrentState(connection)
     }
 
     private suspend fun run(connection: GameConnection, message: ClientMessage, allowAdult: Boolean) {
@@ -100,11 +121,11 @@ class GameSocketHandler(
             ?: return connection.send(ServerMessage.Failure(GAME_NOT_FOUND))
         val command = translator.toCommand(
             message,
-            connection.playerId,
+            actorOf(connection, message),
             state.settings,
             connection.code,
             allowAdult,
-            isHost = state.isHost(connection.playerId),
+            isHost = state.isHost(actorOf(connection, message)),
         ) ?: return
         when (val result = games.dispatch(connection.code, command)) {
             is DispatchResult.Refused -> connection.send(ServerMessage.Failure(result.error.name))
@@ -127,11 +148,20 @@ class GameSocketHandler(
         if (before.settings.answerMode == after.settings.answerMode) return
         val rebuilt = translator.poolForMode(
             connection.code,
-            connection.playerId,
+            connection.actor,
             after.settings.answerMode,
             allowAdult,
         ) ?: return
         games.dispatch(connection.code, rebuilt)
+    }
+
+    /**
+     * Whose move a message is. It is the seat the socket holds, except for the two that
+     * belong to the device itself: adding somebody to the sofa, and walking away with it.
+     */
+    private fun actorOf(connection: GameConnection, message: ClientMessage): PlayerId = when (message) {
+        is ClientMessage.AddSeat, ClientMessage.Leave -> connection.playerId
+        else -> connection.actor
     }
 
     private fun decode(text: String): ClientMessage? =

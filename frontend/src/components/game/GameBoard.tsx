@@ -16,10 +16,12 @@ interface Props {
   send: (message: ClientMessage) => void
   /** The running Twitch tally, which arrives apart from the snapshot. */
   liveChatVotes?: LiveChatVotes
+  /** The host trading their seat for the stream view, which the page has to follow. */
+  onStepAside?: (heir: string) => void
 }
 
 /** Picks the screen matching the current step. The server decides, the client obeys. */
-export function GameBoard({ game, me, send, liveChatVotes }: Props) {
+export function GameBoard({ game, me, send, liveChatVotes, onStepAside }: Props) {
   switch (game.phase) {
     case 'LOBBY':
       return (
@@ -28,6 +30,8 @@ export function GameBoard({ game, me, send, liveChatVotes }: Props) {
           me={me}
           onSettings={(patch) => send(messages.settings(patch))}
           onDeck={(deck) => send(messages.deck(deck))}
+          onStepAside={onStepAside}
+          onAddSeat={(nickname, avatar) => send(messages.addSeat(nickname, avatar))}
         />
       )
     case 'SUBMITTING':

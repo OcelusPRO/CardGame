@@ -13,6 +13,11 @@ interface Props {
   hostTwitchLogin?: string
   /** The other players who signed in with Twitch, whose chats can join the vote. */
   guestTwitchLogins?: string[]
+  /**
+   * A shared device: the phone goes round the room, so answering and voting wait for
+   * everyone rather than a clock, and the two timers have nothing to set.
+   */
+  untimed?: boolean
   onChange: (patch: GameSettingsInput) => void
 }
 
@@ -35,6 +40,7 @@ export function SettingsForm({
   disabled,
   hostTwitchLogin,
   guestTwitchLogins = [],
+  untimed = false,
   onChange,
 }: Props) {
   const freeText = settings.answerMode === 'FREE_TEXT'
@@ -117,15 +123,17 @@ export function SettingsForm({
             onChange={(handSize) => onChange({ handSize })}
           />
         )}
-        <NumberBox
-          label="Temps de réponse"
-          value={settings.submitSeconds}
-          min={15}
-          max={300}
-          lockedBecause={lockedBecause}
-          onChange={(submitSeconds) => onChange({ submitSeconds })}
-        />
-        {duels ? (
+        {!untimed && (
+          <NumberBox
+            label="Temps de réponse"
+            value={settings.submitSeconds}
+            min={15}
+            max={300}
+            lockedBecause={lockedBecause}
+            onChange={(submitSeconds) => onChange({ submitSeconds })}
+          />
+        )}
+        {untimed && !chatVotes ? null : duels ? (
           <NumberBox
             label="Temps par duel"
             value={settings.duelSeconds}

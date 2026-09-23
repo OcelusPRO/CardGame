@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type {
+  AvatarInput,
   CardPackView,
   DeckInput,
   GameSettingsInput,
@@ -11,7 +12,9 @@ import { Panel } from '../ui/Panel'
 import { DeckBuilder } from '../deck/DeckBuilder'
 import { ChatCardsForm } from './ChatCardsForm'
 import { NOT_HOST, SettingsForm } from './SettingsForm'
+import { SeatsPanel } from './SeatsPanel'
 import { SharePanel } from './SharePanel'
+import { StepAsidePanel } from './StepAsidePanel'
 
 interface Props {
   game: GameView
@@ -19,10 +22,14 @@ interface Props {
   me?: MeView | null
   onSettings: (patch: GameSettingsInput) => void
   onDeck: (deck: DeckInput) => void
+  /** The host trading their seat for the stream view; online tables only. */
+  onStepAside?: (heir: string) => void
+  /** One more player around a shared device. */
+  onAddSeat?: (nickname: string, avatar: AvatarInput) => void
 }
 
 /** The waiting room: invite, tune the rules, compose the paquet. */
-export function LobbyPanel({ game, me, onSettings, onDeck }: Props) {
+export function LobbyPanel({ game, me, onSettings, onDeck, onStepAside, onAddSeat }: Props) {
   const [packs, setPacks] = useState<CardPackView[]>([])
   const notHost = !game.you.isHost
   const answerMode = game.settings.answerMode
@@ -41,7 +48,11 @@ export function LobbyPanel({ game, me, onSettings, onDeck }: Props) {
 
   return (
     <div className="flex flex-col gap-5">
-      {game.you.isHost && <SharePanel code={game.code} />}
+      {game.you.isHost && game.sharedDevice && onAddSeat && <SeatsPanel game={game} onAddSeat={onAddSeat} />}
+      {game.you.isHost && !game.sharedDevice && <SharePanel code={game.code} />}
+      {game.you.isHost && !game.sharedDevice && onStepAside && (
+        <StepAsidePanel game={game} onStepAside={onStepAside} />
+      )}
 
       <div className="grid gap-5 xl:grid-cols-2 xl:items-start">
         <Panel title="Règles">
@@ -50,6 +61,7 @@ export function LobbyPanel({ game, me, onSettings, onDeck }: Props) {
             disabled={notHost}
             hostTwitchLogin={hostTwitchLogin}
             guestTwitchLogins={guestTwitchLogins(game)}
+            untimed={game.sharedDevice}
             onChange={onSettings}
           />
         </Panel>

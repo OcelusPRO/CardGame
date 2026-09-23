@@ -33,7 +33,7 @@ class GameBroadcaster(
     }
 
     private fun snapshotFor(connection: TableConnection, state: GameState) = when (connection) {
-        is GameConnection -> views.create(state, connection.playerId)
+        is GameConnection -> views.forDevice(state, connection.playerId, connection.seat)
         is SpectatorConnection -> views.spectate(state)
     }
 }

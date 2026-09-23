@@ -27,6 +27,13 @@ data class GameState(
     val createdAtMillis: Long = 0,
     /** What the Twitch chats have written into this game, kept for the host to read. */
     val chatCardLog: ChatCardLog = ChatCardLog.EMPTY,
+    /**
+     * The device every seat belongs to, when the whole table plays on one phone passed
+     * from hand to hand. It is the seat that opened the table, and the only one a socket
+     * authenticates as; the others are players sitting next to it. Null for a table
+     * played online, one device per player.
+     */
+    val deviceOwner: PlayerId? = null,
 ) {
     fun playerOf(playerId: PlayerId): Player? = players.firstOrNull { it.id == playerId }
 
@@ -171,4 +178,19 @@ data class GameState(
         get() = phase == GamePhase.SUBMITTING ||
             phase == GamePhase.SELECTING ||
             phase == GamePhase.ROUND_RESULT
+
+    /** True when the whole table plays on one device, see [deviceOwner]. */
+    val sharedDevice: Boolean get() = deviceOwner != null
+
+    /**
+     * Whether answering and judging run against the clock. A shared device does not: the
+     * phone goes round the room one player at a time, and a timer sized for one person
+     * would run out while the third one is still being handed the phone. The chat is the
+     * exception — it judges from its own screens and needs the timer to know when to stop.
+     */
+    val clocksTurns: Boolean get() = !sharedDevice
+
+    /** Same question for the judging step, which the chat may be the one doing. */
+    val clocksJudging: Boolean
+        get() = !sharedDevice || settings.selectionMode == SelectionMode.CHAT
 }

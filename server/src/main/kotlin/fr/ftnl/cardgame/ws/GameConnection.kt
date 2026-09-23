@@ -39,7 +39,19 @@ class GameConnection(
     val playerId: PlayerId,
     session: WebSocketSession,
     json: Json,
-) : TableConnection(code, session, json)
+) : TableConnection(code, session, json) {
+
+    /**
+     * On a shared device, the player currently holding the phone: whose hand the socket
+     * is shown and whose moves it sends. Null while the screen faces the whole table.
+     * Always null on an online table, where the socket only ever is [playerId].
+     */
+    @Volatile
+    var seat: PlayerId? = null
+
+    /** Who the commands of this socket are played as right now. */
+    val actor: PlayerId get() = seat ?: playerId
+}
 
 /**
  * A socket that only watches: the page a streamer puts on screen, or leaves open on a

@@ -15,4 +15,6 @@ data class GamePreview(
     val maxPlayers: Int,
     val canJoin: Boolean,
     val youArePlaying: Boolean,
+    /** The table plays on a single device: the link can watch it, never join it. */
+    val sharedDevice: Boolean = false,
 )

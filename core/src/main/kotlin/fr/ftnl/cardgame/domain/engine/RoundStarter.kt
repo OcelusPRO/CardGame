@@ -32,7 +32,11 @@ internal class RoundStarter(
             dealt.state.copy(
                 phase = GamePhase.SUBMITTING,
                 round = Round(number = number, situation = situation, czarId = czarFor(state, number)),
-                phaseDeadlineMillis = clock.nowMillis() + state.settings.submitSeconds * MILLIS_PER_SECOND,
+                phaseDeadlineMillis = if (state.clocksTurns) {
+                    clock.nowMillis() + state.settings.submitSeconds * MILLIS_PER_SECOND
+                } else {
+                    null
+                },
             ),
             dealt.dealtPunchlines,
         )

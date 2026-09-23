@@ -1,6 +1,7 @@
 package fr.ftnl.cardgame.ws
 
 import fr.ftnl.cardgame.api.dto.DeckInput
+import fr.ftnl.cardgame.api.view.AvatarMapper
 import fr.ftnl.cardgame.api.view.SettingsMapper
 import fr.ftnl.cardgame.catalog.CardPoolResolver
 import fr.ftnl.cardgame.catalog.CustomCardFactory
@@ -12,8 +13,11 @@ import fr.ftnl.cardgame.domain.game.AnswerMode
 import fr.ftnl.cardgame.domain.game.GameCode
 import fr.ftnl.cardgame.domain.game.GameSettings
 import fr.ftnl.cardgame.domain.game.SubmissionId
+import fr.ftnl.cardgame.domain.player.Nickname
+import fr.ftnl.cardgame.domain.player.Player
 import fr.ftnl.cardgame.domain.player.PlayerId
 import fr.ftnl.cardgame.game.GameDecks
+import java.util.UUID
 
 /**
  * Translates a socket message into the domain command it stands for. Anything needing a
@@ -57,12 +61,29 @@ class GameCommandTranslator(
         }
 
         is ClientMessage.Kick -> GameCommand.Kick(playerId, PlayerId(message.playerId))
+        is ClientMessage.StepAside -> GameCommand.StepAside(playerId, message.heir?.let(::PlayerId))
+        is ClientMessage.AddSeat -> newSeat(message)?.let { GameCommand.AddSeat(playerId, it) }
         ClientMessage.Start -> GameCommand.Start(playerId)
         ClientMessage.NextRound -> GameCommand.NextRound(playerId)
         ClientMessage.ReturnToLobby -> GameCommand.ReturnToLobby(playerId)
         ClientMessage.Leave -> GameCommand.Leave(playerId)
-        ClientMessage.Ping -> null
+        // Neither is a move in the game: the ping keeps the link alive, and the seat of a
+        // shared device only changes whose eyes the socket looks through.
+        ClientMessage.Ping, is ClientMessage.Seat -> null
     }
+
+    /**
+     * A player sitting next to a shared device. They have no browser of their own, so
+     * they get an id minted here rather than the one a session would have carried. A
+     * name the rules refuse simply adds nobody; the form checks the length first.
+     */
+    private fun newSeat(message: ClientMessage.AddSeat): Player? = runCatching {
+        Player(
+            id = PlayerId(UUID.randomUUID().toString()),
+            nickname = Nickname.of(message.nickname),
+            avatar = AvatarMapper.toDomain(message.avatar, pictureUrl = null),
+        )
+    }.getOrNull()
 
     /**
      * Rebuilds the last deck the host applied, for [answerMode]. Null when nothing was

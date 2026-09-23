@@ -22,6 +22,7 @@ const MESSAGES: Record<string, string> = {
   UNKNOWN_SUBMISSION: "Cette réponse n'existe plus.",
   CANNOT_VOTE_OWN_ANSWER: "On ne vote pas pour soi, ce serait trop facile.",
   CANNOT_KICK_SELF: "Vous ne pouvez pas vous exclure vous-même.",
+  SHARED_DEVICE: "Cette partie se joue sur un seul appareil : on ne peut pas la rejoindre d'ailleurs.",
   ONLY_THE_CHAT_VOTES: "Cette manche, c'est le tchat qui tranche.",
   CHAT_VOTE_CLOSED: "Aucun tchat ne vote sur cette table.",
   GAME_NOT_FOUND: "Cette partie n'existe pas ou est terminée.",

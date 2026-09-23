@@ -31,4 +31,5 @@ enum class GameError {
     CHAT_CARDS_CLOSED,
     CHAT_CARDS_FULL,
     ONLY_THE_CHAT_VOTES,
+    SHARED_DEVICE,
 }

@@ -35,7 +35,7 @@ class GameEntryService(
     suspend fun create(request: CreateGameRequest, session: PlayerSession, baseUrl: String): GameTicket {
         val host = player(session, request.nickname, request.avatar)
         val settings = SettingsMapper.merge(GameSettings(), request.settings ?: GameSettingsInput())
-        val state = games.create(host, settings)
+        val state = games.create(host, settings, request.sharedDevice)
         // A brand new table starts on every enabled pack the host is actually allowed to use:
         // adult-only packs are left out unless one of their accounts is cleared for them.
         // The lobby's paquet editor overrides this with an `UpdateDeck` of its own moments
@@ -91,7 +91,10 @@ class GameEntryService(
         hostNickname = state.playerOf(state.hostId)?.nickname?.value.orEmpty(),
         playerCount = state.players.size,
         maxPlayers = state.settings.maxPlayers,
-        canJoin = state.phase == GamePhase.LOBBY && state.players.size < state.settings.maxPlayers,
+        canJoin = !state.sharedDevice &&
+            state.phase == GamePhase.LOBBY &&
+            state.players.size < state.settings.maxPlayers,
         youArePlaying = state.contains(viewer),
+        sharedDevice = state.sharedDevice,
     )
 }

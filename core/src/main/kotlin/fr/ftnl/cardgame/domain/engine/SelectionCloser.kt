@@ -33,8 +33,8 @@ internal class SelectionCloser(private val clock: GameClock) {
         )
     }
 
-    private fun nextDuel(state: GameState): Long =
-        clock.nowMillis() + state.settings.duelSeconds * MILLIS_PER_SECOND
+    private fun nextDuel(state: GameState): Long? =
+        if (state.clocksJudging) clock.nowMillis() + state.settings.duelSeconds * MILLIS_PER_SECOND else null
 
     private fun playedCards(round: Round) = round.submissions.values.flatMap { it.cards }
 

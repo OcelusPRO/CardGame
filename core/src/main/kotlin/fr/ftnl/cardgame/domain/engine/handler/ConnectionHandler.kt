@@ -23,11 +23,16 @@ import fr.ftnl.cardgame.domain.game.GameState
  * table would otherwise sit idle for no reason. See [RoundFlowHandler] for the one
  * handover that does happen mid-game: at the very end, if the original host never came
  * back.
+ *
+ * A shared device ignores all of it. Its players are on the sofa whether the phone's
+ * socket is up or not — a locked screen is not four people leaving — so nobody is marked
+ * offline, dealt out of a round, or stripped of the crown by a flaky link.
  */
 internal class ConnectionHandler(private val roundFlow: RoundFlow) {
 
     fun handle(state: GameState, command: GameCommand.SetConnected): CommandResult {
         if (!state.contains(command.playerId)) return CommandResult.rejected(GameError.UNKNOWN_PLAYER)
+        if (state.sharedDevice) return CommandResult.Accepted(state, emptyList())
 
         val handedOver = !command.connected && command.playerId == state.hostId && !state.isMidGame
         val next = state.copy(

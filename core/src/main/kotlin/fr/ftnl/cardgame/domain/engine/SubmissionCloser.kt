@@ -24,7 +24,11 @@ internal class SubmissionCloser(
         return state.copy(
             round = if (state.settings.runsBracket) revealed.withBracket() else revealed,
             phase = GamePhase.SELECTING,
-            phaseDeadlineMillis = clock.nowMillis() + state.settings.judgingSeconds * MILLIS_PER_SECOND,
+            phaseDeadlineMillis = if (state.clocksJudging) {
+                clock.nowMillis() + state.settings.judgingSeconds * MILLIS_PER_SECOND
+            } else {
+                null
+            },
         )
     }
 

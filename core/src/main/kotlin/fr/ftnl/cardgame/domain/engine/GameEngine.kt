@@ -54,6 +54,8 @@ class GameEngine(
         is GameCommand.SetConnected -> connection.handle(state, command)
         is GameCommand.DropIfAway -> dropIfAway.handle(state, command)
         is GameCommand.Kick -> kick.handle(state, command)
+        is GameCommand.StepAside -> leave.stepAside(state, command)
+        is GameCommand.AddSeat -> join.addSeat(state, command)
         is GameCommand.LinkTwitch -> linkTwitch.handle(state, command)
         is GameCommand.UpdateSettings -> settings.handle(state, command)
         is GameCommand.SetCardPool -> cardPool.handle(state, command)

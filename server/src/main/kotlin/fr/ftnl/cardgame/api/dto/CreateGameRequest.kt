@@ -8,4 +8,6 @@ data class CreateGameRequest(
     val nickname: String,
     val avatar: AvatarInput,
     val settings: GameSettingsInput? = null,
+    /** The whole table plays on the creator's device, passed round the room. */
+    val sharedDevice: Boolean = false,
 )

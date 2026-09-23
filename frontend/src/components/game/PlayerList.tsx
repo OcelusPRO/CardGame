@@ -12,6 +12,11 @@ interface Props {
 export function PlayerList({ game, onKick, onLeave }: Props) {
   const ordered = [...game.players].sort((a, b) => b.score - a.score)
   const canKick = game.you.isHost && game.phase === 'LOBBY'
+  // On a shared device nobody is "you": the phone changes hands. Leaving is the device's
+  // own business — it takes the whole sofa with it — so it hangs on the host's row, and
+  // only while the screen faces the table rather than somebody's hand.
+  const self = game.sharedDevice ? undefined : game.you.id
+  const leaver = game.sharedDevice ? (game.seat ? undefined : game.you.id) : game.you.id
 
   return (
     <Panel title={`Joueurs (${game.players.length}/${game.settings.maxPlayers})`}>
@@ -21,9 +26,9 @@ export function PlayerList({ game, onKick, onLeave }: Props) {
             key={player.id}
             player={player}
             phase={game.phase}
-            isYou={player.id === game.you.id}
+            isYou={player.id === self}
             onKick={canKick && player.id !== game.you.id && onKick ? () => onKick(player.id) : undefined}
-            onLeave={player.id === game.you.id ? onLeave : undefined}
+            onLeave={player.id === leaver ? onLeave : undefined}
           />
         ))}
       </ul>
